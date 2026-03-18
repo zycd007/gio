@@ -18,7 +18,25 @@
     "selectedColor": "#c9a962",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
-    "custom": true
+    "custom": true,
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/about/about",
+        "text": "关于"
+      },
+      {
+        "pagePath": "pages/projects/projects",
+        "text": "案例"
+      },
+      {
+        "pagePath": "pages/contact/contact",
+        "text": "联系"
+      }
+    ]
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2"

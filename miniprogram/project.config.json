@@ -45,8 +45,8 @@
     "disableSWC": true
   },
   "compileType": "mini-program",
-  "libVersion": "3.3.4",
-  "appid": "touristappid",
+  "libVersion": "3.15.0",
+  "appid": "wxaacef8adf284ff3d",
   "projectname": "giosj-miniprogram",
   "condition": {},
   "editorSetting": {
