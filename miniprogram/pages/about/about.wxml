@@ -1,0 +1,66 @@
+<view class="container">
+  <view class="about-hero">
+    <text class="about-title">ABOUT US</text>
+    <text class="about-subtitle">了解 GIO&SJ 的故事</text>
+  </view>
+
+  <view class="about-content">
+    <text class="about-section-title">关于我们</text>
+    <text class="about-text">
+      我们是一群有热情、有态度的 90 后，专注于个性化商业空间、私宅设计、全案设计和产品落地的团队。
+    </text>
+    <text class="about-text">
+      因思想碰撞，因对空间、企业与生活方式的热爱，我们保持对空间温度的追求，追求有态度的设计，还原纯粹的空间美学。
+    </text>
+    <text class="about-text">
+      将每个项目视作一个作品，对细节的关注与一丝不苟的态度贯穿始终。设计 + 施工 + 软装一体化，为客户提供真正的一站式专业服务。
+    </text>
+    <text class="about-text">
+      拒绝流水线、模块化设计，我们拒绝千篇一律，确保每个项目都能成为精品。
+    </text>
+
+    <view class="highlights">
+      <view class="highlight-item">
+        <view class="highlight-icon">✦</view>
+        <text class="highlight-text">原创设计理念</text>
+      </view>
+      <view class="highlight-item">
+        <view class="highlight-icon">★</view>
+        <text class="highlight-text">10 年 + 行业经验</text>
+      </view>
+      <view class="highlight-item">
+        <view class="highlight-icon">◆</view>
+        <text class="highlight-text">一站式全案服务</text>
+      </view>
+      <view class="highlight-item">
+        <view class="highlight-icon">♥</view>
+        <text class="highlight-text">100% 客户满意</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="about-content">
+    <text class="about-section-title">设计理念</text>
+    <text class="about-text">
+      我们相信，空间不仅仅是物理的存在，更是情感与生活的载体。每一个项目都承载着客户的期待与梦想，我们用心聆听，用专业诠释。
+    </text>
+    <text class="about-text">
+      从概念到落地，我们全程把控，确保设计初衷完美呈现。氛围营造情绪的底色，这是我们对每个项目的承诺。
+    </text>
+  </view>
+
+  <view class="stats">
+    <view class="stat-item">
+      <text class="stat-num">2024</text>
+      <text class="stat-label">创立之年</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num">10+</text>
+      <text class="stat-label">年经验</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num">∞</text>
+      <text class="stat-label">无限可能</text>
+    </view>
+  </view>
+</view>

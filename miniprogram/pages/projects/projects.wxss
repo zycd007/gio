@@ -1,0 +1,182 @@
+page {
+  background: #f8f8f8;
+}
+
+.container {
+  min-height: 100vh;
+}
+
+/* 分类视图 */
+.categories-view {
+  padding: 30rpx;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 50rpx;
+  padding-top: 20rpx;
+}
+
+.section-label {
+  display: block;
+  font-size: 11rpx;
+  color: #c9a962;
+  letter-spacing: 3rpx;
+  text-transform: uppercase;
+  margin-bottom: 15rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 400;
+  letter-spacing: 4rpx;
+  color: #1a1a1a;
+}
+
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15rpx;
+}
+
+.cat-card {
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.cat-img {
+  height: 100rpx;
+  background: linear-gradient(135deg, #1a1a1a, #444444);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+}
+
+.cat-info {
+  padding: 20rpx;
+}
+
+.cat-name {
+  display: block;
+  font-size: 16rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 5rpx;
+}
+
+.cat-count {
+  display: block;
+  font-size: 11rpx;
+  color: #999999;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+
+.cat-count-bar {
+  height: 4rpx;
+  background: #f0f0f0;
+  border-radius: 2rpx;
+  margin-top: 15rpx;
+  overflow: hidden;
+}
+
+.cat-count-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a1a1a, #c9a962);
+  border-radius: 2rpx;
+  transition: width 0.5s ease;
+}
+
+/* 列表视图 */
+.list-view {
+  padding: 30rpx;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25rpx;
+  padding-top: 10rpx;
+}
+
+.list-title {
+  display: block;
+  font-size: 18rpx;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+  color: #1a1a1a;
+}
+
+.list-count {
+  display: block;
+  font-size: 12rpx;
+  color: #999999;
+  margin-top: 5rpx;
+}
+
+.back-btn {
+  background: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  padding: 10rpx 25rpx;
+  border-radius: 20rpx;
+  font-size: 13rpx;
+}
+
+.project-list {
+  padding-bottom: 30rpx;
+}
+
+.project-card {
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.project-img {
+  height: 200rpx;
+  background: linear-gradient(135deg, #1a1a1a, #3a3a3a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16rpx;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+}
+
+.project-info {
+  padding: 20rpx;
+}
+
+.project-name {
+  display: block;
+  font-size: 17rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 15rpx;
+}
+
+.project-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.project-location {
+  font-size: 12rpx;
+  color: #999999;
+}
+
+.project-year {
+  font-size: 12rpx;
+  color: #c9a962;
+  font-weight: 500;
+}

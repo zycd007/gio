@@ -1,0 +1,65 @@
+<view class="container">
+  <view class="contact-hero">
+    <text class="contact-title">CONTACT US</text>
+    <text class="contact-subtitle">期待与您的合作</text>
+  </view>
+
+  <view class="contact-section">
+    <view class="contact-card">
+      <view class="contact-item">
+        <view class="contact-icon">📍</view>
+        <view class="contact-text">
+          <text class="contact-label">公司地址</text>
+          <text class="contact-value">四川省成都市</text>
+        </view>
+      </view>
+      <view class="contact-item">
+        <view class="contact-icon">📱</view>
+        <view class="contact-text">
+          <text class="contact-label">联系电话</text>
+          <text class="contact-value">添加微信获取联系方式</text>
+        </view>
+      </view>
+      <view class="contact-item">
+        <view class="contact-icon">✉️</view>
+        <view class="contact-text">
+          <text class="contact-label">电子邮箱</text>
+          <text class="contact-value">contact@giosj.com</text>
+        </view>
+      </view>
+      <view class="contact-item">
+        <view class="contact-icon">💬</view>
+        <view class="contact-text">
+          <text class="contact-label">官方微信</text>
+          <text class="contact-value">GIO-SJ</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="qr-card">
+      <text class="qr-title">添加官方微信</text>
+      <text class="qr-desc">扫一扫获取更多信息</text>
+      <view class="qr-code">
+        <text class="qr-placeholder">📱</text>
+      </view>
+      <text class="qr-hint">长按识别二维码添加微信</text>
+    </view>
+
+    <view class="contact-form">
+      <text class="form-title">在线留言</text>
+      <view class="form-group">
+        <input class="form-input" placeholder="您的姓名 *" placeholder-class="input-placeholder" />
+      </view>
+      <view class="form-group">
+        <input class="form-input" type="number" placeholder="联系电话 *" placeholder-class="input-placeholder" />
+      </view>
+      <view class="form-group">
+        <input class="form-input" placeholder="项目类型（如：私宅/餐饮/办公）" placeholder-class="input-placeholder" />
+      </view>
+      <view class="form-group">
+        <textarea class="form-textarea" placeholder="请描述您的需求..." placeholder-class="input-placeholder" maxlength="500" />
+      </view>
+      <button class="form-submit" bindtap="submitForm">提交留言</button>
+    </view>
+  </view>
+</view>

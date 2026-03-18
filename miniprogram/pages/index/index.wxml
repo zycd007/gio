@@ -1,0 +1,69 @@
+<view class="container">
+  <!-- Hero Section -->
+  <view class="hero">
+    <view class="hero-content">
+      <text class="hero-title">GIO&SJ</text>
+      <text class="hero-subtitle">The atmosphere creates the bottom of the mood</text>
+      <view class="hero-since">
+        <text>SINCE 2024</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tagline -->
+  <view class="tagline">
+    <text class="tagline-icon">✦</text>
+    <text class="tagline-text">我们是一群有热情、有态度的 90 后设计团队</text>
+    <text class="tagline-text">专注于个性化商业空间与私宅设计</text>
+    <text class="tagline-text">设计 + 施工 + 软装一体化服务</text>
+  </view>
+
+  <!-- Core Competitiveness -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-label">CORE COMPETITIVENESS</text>
+      <text class="section-title">核心优势</text>
+    </view>
+    <view class="core-grid">
+      <view class="core-item" wx:for="{{coreItems}}" wx:key="id">
+        <text class="core-icon">{{item.icon}}</text>
+        <text class="core-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Service Areas -->
+  <view class="section services">
+    <view class="section-header">
+      <text class="section-label">SERVICE AREAS</text>
+      <text class="section-title">服务领域</text>
+    </view>
+    <view class="service-list">
+      <view class="service-item" wx:for="{{services}}" wx:key="*this">
+        <text class="service-dot"></text>
+        <text class="service-name">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Cities -->
+  <view class="section cities">
+    <view class="section-header">
+      <text class="section-label">COVERAGE</text>
+      <text class="section-title">业务覆盖</text>
+    </view>
+    <view class="city-grid">
+      <view class="city-item" wx:for="{{cities}}" wx:key="*this">
+        <text>{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Stats -->
+  <view class="stats">
+    <view class="stat-item" wx:for="{{stats}}" wx:key="label">
+      <text class="stat-num">{{item.num}}</text>
+      <text class="stat-label">{{item.label}}</text>
+    </view>
+  </view>
+</view>

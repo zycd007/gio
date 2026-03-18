@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="GIO&SJ 设计事务所 - 专注于个性化商业空间与私宅设计">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>GIO&SJ | 设计事务所</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #1a1a1a;
+      --secondary: #666;
+      --accent: #c9a962;
+      --accent-light: #d4b76e;
+      --bg: #f8f8f8;
+      --white: #ffffff;
+      --text-light: #999;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--primary);
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* 动画 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+
+    /* 导航 */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 1000;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      transition: all 0.3s ease;
+    }
+
+    .nav.scrolled {
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav-menu a {
+      color: var(--secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .nav-menu a.active,
+    .nav-menu a:hover {
+      color: var(--accent);
+    }
+
+    .nav-menu a.active::after,
+    .nav-menu a:hover::after {
+      width: 100%;
+    }
+
+    /* 移动端菜单按钮 */
+    .menu-btn {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .menu-btn span {
+      width: 24px;
+      height: 2px;
+      background: var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    /* 页面容器 */
+    .page {
+      display: none;
+      padding-top: 60px;
+      min-height: 100vh;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* 首页 Hero */
+    .hero {
+      position: relative;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 100px 20px 80px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      font-size: 48px;
+      font-weight: 300;
+      letter-spacing: 12px;
+      margin-bottom: 15px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    .hero-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+
+    .hero-since {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      font-size: 11px;
+      letter-spacing: 3px;
+      border-radius: 30px;
+      animation: fadeInUp 0.8s ease 0.4s both;
+    }
+
+    .hero-since::before,
+    .hero-since::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    /* 轮播图 */
+    .hero-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 0;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0;
+      transition: opacity 1s ease;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .slide.active {
+      opacity: 0.3;
+    }
+
+    /* 标语 */
+    .tagline {
+      background: var(--white);
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .tagline-icon {
+      font-size: 30px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .tagline p {
+      font-size: 15px;
+      color: var(--secondary);
+      max-width: 520px;
+      margin: 0 auto 15px;
+      line-height: 2.2;
+    }
+
+    .tagline-divider {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin: 25px auto;
+    }
+
+    /* 核心优势 */
+    .core {
+      padding: 60px 20px;
+      background: var(--white);
+      margin-top: 8px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      color: var(--primary);
+    }
+
+    .core-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .core-item {
+      text-align: center;
+      padding: 25px 15px;
+      background: var(--bg);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .core-item:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+      background: var(--primary);
+    }
+
+    .core-item:hover .core-icon,
+    .core-item:hover .core-item h4 {
+      color: var(--accent);
+    }
+
+    .core-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .core-item h4 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    /* 服务领域 */
+    .services {
+      padding: 60px 20px;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--white) 100%);
+    }
+
+    .service-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .service-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--white);
+      padding: 12px 20px;
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      font-size: 14px;
+      color: var(--secondary);
+    }
+
+    .service-item:hover {
+      background: var(--primary);
+      color: var(--white);
+      transform: scale(1.05);
+    }
+
+    .service-item .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    /* 城市覆盖 */
+    .cities {
+      padding: 60px 20px;
+      background: var(--primary);
+      color: var(--white);
+      margin-top: 8px;
+    }
+
+    .cities .section-label {
+      color: var(--accent);
+    }
+
+    .cities .section-title {
+      color: var(--white);
+    }
+
+    .city-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 15px;
+      max-width: 600px;
+      margin: 30px auto 0;
+    }
+
+    .city-item {
+      text-align: center;
+      padding: 15px 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .city-item:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    /* 统计数据 */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 50px 20px;
+      background: var(--white);
+      margin-top: 8px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .stat-num {
+      font-size: 36px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-light);
+      letter-spacing: 2px;
+    }
+
+    /* 关于页面 */
+    .about-hero {
+      background: linear-gradient(135deg, var(--primary), #333);
+      padding: 80px 20px;
+      text-align: center;
+      color: var(--white);
+    }
+
+    .about-hero h1 {
+      font-size: 32px;
+      font-weight: 300;
+      letter-spacing: 6px;
+      margin-bottom: 15px;
+    }
+
+    .about-hero p {
+      font-size: 13px;
+      opacity: 0.7;
+      letter-spacing: 2px;
+    }
+
+    .about-content {
+      background: var(--white);
+      padding: 40px 25px;
+      margin: 20px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .about-text {
+      color: var(--secondary);
+      line-height: 2.2;
+      margin-bottom: 20px;
+      text-align: justify;
+    }
+
+    .about-highlights {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .highlight-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+
+    .highlight-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .highlight-text {
+      font-size: 13px;
+      color: var(--secondary);
+    }
+
+    /* 案例分类 */
+    .categories {
+      padding: 30px 20px;
+    }
+
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .cat-card {
+      background: var(--white);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .cat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .cat-img {
+      height: 100px;
+      background: linear-gradient(135deg, #1a1a1a, #444);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cat-img::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.3) 100%);
+    }
+
+    .cat-info {
+      padding: 18px;
+    }
+
+    .cat-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--primary);
+    }
+
+    .cat-count {
+      font-size: 11px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .cat-count-bar {
+      height: 3px;
+      background: var(--bg);
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    .cat-count-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 2px;
+      width: 0;
+      transition: width 1s ease;
+    }
+
+    .cat-card:hover .cat-count-fill {
+      width: 100%;
+    }
+
+    /* 案例列表 */
+    .project-list {
+      padding: 30px 20px 100px;
+    }
+
+    .project-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .project-list-title {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 2px;
+    }
+
+    .project-list-count {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .project-card {
+      background: var(--white);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .project-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .project-img {
+      height: 200px;
+      background: linear-gradient(135deg, #1a1a1a, #3a3a3a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      position: relative;
+    }
+
+    .project-img::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.5) 100%);
+    }
+
+    .project-img span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .project-info {
+      padding: 18px;
+    }
+
+    .project-name {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+
+    .project-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .project-location {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .project-year {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* 联系页面 */
+    .contact-hero {
+      background: linear-gradient(135deg, var(--primary), #2a2a2a);
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--white);
+    }
+
+    .contact-hero h1 {
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+
+    .contact-hero p {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .contact-section {
+      padding: 30px 20px;
+    }
+
+    .contact-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 0;
+      margin-bottom: 15px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--bg);
+      transition: all 0.3s ease;
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-item:hover {
+      background: var(--bg);
+    }
+
+    .contact-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+
+    .contact-text {
+      flex: 1;
+    }
+
+    .contact-label {
+      font-size: 11px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .contact-value {
+      font-size: 15px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    /* QR Code 卡片 */
+    .qr-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      margin: 20px;
+    }
+
+    .qr-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .qr-desc {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 20px;
+    }
+
+    .qr-code {
+      width: 200px;
+      height: 200px;
+      background: var(--primary);
+      margin: 0 auto 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+
+    .qr-hint {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* 咨询表单 */
+    .contact-form {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 25px;
+      margin: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--bg);
+      border-radius: 10px;
+      font-size: 14px;
+      background: var(--bg);
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--white);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary), #333);
+      color: var(--white);
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .form-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    /* 底部 */
+    .footer {
+      background: var(--primary);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 40px 20px 100px;
+      font-size: 12px;
+    }
+
+    .footer-logo {
+      font-size: 20px;
+      letter-spacing: 6px;
+      margin-bottom: 15px;
+      color: var(--white);
+      font-weight: 300;
+    }
+
+    .footer-slogan {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .footer-links a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    .footer-copyright {
+      opacity: 0.4;
+    }
+
+    /* 底部导航栏 */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(0,0,0,0.05);
+      z-index: 1000;
+    }
+
+    .tab-item {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 10px;
+      padding: 5px 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab-item.active {
+      color: var(--primary);
+    }
+
+    .tab-icon {
+      font-size: 22px;
+      display: block;
+      margin-bottom: 3px;
+      transition: transform 0.3s ease;
+    }
+
+    .tab-item.active .tab-icon {
+      transform: translateY(-3px);
+    }
+
+    .tab-item::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 40px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 3px 3px;
+      transition: transform 0.3s ease;
+    }
+
+    .tab-item.active::before {
+      transform: translateX(-50%) scaleX(1);
+    }
+
+    /* 返回顶部按钮 */
+    .back-top {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), #333);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      z-index: 999;
+      border: none;
+    }
+
+    .back-top.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .back-top:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+
+    /* 页面指示器 */
+    .page-indicator {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--bg);
+      z-index: 999;
+    }
+
+    .page-progress {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      width: 0;
+      transition: width 0.3s ease;
+    }
+
+    /* 加载动画 */
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .loading.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loading-logo {
+      text-align: center;
+    }
+
+    .loading-text {
+      color: var(--white);
+      font-size: 24px;
+      letter-spacing: 8px;
+      margin-bottom: 20px;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    .loading-bar {
+      width: 150px;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loading-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 50%;
+      background: var(--accent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* 消息提示 */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(0,0,0,0.9);
+      color: var(--white);
+      padding: 20px 30px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .toast-icon {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    /* 图片占位符样式 */
+    .img-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+      background-size: 200% 200%;
+      animation: shimmer 3s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 40px;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 480px) {
+      .hero-title {
+        font-size: 36px;
+        letter-spacing: 6px;
+      }
+
+      .section-title {
+        font-size: 20px;
+      }
+
+      .stats {
+        padding: 30px 10px;
+      }
+
+      .stat-num {
+        font-size: 28px;
+      }
+
+      .core-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .nav-menu {
+        display: none;
+      }
+
+      .menu-btn {
+        display: flex;
+      }
+    }
+
+    /* 隐藏滚动条但保留功能 */
+    ::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    /* 小程序适配 */
+    .wx-hide {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- 加载动画 -->
+  <div class="loading" id="loading">
+    <div class="loading-logo">
+      <div class="loading-text">GIO&SJ</div>
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+
+  <!-- 页面进度条 -->
+  <div class="page-indicator">
+    <div class="page-progress" id="pageProgress"></div>
+  </div>
+
+  <!-- 顶部导航 -->
+  <nav class="nav" id="nav">
+    <div class="nav-logo">GIO&SJ</div>
+    <div class="nav-menu">
+      <a href="#" data-page="home" class="active">首页</a>
+      <a href="#" data-page="about">关于</a>
+      <a href="#" data-page="projects">案例</a>
+      <a href="#" data-page="contact">联系</a>
+    </div>
+    <button class="menu-btn" id="menuBtn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- 首页 -->
+  <div id="home" class="page active">
+    <div class="hero">
+      <div class="hero-slider">
+        <div class="slide active" style="background-image: linear-gradient(45deg, #2a2a2a, #1a1a1a);"></div>
+        <div class="slide" style="background-image: linear-gradient(45deg, #3a3a3a, #2a2a2a);"></div>
+        <div class="slide" style="background-image: linear-gradient(45deg, #1a1a1a, #3a3a3a);"></div>
+      </div>
+      <div class="hero-content">
+        <h1 class="hero-title">GIO&SJ</h1>
+        <p class="hero-subtitle">The atmosphere creates the bottom of the mood</p>
+        <span class="hero-since">SINCE 2024</span>
+      </div>
+    </div>
+
+    <div class="tagline">
+      <div class="tagline-icon">✦</div>
+      <p>我们是一群有热情、有态度的 90 后设计团队</p>
+      <p>专注于个性化商业空间与私宅设计</p>
+      <p>设计 + 施工 + 软装一体化服务</p>
+      <div class="tagline-divider"></div>
+      <p style="font-size: 13px; color: var(--accent);">拒绝千篇一律，每个项目都是精品</p>
+    </div>
+
+    <div class="core">
+      <div class="section-header">
+        <div class="section-label">CORE COMPETITIVENESS</div>
+        <h2 class="section-title">核心优势</h2>
+      </div>
+      <div class="core-grid">
+        <div class="core-item">
+          <div class="core-icon">🎨</div>
+          <h4>原创设计</h4>
+        </div>
+        <div class="core-item">
+          <div class="core-icon">🔨</div>
+          <h4>精细施工</h4>
+        </div>
+        <div class="core-item">
+          <div class="core-icon">📦</div>
+          <h4>全案软装</h4>
+        </div>
+        <div class="core-item">
+          <div class="core-icon">🏭</div>
+          <h4>工厂直供</h4>
+        </div>
+        <div class="core-item">
+          <div class="core-icon">🛒</div>
+          <h4>严选产品</h4>
+        </div>
+        <div class="core-item">
+          <div class="core-icon">🏠</div>
+          <h4>私宅定制</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="services">
+      <div class="section-header">
+        <div class="section-label">SERVICE AREAS</div>
+        <h2 class="section-title">服务领域</h2>
+      </div>
+      <div class="service-list">
+        <div class="service-item"><span class="dot"></span>餐饮空间</div>
+        <div class="service-item"><span class="dot"></span>酒吧俱乐部</div>
+        <div class="service-item"><span class="dot"></span>娱乐空间</div>
+        <div class="service-item"><span class="dot"></span>办公空间</div>
+        <div class="service-item"><span class="dot"></span>酒店民宿</div>
+        <div class="service-item"><span class="dot"></span>服装买手店</div>
+        <div class="service-item"><span class="dot"></span>婚纱摄影</div>
+        <div class="service-item"><span class="dot"></span>医美空间</div>
+        <div class="service-item"><span class="dot"></span>展厅展览</div>
+        <div class="service-item"><span class="dot"></span>私宅设计</div>
+      </div>
+    </div>
+
+    <div class="cities">
+      <div class="section-header">
+        <div class="section-label">COVERAGE</div>
+        <h2 class="section-title">业务覆盖</h2>
+      </div>
+      <div class="city-grid">
+        <div class="city-item">成都</div>
+        <div class="city-item">上海</div>
+        <div class="city-item">南京</div>
+        <div class="city-item">武汉</div>
+        <div class="city-item">西安</div>
+        <div class="city-item">长沙</div>
+        <div class="city-item">广州</div>
+        <div class="city-item">佛山</div>
+        <div class="city-item">银川</div>
+        <div class="city-item">重庆</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">
+        <span class="stat-num">10+</span>
+        <span class="stat-label">团队经验</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">200+</span>
+        <span class="stat-label">落地项目</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">客户满意</span>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-logo">GIO&SJ</div>
+      <p class="footer-slogan">The atmosphere creates the bottom of the mood</p>
+      <div class="footer-links">
+        <a href="#" data-page="about">关于我们</a>
+        <a href="#" data-page="projects">案例作品</a>
+        <a href="#" data-page="contact">联系我们</a>
+      </div>
+      <p class="footer-copyright">© 2024 GIO&SJ Design Studio. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <!-- 关于页 -->
+  <div id="about" class="page">
+    <div class="about-hero">
+      <h1>ABOUT US</h1>
+      <p>了解 GIO&SJ 的故事</p>
+    </div>
+
+    <div class="about-content">
+      <h2 style="font-size: 18px; margin-bottom: 20px; text-align: center;">关于我们</h2>
+      <p class="about-text">
+        我们是一群有热情、有态度的 90 后，专注于个性化商业空间、私宅设计、全案设计和产品落地的团队。
+      </p>
+      <p class="about-text">
+        因思想碰撞，因对空间、企业与生活方式的热爱，我们保持对空间温度的追求，追求有态度的设计，还原纯粹的空间美学。
+      </p>
+      <p class="about-text">
+        将每个项目视作一个作品，对细节的关注与一丝不苟的态度贯穿始终。设计 + 施工 + 软装一体化，为客户提供真正的一站式专业服务。
+      </p>
+      <p class="about-text">
+        拒绝流水线、模块化设计，我们拒绝千篇一律，确保每个项目都能成为精品。
+      </p>
+
+      <div class="about-highlights">
+        <div class="highlight-item">
+          <div class="highlight-icon">✦</div>
+          <div class="highlight-text">原创设计理念</div>
+        </div>
+        <div class="highlight-item">
+          <div class="highlight-icon">★</div>
+          <div class="highlight-text">10 年 + 行业经验</div>
+        </div>
+        <div class="highlight-item">
+          <div class="highlight-icon">◆</div>
+          <div class="highlight-text">一站式全案服务</div>
+        </div>
+        <div class="highlight-item">
+          <div class="highlight-icon">♥</div>
+          <div class="highlight-text">100% 客户满意</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-content">
+      <h2 style="font-size: 18px; margin-bottom: 20px; text-align: center;">设计理念</h2>
+      <p class="about-text">
+        我们相信，空间不仅仅是物理的存在，更是情感与生活的载体。每一个项目都承载着客户的期待与梦想，我们用心聆听，用专业诠释。
+      </p>
+      <p class="about-text">
+        从概念到落地，我们全程把控，确保设计初衷完美呈现。氛围营造情绪的底色，这是我们对每个项目的承诺。
+      </p>
+    </div>
+
+    <div class="stats" style="margin: 20px; border-radius: 16px;">
+      <div class="stat-item">
+        <span class="stat-num">2024</span>
+        <span class="stat-label">创立之年</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">10+</span>
+        <span class="stat-label">年经验</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">∞</span>
+        <span class="stat-label">无限可能</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例页 -->
+  <div id="projects" class="page">
+    <div class="categories" id="categoriesView">
+      <div class="section-header">
+        <div class="section-label">PORTFOLIO</div>
+        <h2 class="section-title">案例分类</h2>
+      </div>
+      <div class="cat-grid">
+        <div class="cat-card" onclick="showProjects('residential')">
+          <div class="cat-img">🏠</div>
+          <div class="cat-info">
+            <div class="cat-name">私宅空间</div>
+            <div class="cat-count">Residence</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 80%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('restaurant')">
+          <div class="cat-img">🍽️</div>
+          <div class="cat-info">
+            <div class="cat-name">餐饮空间</div>
+            <div class="cat-count">Restaurant</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 70%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('entertainment')">
+          <div class="cat-img">🎵</div>
+          <div class="cat-info">
+            <div class="cat-name">娱乐空间</div>
+            <div class="cat-count">Entertainment</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 40%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('office')">
+          <div class="cat-img">💼</div>
+          <div class="cat-info">
+            <div class="cat-name">办公空间</div>
+            <div class="cat-count">Office</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 20%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('hotel')">
+          <div class="cat-img">🏨</div>
+          <div class="cat-info">
+            <div class="cat-name">酒店民宿</div>
+            <div class="cat-count">Hotel</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 60%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('wedding')">
+          <div class="cat-img">📸</div>
+          <div class="cat-info">
+            <div class="cat-name">婚纱摄影</div>
+            <div class="cat-count">Wedding</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 30%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('club')">
+          <div class="cat-img">🍸</div>
+          <div class="cat-info">
+            <div class="cat-name">酒吧俱乐部</div>
+            <div class="cat-count">Club</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 35%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('medical')">
+          <div class="cat-img">💊</div>
+          <div class="cat-info">
+            <div class="cat-name">医美空间</div>
+            <div class="cat-count">Medical</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 25%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('exhibition')">
+          <div class="cat-img">🖼️</div>
+          <div class="cat-info">
+            <div class="cat-name">展厅展览</div>
+            <div class="cat-count">Exhibition</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 45%"></div></div>
+          </div>
+        </div>
+        <div class="cat-card" onclick="showProjects('clothing')">
+          <div class="cat-img">👗</div>
+          <div class="cat-info">
+            <div class="cat-name">服装买手店</div>
+            <div class="cat-count">Clothing</div>
+            <div class="cat-count-bar"><div class="cat-count-fill" style="width: 50%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-list" id="projectListView" style="display: none;">
+      <div class="project-list-header">
+        <div>
+          <div class="project-list-title" id="projectListTitle">项目列表</div>
+          <div class="project-list-count" id="projectListCount">共 0 个项目</div>
+        </div>
+        <button onclick="closeProjects()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 13px; cursor: pointer;">
+          ← 返回
+        </button>
+      </div>
+      <div id="projectsContainer"></div>
+    </div>
+  </div>
+
+  <!-- 联系页 -->
+  <div id="contact" class="page">
+    <div class="contact-hero">
+      <h1>CONTACT US</h1>
+      <p>期待与您的合作</p>
+    </div>
+
+    <div class="contact-section">
+      <div class="contact-card">
+        <div class="contact-item">
+          <div class="contact-icon">📍</div>
+          <div class="contact-text">
+            <div class="contact-label">公司地址</div>
+            <div class="contact-value">四川省成都市</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">📱</div>
+          <div class="contact-text">
+            <div class="contact-label">联系电话</div>
+            <div class="contact-value">添加微信获取联系方式</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">✉️</div>
+          <div class="contact-text">
+            <div class="contact-label">电子邮箱</div>
+            <div class="contact-value">contact@giosj.com</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">💬</div>
+          <div class="contact-text">
+            <div class="contact-label">官方微信</div>
+            <div class="contact-value">GIO-SJ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qr-card">
+        <div class="qr-title">添加官方微信</div>
+        <div class="qr-desc">扫一扫获取更多信息</div>
+        <div class="qr-code">📱</div>
+        <div class="qr-hint">长按识别二维码添加微信</div>
+      </div>
+
+      <div class="contact-form">
+        <h3 class="form-title">在线留言</h3>
+        <form id="contactForm" onsubmit="handleSubmit(event)">
+          <div class="form-group">
+            <input type="text" class="form-input" placeholder="您的姓名 *" required>
+          </div>
+          <div class="form-group">
+            <input type="tel" class="form-input" placeholder="联系电话 *" required pattern="[0-9]{11}">
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-input" placeholder="项目类型（如：私宅/餐饮/办公）">
+          </div>
+          <div class="form-group">
+            <textarea class="form-input form-textarea" placeholder="请描述您的需求..."></textarea>
+          </div>
+          <button type="submit" class="form-submit">提交留言</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="tab-bar">
+    <div class="tab-item active" data-page="home">
+      <span class="tab-icon">🏠</span>
+      首页
+    </div>
+    <div class="tab-item" data-page="about">
+      <span class="tab-icon">📖</span>
+      关于
+    </div>
+    <div class="tab-item" data-page="projects">
+      <span class="tab-icon">📁</span>
+      案例
+    </div>
+    <div class="tab-item" data-page="contact">
+      <span class="tab-icon">📞</span>
+      联系
+    </div>
+  </div>
+
+  <!-- 返回顶部 -->
+  <button class="back-top" id="backTop" onclick="scrollToTop()">↑</button>
+
+  <!-- 消息提示 -->
+  <div class="toast" id="toast">
+    <div class="toast-icon">✓</div>
+    <div class="toast-message">操作成功</div>
+  </div>
+
+  <script>
+    // 项目数据
+    const projectsData = {
+      residential: [
+        { name: "麓湖黑珍珠", location: "成都", year: "2025" },
+        { name: "麓湖项目", location: "成都", year: "2025" },
+        { name: "御府", location: "成都", year: "2025.08" },
+        { name: "现代风格私宅", location: "成都", year: "2025" },
+        { name: "新装饰主义", location: "成都", year: "2025" },
+        { name: "中州锦城", location: "成都", year: "2025" },
+        { name: "国际公寓", location: "成都", year: "2025" },
+        { name: "自然居所", location: "成都", year: "2025" },
+        { name: "极简私宅", location: "成都", year: "2025" },
+        { name: "轻奢雅宅", location: "成都", year: "2025.10" },
+        { name: "现代雅居", location: "成都", year: "2025" },
+        { name: "静谧空间", location: "成都", year: "2025.08" },
+        { name: "艺术私宅", location: "成都", year: "2025" },
+        { name: "城市别墅", location: "成都", year: "2025" },
+        { name: "山居", location: "成都", year: "2025" },
+        { name: "湖景大宅", location: "成都", year: "2025" },
+        { name: "云端公寓", location: "成都", year: "2025" },
+        { name: "花园洋房", location: "成都", year: "2025" },
+        { name: "复式空间", location: "成都", year: "2025" },
+        { name: "平层豪宅", location: "成都", year: "2025" },
+        { name: "西安私宅", location: "西安", year: "2025" },
+        { name: "西安雅居", location: "西安", year: "2023" }
+      ],
+      restaurant: [
+        { name: "品牌餐厅", location: "成都", year: "2019.10" },
+        { name: "特色餐饮", location: "西安", year: "2021" },
+        { name: "主题餐厅", location: "西安", year: "2021.01" },
+        { name: "餐饮空间", location: "西安", year: "2021.01" },
+        { name: "Date Bank", location: "成都", year: "2021.08" },
+        { name: "轻食餐厅", location: "成都", year: "2021.08" },
+        { name: "创意餐厅", location: "成都", year: "2021.12" },
+        { name: "上海餐厅", location: "上海", year: "2021.11" },
+        { name: " fusion 餐厅", location: "西安", year: "2022.04" },
+        { name: "成都院子", location: "成都", year: "2022.01" },
+        { name: "卫生餐厅", location: "西安", year: "2022.05" },
+        { name: "山水小馆", location: "西安", year: "2022" },
+        { name: "餐厅项目", location: "成都", year: "2023.02" },
+        { name: "Foooo", location: "成都", year: "2023.08" },
+        { name: "Mr.R 酒吧", location: "成都", year: "2023" },
+        { name: "烟草博物馆", location: "上海", year: "2023" },
+        { name: "浅喜", location: "成都", year: "2023" },
+        { name: "顺旺", location: "成都", year: "2023" },
+        { name: "合景", location: "成都", year: "2023" },
+        { name: "EACH", location: "成都", year: "2023" }
+      ],
+      entertainment: [
+        { name: "Aka 娱乐空间", location: "成都", year: "2022" },
+        { name: "十口娱乐", location: "成都", year: "2022" },
+        { name: "TIC 娱乐", location: "成都", year: "2022" },
+        { name: "吾木缘娱乐", location: "成都", year: "2022" },
+        { name: "UMPLAY", location: "西安", year: "2022" }
+      ],
+      office: [
+        { name: "1807 办公室", location: "成都", year: "2022" },
+        { name: "设计师办公室", location: "成都", year: "2022" }
+      ],
+      hotel: [
+        { name: "围炉野宿", location: "上海", year: "2021.09" },
+        { name: "酒店项目", location: "成都", year: "2022" },
+        { name: "温泉酒店", location: "西安", year: "2022" },
+        { name: "度假酒店", location: "西安", year: "2022.08" },
+        { name: "城市酒店", location: "西安", year: "2021.01" },
+        { name: "民宿项目", location: "成都", year: "2022.01" },
+        { name: "特色民宿", location: "成都", year: "2022.01" },
+        { name: "精品酒店", location: "成都", year: "2022.01" }
+      ],
+      wedding: [
+        { name: "XLPHOTO", location: "西安", year: "2021" },
+        { name: "婚纱摄影", location: "西安", year: "2021.10" },
+        { name: "La Fibre", location: "西安", year: "2022.06" }
+      ],
+      club: [
+        { name: "酒庄俱乐部", location: "成都", year: "2022" },
+        { name: "汇金俱乐部", location: "成都", year: "2022" },
+        { name: "Hoormem", location: "成都", year: "2022" }
+      ],
+      medical: [
+        { name: "医美医院", location: "西安", year: "2023.05" },
+        { name: "皮肤管理", location: "成都", year: "2022.08" },
+        { name: "美容会所", location: "成都", year: "2022" },
+        { name: "医美空间", location: "成都", year: "2022.01" }
+      ],
+      exhibition: [
+        { name: "展厅项目", location: "成都", year: "2022" },
+        { name: "GABO 展厅", location: "佛山", year: "2020" },
+        { name: "OCM 展厅", location: "成都", year: "2021" },
+        { name: "展厅设计", location: "成都", year: "2023.01" },
+        { name: "展览空间", location: "西安", year: "2023" }
+      ],
+      clothing: [
+        { name: "买手店项目", location: "成都", year: "2022" },
+        { name: "AFGK", location: "成都", year: "2022" },
+        { name: "HUG 买手店", location: "成都", year: "2022" },
+        { name: "KVA 买手店", location: "成都", year: "2022" },
+        { name: "FIL 买手店", location: "成都", year: "2022" },
+        { name: "KVK 买手店", location: "成都", year: "2022" }
+      ]
+    };
+
+    const categoryNames = {
+      residential: "私宅空间",
+      restaurant: "餐饮空间",
+      entertainment: "娱乐空间",
+      office: "办公空间",
+      hotel: "酒店民宿",
+      wedding: "婚纱摄影",
+      club: "酒吧俱乐部",
+      medical: "医美空间",
+      exhibition: "展厅展览",
+      clothing: "服装买手店"
+    };
+
+    // 页面切换
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+
+      document.getElementById(pageId).classList.add('active');
+      document.querySelector(`.tab-item[data-page="${pageId}"]`)?.classList.add('active');
+      document.querySelector(`.nav-menu a[data-page="${pageId}"]`)?.classList.add('active');
+
+      // 关闭移动端菜单
+      if (window.innerWidth <= 480) {
+        closeMobileMenu();
+      }
+
+      window.scrollTo(0, 0);
+      updatePageProgress();
+    }
+
+    // 导航点击
+    document.querySelectorAll('.nav-menu a, .tab-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pageId = e.currentTarget.dataset.page || e.target.dataset.page;
+        if (pageId) switchPage(pageId);
+      });
+    });
+
+    // 导航滚动效果
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('nav');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+
+      // 返回顶部按钮
+      const backTop = document.getElementById('backTop');
+      if (window.scrollY > 300) {
+        backTop.classList.add('show');
+      } else {
+        backTop.classList.remove('show');
+      }
+
+      updatePageProgress();
+    });
+
+    // 页面进度条
+    function updatePageProgress() {
+      const page = document.querySelector('.page.active');
+      if (!page) return;
+
+      const scrollTop = page.scrollTop || document.documentElement.scrollTop;
+      const scrollHeight = page.scrollHeight - page.clientHeight;
+      const progress = (scrollTop / scrollHeight) * 100;
+      document.getElementById('pageProgress').style.width = progress + '%';
+    }
+
+    // 返回顶部
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 移动端菜单
+    const menuBtn = document.getElementById('menuBtn');
+    let menuOpen = false;
+
+    menuBtn.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      if (menuOpen) {
+        showMobileMenu();
+      } else {
+        closeMobileMenu();
+      }
+    });
+
+    function showMobileMenu() {
+      const navMenu = document.querySelector('.nav-menu');
+      navMenu.style.display = 'flex';
+      navMenu.style.flexDirection = 'column';
+      navMenu.style.position = 'absolute';
+      navMenu.style.top = '100%';
+      navMenu.style.left = '0';
+      navMenu.style.right = '0';
+      navMenu.style.background = 'white';
+      navMenu.style.padding = '20px';
+      navMenu.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+    }
+
+    function closeMobileMenu() {
+      const navMenu = document.querySelector('.nav-menu');
+      navMenu.style.display = 'none';
+      menuOpen = false;
+    }
+
+    // 显示项目列表
+    function showProjects(category) {
+      const categoriesView = document.getElementById('categoriesView');
+      const projectListView = document.getElementById('projectListView');
+      const projectsContainer = document.getElementById('projectsContainer');
+      const title = document.getElementById('projectListTitle');
+      const count = document.getElementById('projectListCount');
+
+      title.textContent = categoryNames[category] || '项目列表';
+
+      const projects = projectsData[category] || [];
+      count.textContent = `共 ${projects.length} 个项目`;
+
+      projectsContainer.innerHTML = projects.map((p, i) => `
+        <div class="project-card" style="animation: fadeInUp 0.5s ease ${i * 0.05}s both;">
+          <div class="project-img">
+            <span>${p.name}</span>
+          </div>
+          <div class="project-info">
+            <div class="project-name">${p.name}</div>
+            <div class="project-meta">
+              <div class="project-location">📍 ${p.location}</div>
+              <div class="project-year">${p.year}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      categoriesView.style.display = 'none';
+      projectListView.style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    // 关闭项目列表
+    function closeProjects() {
+      document.getElementById('categoriesView').style.display = 'block';
+      document.getElementById('projectListView').style.display = 'none';
+      window.scrollTo(0, 0);
+    }
+
+    // 表单提交
+    function handleSubmit(e) {
+      e.preventDefault();
+      showToast('提交成功！我们会尽快联系您', '✓');
+      e.target.reset();
+    }
+
+    // 消息提示
+    function showToast(message, icon = '✓') {
+      const toast = document.getElementById('toast');
+      toast.querySelector('.toast-icon').textContent = icon;
+      toast.querySelector('.toast-message').textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // 轮播图
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+
+    function nextSlide() {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+    }
+
+    // 页面加载完成
+    window.addEventListener('load', () => {
+      // 隐藏加载动画
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hide');
+      }, 1000);
+
+      // 启动轮播
+      setInterval(nextSlide, 3000);
+
+      // 初始化移动端菜单
+      if (window.innerWidth <= 480) {
+        document.querySelector('.nav-menu').style.display = 'none';
+      }
+    });
+
+    // 检测是否为微信小程序环境
+    function isWeChat() {
+      const ua = navigator.userAgent.toLowerCase();
+      return ua.includes('micromessenger');
+    }
+
+    if (isWeChat()) {
+      document.body.classList.add('wx-env');
+    }
+  </script>
+</body>
+</html>

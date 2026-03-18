@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/GIO/images_output/ppt/media/**)",
+      "Read(//e/GIO/images_output/**)"
+    ]
+  }
+}

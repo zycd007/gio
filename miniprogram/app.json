@@ -1,0 +1,25 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/about/about",
+    "pages/projects/projects",
+    "pages/project-detail/project-detail",
+    "pages/contact/contact"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#1a1a1a",
+    "navigationBarTitleText": "GIO&SJ 设计事务所",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f8f8f8"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#c9a962",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "custom": true
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}
