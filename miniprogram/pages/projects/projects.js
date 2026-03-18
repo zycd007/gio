@@ -73,6 +73,7 @@ Page({
   // 初始化项目数据，从 imageFolderMap 读取
   initProjects() {
     const projects = {};
+    const allProjects = []; // 用于跟踪所有需要加载图片的项目
 
     for (const catId of Object.keys(this.data.imageFolderMap)) {
       const folders = this.data.imageFolderMap[catId];
@@ -84,19 +85,42 @@ Page({
       projects[catId] = folders.map((f, index) => ({
         id: index + 1,
         name: f.name,
-        location: f.folder.split('_')[1] || '成都',
-        year: '2025',
+        location: this.extractLocation(f.folder),
+        year: this.extractYear(f.folder),
         folder: f.folder,
         images: []
       }));
 
-      // 加载图片
+      // 记录需要加载图片的项目
       for (let i = 0; i < projects[catId].length; i++) {
-        this.loadProjectImages(catId, i);
+        allProjects.push({ categoryId: catId, index: i });
       }
     }
 
-    this.setData({ projects });
+    this.setData({ projects }, () => {
+      // 数据设置完成后，再加载图片
+      for (const item of allProjects) {
+        this.loadProjectImages(item.categoryId, item.index);
+      }
+    });
+  },
+
+  // 从文件夹名提取位置
+  extractLocation(folder) {
+    const parts = folder.split('_');
+    if (parts.length >= 2) {
+      return parts[1];
+    }
+    return '成都';
+  },
+
+  // 从文件夹名提取年份
+  extractYear(folder) {
+    const match = folder.match(/(\d{4}(?:\.\d{1,2})?)/);
+    if (match) {
+      return match[1];
+    }
+    return '2025';
   },
 
   // 加载项目图片
@@ -105,8 +129,28 @@ Page({
     if (!project || !project.folder) return;
 
     const imagePaths = [];
-    // 小程序图片路径：相对于项目根目录
-    const baseDir = `/images/${categoryId}/${project.folder}`;
+    // 小程序图片路径：需要使用完整的文件夹名称（如 residential_私宅空间）
+    // 从 imageFolderMap 中获取完整的文件夹名称
+    const folderInfo = this.data.imageFolderMap[categoryId].find(f => f.name === project.name);
+    const fullFolderName = folderInfo ? folderInfo.folder : project.folder;
+
+    // 构建分类目录的完整名称（如 residential_私宅空间）
+    const categoryMap = {
+      residential: 'residential_私宅空间',
+      restaurant: 'restaurant_餐饮空间',
+      entertainment: 'entertainment_娱乐空间',
+      office: 'office_办公空间',
+      hotel: 'hotel_酒店民宿',
+      wedding: 'wedding_婚纱摄影',
+      club: 'club_酒吧俱乐部',
+      medical: 'medical_医美空间',
+      exhibition: 'exhibition_展厅展览',
+      clothing: 'clothing_服装买手店'
+    };
+
+    const categoryDir = categoryMap[categoryId] || categoryId;
+    // 图片路径：相对于项目根目录（不以 / 开头）
+    const baseDir = `images/${categoryDir}/${fullFolderName}`;
 
     // 生成图片路径列表（最多 6 张 jpg）
     for (let i = 1; i <= 6; i++) {
