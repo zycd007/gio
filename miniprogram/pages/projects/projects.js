@@ -11,10 +11,7 @@ Page({
         { name: '新装饰主义', folder: '新装饰_成都_2025' },
         { name: '中州锦城', folder: '中州_成都_2025' },
         { name: '国际公寓', folder: '国际_成都_2025' },
-        { name: '自然居所', folder: '自然_成都_2025' },
-        { name: '项目 2025.10', folder: '项目_成都_2025.10' },
-        { name: '项目 2025', folder: '项目_成都_2025' },
-        { name: '西安私宅', folder: '项目_西安_2025' }
+        { name: '自然居所', folder: '自然_成都_2025' }
       ],
       restaurant: [
         { name: 'Date Bank', folder: 'date_bank_成都_2021.08' },
@@ -22,18 +19,21 @@ Page({
         { name: 'Foooo', folder: 'Foooo_成都_2023.08' },
         { name: '合景', folder: '合景_成都' },
         { name: '浅喜', folder: '浅喜_成都' },
-        { name: '山水小馆', folder: '山水小馆_西安' },
-        { name: '卫生餐厅', folder: '卫生餐厅_西安_2022.05' },
         { name: '烟草博物馆', folder: '烟草博物馆_上海' }
       ],
-      entertainment: [],
+      entertainment: [
+        { name: 'TIC 娱乐', folder: 'TIC_成都' }
+      ],
       office: [],
       hotel: [],
       wedding: [],
       club: [],
       medical: [],
       exhibition: [],
-      clothing: []
+      clothing: [
+        { name: 'AFGK', folder: 'AFGK_成都_2022' },
+        { name: 'FIL', folder: 'FIL_成都' }
+      ]
     },
     categories: [
       { id: 'residential', name: '私宅空间', en: 'Residence', icon: '🏠', progress: 80 },
