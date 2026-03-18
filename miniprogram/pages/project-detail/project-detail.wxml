@@ -1,7 +1,8 @@
 <view class="container">
   <view class="project-hero">
     <view class="project-img-placeholder">
-      <text class="project-name-large">{{project.name}}</text>
+      <image wx:if="{{project.images && project.images.length > 0}}" src="{{project.images[0]}}" mode="aspectFill" class="project-cover-img" />
+      <text wx:else class="project-name-large">{{project.name}}</text>
     </view>
   </view>
 
@@ -39,7 +40,16 @@
       </text>
     </view>
 
-    <view class="project-gallery">
+    <view class="project-gallery" wx:if="{{project.images && project.images.length > 0}}">
+      <text class="gallery-title">项目图片</text>
+      <view class="gallery-grid">
+        <view class="gallery-item" wx:for="{{project.images}}" wx:key="*this" bindtap="previewImage" data-index="{{index}}">
+          <image src="{{item}}" mode="aspectFill" class="gallery-img" />
+        </view>
+      </view>
+    </view>
+
+    <view class="project-gallery" wx:else>
       <text class="gallery-title">项目图片</text>
       <view class="gallery-grid">
         <view class="gallery-item" wx:for="{{[1,2,3,4]}}" wx:key="*this">

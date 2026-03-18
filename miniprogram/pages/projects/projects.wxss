@@ -150,6 +150,16 @@ page {
   font-size: 16rpx;
   font-weight: 500;
   letter-spacing: 2rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.project-cover {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .project-info {

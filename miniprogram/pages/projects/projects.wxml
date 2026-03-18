@@ -29,9 +29,10 @@
       <button class="back-btn" bindtap="backToCategories">← 返回</button>
     </view>
     <view class="project-list">
-      <view class="project-card" wx:for="{{currentProjects}}" wx:key="id">
+      <view class="project-card" wx:for="{{currentProjects}}" wx:key="id" bindtap="goToDetail" data-item="{{item}}">
         <view class="project-img">
-          <text class="project-name-short">{{item.name}}</text>
+          <image wx:if="{{item.images && item.images.length > 0}}" src="{{item.images[0]}}" mode="aspectFill" class="project-cover" binderror="onImageError" data-index="{{index}}" />
+          <text wx:if="{{!item.images || item.images.length === 0}}" class="project-name-short">{{item.name}}</text>
         </view>
         <view class="project-info">
           <text class="project-name">{{item.name}}</text>
