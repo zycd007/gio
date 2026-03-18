@@ -149,8 +149,8 @@ Page({
     };
 
     const categoryDir = categoryMap[categoryId] || categoryId;
-    // 图片路径：相对于项目根目录（不以 / 开头）
-    const baseDir = `images/${categoryDir}/${fullFolderName}`;
+    // 图片路径：从项目根目录开始（必须以 / 开头）
+    const baseDir = `/images/${categoryDir}/${fullFolderName}`;
 
     // 生成图片路径列表（最多 6 张 jpg）
     for (let i = 1; i <= 6; i++) {
@@ -176,27 +176,22 @@ Page({
   },
 
   goToDetail(e) {
-    const item = e.currentTarget.dataset.item;
-    const imagesStr = item.images && item.images.length > 0
-      ? encodeURIComponent(JSON.stringify(item.images))
+    const id = e.currentTarget.dataset.id;
+    const name = e.currentTarget.dataset.name;
+    const location = e.currentTarget.dataset.location;
+    const year = e.currentTarget.dataset.year;
+    const categoryId = e.currentTarget.dataset.category;
+
+    // 从 data 中获取图片数据
+    const project = (this.data.projects[categoryId] || []).find(p => p.id === id);
+    const images = project ? project.images : [];
+
+    const imagesStr = images && images.length > 0
+      ? encodeURIComponent(JSON.stringify(images))
       : '';
-    // 使用 currentCategory 或从 category ID 查找
-    let typeName = '';
-    if (this.data.currentCategory) {
-      typeName = this.data.currentCategory.name;
-    } else {
-      // 尝试从 projects 数据中推断
-      for (const cat of this.data.categories) {
-        const catProjects = this.data.projects[cat.id] || [];
-        if (catProjects.some(p => p.id === item.id)) {
-          typeName = cat.name;
-          break;
-        }
-      }
-    }
 
     wx.navigateTo({
-      url: `/pages/project-detail/project-detail?name=${encodeURIComponent(item.name)}&location=${encodeURIComponent(item.location)}&year=${encodeURIComponent(item.year)}&type=${encodeURIComponent(typeName)}&images=${imagesStr}`
+      url: `/pages/project-detail/project-detail?name=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}&year=${encodeURIComponent(year)}&images=${imagesStr}`
     });
   },
 

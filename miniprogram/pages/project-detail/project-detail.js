@@ -16,10 +16,10 @@ Page({
 
     if (options.name) {
       const project = {
-        name: options.name,
-        location: options.location || '成都',
-        year: options.year || '2025',
-        type: options.type || '私宅',
+        name: decodeURIComponent(options.name),
+        location: options.location ? decodeURIComponent(options.location) : '成都',
+        year: options.year ? decodeURIComponent(options.year) : '2025',
+        type: options.type ? decodeURIComponent(options.type) : '私宅',
         images: []
       };
 
