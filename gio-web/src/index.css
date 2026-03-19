@@ -6,6 +6,17 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
 }
 
 body {
@@ -13,6 +24,8 @@ body {
   background-color: #f8f8f8;
   color: #333;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -36,24 +49,42 @@ img {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 20px;
+  }
 }
 
 /* 通用样式 */
 .section-title {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 300;
   letter-spacing: 2px;
   color: #1a1a1a;
 }
 
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.5rem;
+  }
+}
+
 .section-label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #c9a962;
   text-transform: uppercase;
   letter-spacing: 3px;
   margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .section-label {
+    font-size: 0.875rem;
+  }
 }
 
 .btn-primary {
@@ -63,8 +94,92 @@ img {
   font-size: 0.95rem;
   letter-spacing: 1px;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
 }
 
 .btn-primary:hover {
   background-color: #b89650;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 细滚动条样式 */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 3px;
+}
+
+/* 移动端触摸优化 */
+@media (hover: none) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+
+  .hover\:shadow-xl:hover {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* 输入框移动端优化 */
+input, textarea {
+  font-size: 16px;
+  -webkit-appearance: none;
+  border-radius: 2px;
+}
+
+@media (min-width: 768px) {
+  input, textarea {
+    font-size: 14px;
+  }
+}
+
+/* 防止 iOS 输入框缩放 */
+@supports (-webkit-touch-callout: none) {
+  input, textarea {
+    font-size: 16px;
+  }
+}
+
+/* 图片加载占位 */
+img {
+  background-color: #f3f4f6;
+}
+
+/* 页面过渡动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main > div {
+  animation: fadeIn 0.3s ease-out;
 }
