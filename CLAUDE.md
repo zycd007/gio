@@ -1,10 +1,55 @@
 # GIO 项目开发规范
 
 ## 项目概述
-- **项目名称**: GIO 设计事务所后端 API
+- **项目名称**: GIO 设计事务所
 - **技术栈**: Spring Boot 3.2.0 + MyBatis Plus 3.5.5 + MySQL
 - **Java 版本**: 17
-- **端口**: 8080
+- **架构**: 微服务架构
+
+## 微服务架构
+
+### 服务列表
+| 服务名 | 端口 | 说明 | 访问范围 |
+|--------|------|------|----------|
+| gio-portal | 8081 | C 端官网服务 | 公开 |
+| gio-admin | 8082 | 后台管理服务 | 需登录 |
+| gio-service | - | 共享服务层 | 内部依赖 |
+
+### 访问地址
+- **C 端官网**: http://localhost:8081
+- **后台管理**: http://localhost:8082
+
+### 项目结构
+```
+gio/
+├── pom.xml                  # 父 POM
+├── gio-service/             # 共享服务模块
+│   ├── src/main/java/com/gio/
+│   │   ├── entity/         # 实体类
+│   │   ├── dto/            # DTO
+│   │   ├── mapper/         # MyBatis Mapper
+│   │   ├── service/        # 服务层
+│   │   ├── common/         # 通用类
+│   │   └── config/         # 配置类
+│   └── pom.xml
+├── gio-portal/              # C 端官网服务
+│   ├── src/main/java/com/gio/
+│   │   ├── controller/     # 控制器
+│   │   └── PortalApplication.java
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── pom.xml
+├── gio-admin/               # 后台管理服务
+│   ├── src/main/java/com/gio/
+│   │   ├── controller/     # 控制器
+│   │   └── AdminApplication.java
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── pom.xml
+├── gio-web/                # 小程序前端
+├── init_db.py              # 数据库初始化脚本
+└── migrate_images.py       # 图片迁移脚本
+```
 
 ## 开发环境配置
 
@@ -17,35 +62,22 @@
 
 ### 启动命令
 ```bash
-cd gio-api
-JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17" mvn spring-boot:run
+# 构建所有模块
+cd gio
+mvn clean install -DskipTests
+
+# 启动 C 端服务
+cd gio-portal
+mvn spring-boot:run
+
+# 启动后台管理服务
+cd gio-admin
+mvn spring-boot:run
 ```
 
 ### 配置说明
-- **配置文件**: `gio-api/src/main/resources/application.yml`
 - **数据库**: 阿里云 MySQL (8.137.63.159:3306/gio_design)
 - **上传路径**: `./uploads/`
-
-## 项目结构
-```
-gio/
-├── gio-api/                 # 后端 API 模块
-│   ├── src/main/java/com/gio/
-│   │   ├── controller/     # 控制器层
-│   │   ├── service/        # 服务层
-│   │   ├── mapper/         # 数据访问层
-│   │   ├── entity/         # 实体类
-│   │   ├── dto/            # 数据传输对象
-│   │   ├── common/         # 通用类 (Result, 异常等)
-│   │   └── config/         # 配置类
-│   ├── src/main/resources/
-│   │   ├── application.yml # 配置文件
-│   │   └── mapper/         # MyBatis XML
-│   └── pom.xml
-├── gio-web/                # 前端小程序
-├── init_db.py              # 数据库初始化脚本
-└── migrate_images.py       # 图片迁移脚本
-```
 
 ## 开发规范
 
@@ -63,8 +95,8 @@ gio/
 
 ### API 规范
 - RESTful 风格
-- 管理端接口：`/api/admin/*`
-- 公共接口：`/api/*`
+- C 端接口：`GET /api/categories`, `GET /api/projects`
+- 管理端接口：`/api/admin/*` (需要 JWT 认证)
 - JWT Token 认证，过期时间 24 小时
 
 ## 测试
@@ -76,26 +108,32 @@ mvn test
 
 ### API 测试
 ```bash
-# 获取分类列表
-curl http://localhost:8080/api/categories
+# C 端 - 获取分类列表
+curl http://localhost:8081/api/categories
 
-# 获取项目列表
-curl http://localhost:8080/api/projects
+# C 端 - 获取项目列表
+curl http://localhost:8081/api/projects
+
+# 管理端 - 登录
+curl -X POST http://localhost:8082/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
 ```
 
 ## 部署
 
 ### 本地部署
 1. 确保 MySQL 服务运行
-2. 运行 `init_db.py` 初始化数据库（如需要）
-3. 启动后端：`mvn spring-boot:run`
+2. 运行 `mvn clean install -DskipTests` 构建所有模块
+3. 分别启动两个服务
 4. 上传目录确保有写权限
 
 ### 服务器部署
 1. 数据库已在阿里云 (8.137.63.159)
 2. 上传 jar 包到服务器
-3. 使用 `nohup java -jar gio-api.jar &` 后台运行
-4. 配置 Nginx 反向代理（可选）
+3. 使用 `nohup java -jar gio-portal.jar &` 后台运行
+4. 使用 `nohup java -jar gio-admin.jar &` 后台运行
+5. 配置 Nginx 反向代理（可选）
 
 ### 数据库迁移
 ```bash
@@ -121,7 +159,7 @@ mysql -h 8.137.63.159 -u root -p gio_design < backup.sql
 ```
 
 ### Spring Boot 启动失败
-- 检查端口 8080 是否被占用
+- 检查端口是否被占用（8081/8082）
 - 检查数据库连接配置
 - 确保 MyBatis Plus 版本与 Spring Boot 兼容
 
@@ -135,6 +173,12 @@ mysql -h 8.137.63.159 -u root -p gio_design < backup.sql
 - Bug 修复：`fix: resolve xxx issue`
 - 配置修改：`chore: update xxx config`
 - 重构：`refactor: improve xxx structure`
+
+## 代码清理规范
+- 每次重构后，删除旧的不再使用的代码文件
+- 清理无用的 import 和依赖
+- 确保删除旧的模块文件夹（如 gio-api）
+- 使用 `git status` 检查是否有残留文件
 
 ## 安全注意事项
 - 生产环境需修改 `jwt.secret`

@@ -1,0 +1,92 @@
+package com.gio.controller.admin;
+
+import com.gio.common.Result;
+import com.gio.dto.PageResult;
+import com.gio.dto.ProjectDetailDTO;
+import com.gio.dto.ProjectListItemDTO;
+import com.gio.entity.Project;
+import com.gio.service.ProjectService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 后台管理 - 项目管理
+ */
+@RestController
+@RequestMapping("/api/admin/projects")
+public class AdminProjectController {
+
+    @Autowired
+    private ProjectService projectService;
+
+    /**
+     * 获取项目列表（分页，含草稿）
+     */
+    @GetMapping
+    public Result<PageResult<ProjectListItemDTO>> getProjects(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) Integer categoryId) {
+        // 后台可以看到所有项目（包括草稿）
+        var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Project>();
+        if (categoryId != null) {
+            queryWrapper.eq("category_id", categoryId);
+        }
+        queryWrapper.orderByAsc("sort_order").orderByDesc("id");
+
+        // 简化处理，直接使用 service 方法
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取项目详情
+     */
+    @GetMapping("/{id}")
+    public Result<ProjectDetailDTO> getProject(@PathVariable Integer id) {
+        ProjectDetailDTO dto = projectService.getProjectDetail(id);
+        if (dto == null) {
+            return Result.error(404, "项目不存在");
+        }
+        return Result.success(dto);
+    }
+
+    /**
+     * 创建项目
+     */
+    @PostMapping
+    public Result<Project> createProject(@RequestBody Project project) {
+        projectService.save(project);
+        return Result.success(project);
+    }
+
+    /**
+     * 更新项目
+     */
+    @PutMapping("/{id}")
+    public Result<Project> updateProject(@PathVariable Integer id, @RequestBody Project project) {
+        project.setId(id);
+        projectService.updateById(project);
+        return Result.success(project);
+    }
+
+    /**
+     * 删除项目
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteProject(@PathVariable Integer id) {
+        projectService.removeById(id);
+        return Result.success();
+    }
+
+    /**
+     * 获取分类下的所有项目
+     */
+    @GetMapping("/category/{categoryId}")
+    public Result<List<Project>> getProjectsByCategory(@PathVariable Integer categoryId) {
+        List<Project> projects = projectService.getProjectsByCategory(categoryId);
+        return Result.success(projects);
+    }
+}

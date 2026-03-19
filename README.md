@@ -2,223 +2,165 @@
 
 > The atmosphere creates the bottom of the mood
 
-本项目包含两个版本的公司介绍官网，专为微信小程序展示设计：
+本项目是 GIO&SJ 设计事务所的官方网站，包含前后端完整实现。
 
 ## 项目结构
 
 ```
 gio/
-├── index.html              # H5 版本（可直接在微信 web-view 中运行）
-├── README.md               # 项目说明
-└── miniprogram/            # 微信小程序原生版本
-    ├── app.js              # 小程序入口
-    ├── app.json            # 小程序配置
-    ├── app.wxss            # 全局样式
-    ├── project.config.json # 项目配置
-    ├── pages/              # 页面目录
-    │   ├── index/          # 首页
-    │   ├── about/          # 关于页
-    │   ├── projects/       # 案例页
-    │   ├── project-detail/ # 项目详情页
-    │   └── contact/        # 联系页
-    ├── components/         # 组件目录
-    │   └── tabbar/         # 自定义底部导航
-    └── images/             # 图片资源
+├── gio-api/              # 后端 Spring Boot 项目
+│   ├── src/main/java/com/gio/
+│   │   ├── controller/   # 控制器层
+│   │   ├── service/      # 服务层
+│   │   ├── mapper/       # 数据访问层
+│   │   ├── entity/       # 实体类
+│   │   ├── dto/          # 数据传输对象
+│   │   ├── config/       # 配置类
+│   │   └── common/       # 公共类
+│   └── src/main/resources/
+│       ├── application.yml  # 配置文件
+│       └── db/schema.sql    # 数据库脚本
+├── gio-web/              # 前端 React 项目
+│   ├── src/
+│   │   ├── components/   # 公共组件
+│   │   ├── pages/        # 页面组件
+│   │   ├── admin/        # 后台管理页面
+│   │   ├── services/     # API 服务
+│   │   └── utils/        # 工具函数
+│   └── public/           # 静态资源
+├── images_backup/        # 图片备份目录
+└── uploads/              # 图片上传目录
 ```
-
----
-
-## 版本一：H5 版本 (index.html)
-
-### 特点
-- 单文件 HTML，开箱即用
-- 响应式设计，完美适配移动端
-- 可在微信 web-view 组件中直接使用
-- 现代简约的设计风格
-
-### 使用方法
-
-1. **本地预览**
-   ```bash
-   # 直接用浏览器打开 index.html
-   ```
-
-2. **部署到服务器**
-   - 将 `index.html` 上传到您的 Web 服务器
-   - 确保使用 HTTPS 协议（微信小程序要求）
-
-3. **在微信小程序中使用**
-   - 在小程序后台配置业务域名
-   - 在小程序中使用 `<web-view>` 组件：
-   ```xml
-   <web-view src="https://yourdomain.com/index.html"></web-view>
-   ```
-
-### 功能模块
-- ✅ 品牌展示（Hero Section）
-- ✅ 公司介绍
-- ✅ 核心优势展示
-- ✅ 服务领域
-- ✅ 业务覆盖城市
-- ✅ 案例分类展示（10 个分类）
-- ✅ 项目列表
-- ✅ 联系方式
-- ✅ 在线留言表单
-
----
-
-## 版本二：微信小程序原生版本 (miniprogram/)
-
-### 特点
-- 原生微信小程序开发
-- 更流畅的用户体验
-- 可直接发布为独立小程序
-- 支持更多小程序特性
-
-### 快速开始
-
-#### 1. 准备工作
-- 注册微信小程序账号：https://mp.weixin.qq.com
-- 获取 AppID
-- 下载微信开发者工具
-
-#### 2. 导入项目
-1. 打开微信开发者工具
-2. 选择"导入项目"
-3. 选择 `miniprogram` 目录
-4. 填入您的 AppID
-5. 点击"导入"
-
-#### 3. 修改配置
-编辑 `project.config.json`，将 `appid` 替换为您的小程序 AppID
-
-#### 4. 编译运行
-点击"编译"按钮即可预览
-
-### 页面说明
-
-| 页面 | 路径 | 说明 |
-|------|------|------|
-| 首页 | /pages/index/index | 品牌展示、核心优势、服务领域 |
-| 关于 | /pages/about/about | 公司介绍、设计理念 |
-| 案例 | /pages/projects/projects | 案例分类、项目列表 |
-| 联系 | /pages/contact/contact | 联系方式、在线留言 |
-
-### 自定义内容
-
-#### 修改联系方式
-编辑 `pages/contact/contact.wxml`
-
-#### 添加案例项目
-编辑 `pages/projects/projects.js` 中的 `projects` 数据
-
-#### 修改配色
-编辑 `app.wxss` 中的 CSS 变量
-
----
-
-## 设计说明
-
-### 配色方案
-```css
---primary: #1a1a1a;    /* 主色调 - 深灰黑 */
---secondary: #666666;  /* 辅助色 - 中灰 */
---accent: #c9a962;     /* 强调色 - 金色 */
---bg: #f8f8f8;         /* 背景色 - 浅灰 */
---white: #ffffff;      /* 白色 */
-```
-
-### 字体
-- 中文：PingFang SC, Microsoft YaHei
-- 英文：-apple-system, BlinkMacSystemFont, Segoe UI
-
-### 设计理念
-- 简约高端
-- 黑白金经典配色
-- 突出设计作品
-- 移动端优先
-
----
-
-## 公司信息（根据 PPT 整理）
-
-### 关于 GIO&SJ
-- 成立时间：2024 年
-- 团队定位：90 后设计团队
-- 专注领域：个性化商业空间、私宅设计
-- 服务理念：设计 + 施工 + 软装一体化
-
-### 核心优势
-- 原创设计
-- 精细施工
-- 全案软装
-- 工厂直供
-- 严选产品
-- 私宅定制
-
-### 服务领域
-餐饮空间、酒吧俱乐部、娱乐空间、办公空间、酒店民宿、服装买手店、婚纱摄影、医美空间、展厅展览、私宅设计
-
-### 业务覆盖
-成都、上海、南京、武汉、西安、长沙、广州、佛山、银川、重庆等
-
----
 
 ## 技术栈
 
-### H5 版本
-- HTML5
-- CSS3
-- Vanilla JavaScript
+### 前端
+- React 18 + TypeScript
+- React Router v6
+- Axios
+- Tailwind CSS
+- Vite
 
-### 小程序版本
-- 微信小程序原生开发
-- WXML + WXSS + JavaScript
+### 后端
+- Java 17
+- Spring Boot 3
+- MyBatis-Plus
+- Spring Security + JWT
+- MySQL
 
----
+## 快速开始
+
+### 1. 初始化数据库
+
+```bash
+# 执行数据库脚本
+mysql -u root -p < gio-api/src/main/resources/db/schema.sql
+```
+
+数据库配置：
+- 地址：localhost:3306
+- 数据库：gio_design
+- 账号：root
+- 密码：admin123
+
+### 2. 启动后端
+
+```bash
+cd gio-api
+mvn spring-boot:run
+```
+
+后端服务将在 http://localhost:8080 启动
+
+### 3. 启动前端
+
+```bash
+cd gio-web
+npm install
+npm run dev
+```
+
+前端服务将在 http://localhost:5173 启动
+
+## API 接口
+
+### 公开接口
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/categories | GET | 获取分类列表 |
+| /api/projects | GET | 获取项目列表（分页） |
+| /api/projects/{id} | GET | 获取项目详情 |
+| /api/images/{id} | GET | 获取图片 |
+
+### 后台管理接口（需 JWT 认证）
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/admin/login | POST | 管理员登录 |
+| /api/admin/categories | GET/POST/PUT/DELETE | 分类管理 |
+| /api/admin/projects | GET/POST/PUT/DELETE | 项目管理 |
+| /api/admin/projects/{id}/images | POST | 上传图片 |
+
+## 后台管理
+
+访问地址：http://localhost:5173/admin/login
+
+默认账号：
+- 用户名：admin
+- 密码：admin123
+
+## 功能特性
+
+### 前台官网
+- ✅ 响应式设计，适配 PC 和移动端
+- ✅ 首页展示（Hero Banner、精选作品、关于我们）
+- ✅ 案例作品列表（支持分类筛选）
+- ✅ 项目详情页（图片预览）
+- ✅ 关于页面
+- ✅ 联系页面
+
+### 后台管理
+- ✅ 管理员登录（JWT 认证）
+- ✅ 项目管理（增删改查）
+- ✅ 分类管理
+- ✅ 图片上传
+- ✅ 封面图设置
+
+## 图片说明
+
+项目图片位于 `images_backup` 目录，共 16 个项目 73 张图片：
+
+### 私宅空间（7 个）
+- 麓湖、御府、现代风格私宅、新装饰主义、中州锦城、国际公寓、自然居所
+
+### 餐饮空间（6 个）
+- Date Bank、成都院子、Foooo、合景、浅喜、烟草博物馆
+
+### 娱乐空间（1 个）
+- TIC 娱乐
+
+### 服装买手店（2 个）
+- AFGK、FIL
 
 ## 部署上线
 
-### H5 版本
-1. 购买域名和服务器
-2. 配置 HTTPS
-3. 上传 `index.html`
-4. 在小程序后台配置业务域名
+### 后端部署
+1. 打包：`mvn clean package`
+2. 上传 jar 包到服务器
+3. 配置生产环境数据库
+4. 运行：`java -jar gio-api-1.0.0.jar`
 
-### 小程序版本
-1. 在微信开发者工具中点击"上传"
-2. 填写版本号和备注
-3. 登录小程序后台提交审核
-4. 审核通过后发布
-
----
+### 前端部署
+1. 构建：`npm run build`
+2. 将 dist 目录上传到 Nginx/Apache
+3. 配置反向代理到后端 API
 
 ## 注意事项
 
-1. **域名备案**：小程序要求域名必须备案
-2. **HTTPS**：必须使用 HTTPS 协议
-3. **业务域名配置**：在小程序后台提前配置
-4. **图片资源**：建议使用 CDN 加速
-5. **隐私协议**：上线前需配置用户隐私协议
+1. 生产环境请修改 JWT secret
+2. 图片上传目录需要设置读写权限
+3. 建议使用对象存储（如阿里云 OSS）存储图片
+4. 请修改默认管理员密码
 
 ---
 
-## 后续优化建议
-
-1. 添加真实项目图片
-2. 集成微信登录
-3. 添加在线客服功能
-4. 接入地图导航
-5. 添加预约功能
-6. 数据统计接入（微信小程序统计）
-
----
-
-## 联系方式
-
-- Email: contact@giosj.com
-- WeChat: GIO-SJ
-
----
-
-© 2024 GIO&SJ Design Studio. All rights reserved.
+© 2026 GIO&SJ Design Studio. All rights reserved.
