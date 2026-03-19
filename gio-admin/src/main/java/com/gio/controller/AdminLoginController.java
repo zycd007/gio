@@ -1,4 +1,4 @@
-package com.gio.controller.admin;
+package com.gio.controller;
 
 import com.gio.common.Result;
 import com.gio.dto.LoginRequest;

@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import com.gio.entity.ProjectImage;
 import com.gio.mapper.ProjectImageMapper;
+import com.gio.mapper.ProjectMapper;
 import com.gio.service.ImageService;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,9 +31,11 @@ public class ImageServiceImpl implements ImageService {
     private String uploadPath;
 
     private final ProjectImageMapper projectImageMapper;
+    private final ProjectMapper projectMapper;
 
-    public ImageServiceImpl(ProjectImageMapper projectImageMapper) {
+    public ImageServiceImpl(ProjectImageMapper projectImageMapper, ProjectMapper projectMapper) {
         this.projectImageMapper = projectImageMapper;
+        this.projectMapper = projectMapper;
     }
 
     @Override
@@ -139,7 +141,7 @@ public class ImageServiceImpl implements ImageService {
             var projectUpdateWrapper = new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<com.gio.entity.Project>();
             projectUpdateWrapper.eq("id", image.getProjectId())
                     .set("cover_image_id", imageId);
-            // 需要注入 ProjectMapper，这里简化处理
+            projectMapper.update(null, projectUpdateWrapper);
         }
     }
 
