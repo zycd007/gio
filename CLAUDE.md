@@ -138,32 +138,49 @@ curl -X POST http://localhost:8082/api/admin/login \
 ssh ubuntu@140.143.87.54
 # 密码: @yuku007@
 
-# 2. 安装 Java 17 (首次部署需要)
+# 2. 安装必要的软件 (首次部署需要)
+# Java 17
 sudo apt update && sudo apt install openjdk-17-jdk
+# Node.js 和 pnpm
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+source ~/.bashrc
+pnpm env use 18
 
-# 3. 拉取代码并构建
+# 3. 拉取代码
 cd ~
 git clone https://github.com/zycd007/gio.git || (cd gio && git pull)
 cd gio
+
+# 4. 构建后端
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 mvn clean package -DskipTests
 
-# 4. 创建必要的目录
+# 5. 构建前端
+cd gio-web
+pnpm install
+pnpm build
+
+# 6. 创建必要的目录
 mkdir -p ~/gio/logs ~/gio/uploads
 
-# 5. 停止旧服务并部署
+# 7. 停止旧服务并部署后端
 pkill -f "gio-.*\.jar" 2>/dev/null || true
 nohup java -jar gio-portal/target/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
 nohup java -jar gio-admin/target/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
 
-# 6. 检查服务状态
-ps aux | grep gio
-netstat -tlnp | grep -E "(8081|8082)"
+# 8. 部署前端 (使用静态文件服务器或 Nginx)
+# 方式一：使用 pnpm preview
+cd gio-web
+pnpm preview --port 3000 --host 0.0.0.0 &
+
+# 方式二：配置 Nginx (推荐)
+# 将 gio-web/dist 目录配置为 Nginx root
 ```
 
 **访问地址：**
 - C 端官网：http://140.143.87.54:8081
 - 管理后台：http://140.143.87.54:8082
+- 前端页面：http://140.143.87.54:3000（preview 模式）
 
 **日志查看：**
 ```bash
