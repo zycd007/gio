@@ -129,13 +129,55 @@ curl -X POST http://localhost:8082/api/admin/login \
 
 ## 部署
 
-### 本地部署
+### 服务器部署（推荐）
+
+在腾讯云服务器上直接拉取代码并构建部署：
+
+```bash
+# 1. SSH 到服务器
+ssh ubuntu@140.143.87.54
+# 密码: @yuku007@
+
+# 2. 安装 Java 17 (首次部署需要)
+sudo apt update && sudo apt install openjdk-17-jdk
+
+# 3. 拉取代码并构建
+cd ~
+git clone https://github.com/zycd007/gio.git || (cd gio && git pull)
+cd gio
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+mvn clean package -DskipTests
+
+# 4. 创建必要的目录
+mkdir -p ~/gio/logs ~/gio/uploads
+
+# 5. 停止旧服务并部署
+pkill -f "gio-.*\.jar" 2>/dev/null || true
+nohup java -jar gio-portal/target/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
+nohup java -jar gio-admin/target/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
+
+# 6. 检查服务状态
+ps aux | grep gio
+netstat -tlnp | grep -E "(8081|8082)"
+```
+
+**访问地址：**
+- C 端官网：http://140.143.87.54:8081
+- 管理后台：http://140.143.87.54:8082
+
+**日志查看：**
+```bash
+tail -f ~/gio/logs/portal.log
+tail -f ~/gio/logs/admin.log
+```
+
+### 本地部署（开发测试）
 1. 确保 MySQL 服务运行
 2. 运行 `mvn clean install -DskipTests` 构建所有模块
 3. 分别启动两个服务
 4. 上传目录确保有写权限
 
-### 服务器部署
+### 服务器部署（旧方式 - 不推荐）
 1. 数据库已在阿里云 (8.137.63.159)
 2. 上传 jar 包到服务器
 3. 使用 `nohup java -jar gio-portal.jar &` 后台运行
