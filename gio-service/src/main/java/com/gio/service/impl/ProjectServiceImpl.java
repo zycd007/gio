@@ -39,9 +39,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         Page<Project> projectPage = new Page<>(page, size);
 
-        // 构建查询条件
+        // 构建查询条件（后台可以看到所有项目，包括草稿）
         var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Project>();
-        queryWrapper.eq("status", 1); // 只查询已发布的项目
         if (categoryId != null) {
             queryWrapper.eq("category_id", categoryId);
         }
@@ -92,7 +91,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 .map(img -> {
                     ProjectDetailDTO.ImageInfo info = new ProjectDetailDTO.ImageInfo();
                     info.setId(img.getId());
-                    info.setImagePath(img.getImagePath());
+                    info.setAttachmentId(img.getAttachmentId());
                     info.setImageName(img.getImageName());
                     info.setWidth(img.getWidth());
                     info.setHeight(img.getHeight());
@@ -125,6 +124,25 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return this.list(queryWrapper);
     }
 
+    @Override
+    public boolean updateProjectStatus(Integer id, Integer status) {
+        Project project = this.getById(id);
+        if (project == null) {
+            return false;
+        }
+        project.setStatus(status);
+        return this.updateById(project);
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteProjectWithImages(Integer id) {
+        // 先删除项目的所有图片
+        imageService.deleteImagesByProject(id);
+        // 再删除项目
+        return this.removeById(id);
+    }
+
     private ProjectListItemDTO convertToDTO(Project project) {
         ProjectListItemDTO dto = new ProjectListItemDTO();
         dto.setId(project.getId());
@@ -133,6 +151,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         dto.setLocation(project.getLocation());
         dto.setYear(project.getYear());
         dto.setViewCount(project.getViewCount());
+        dto.setStatus(project.getStatus());
 
         // 获取分类名称
         Category category = categoryService.getById(project.getCategoryId());
@@ -142,10 +161,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         // 获取封面图
         if (project.getCoverImageId() != null) {
-            ProjectImage coverImage = imageService.getImageById(project.getCoverImageId());
-            if (coverImage != null) {
-                dto.setCoverImagePath(coverImage.getImagePath());
-            }
+            dto.setCoverImageId(project.getCoverImageId());
         }
 
         return dto;

@@ -10,17 +10,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
+    server: {
     port: 5173,
     proxy: {
+      // 管理端 API 代理（必须放在 /api 前面）
+      '/api/admin': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
       // C 端 API 代理
       '/api': {
         target: 'http://localhost:8081',
-        changeOrigin: true,
-      },
-      // 管理端 API 代理
-      '/api/admin': {
-        target: 'http://localhost:8082',
         changeOrigin: true,
       }
     }

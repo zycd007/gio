@@ -11,6 +11,11 @@ spring:
     username: root
     password: "@Yuku007@"
 
+  # 静态文件配置
+  web:
+    resources:
+      static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/,file:./uploads/,file:E:\\my_projects\\gio\\uploads\\
+
 # MyBatis Plus 配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

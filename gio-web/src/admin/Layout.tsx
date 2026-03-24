@@ -30,7 +30,7 @@ const AdminLayout = () => {
       {/* 侧边栏 */}
       <aside className="w-64 bg-dark text-white flex flex-col">
         <div className="p-6">
-          <h1 className="text-xl font-light tracking-widest text-primary">GIO&SJ</h1>
+          <h1 className="text-xl font-light tracking-widest text-primary">GIO</h1>
           <p className="text-xs text-gray-400 mt-1">后台管理系统</p>
         </div>
         <nav className="flex-1 px-4 py-4">

@@ -1,6 +1,7 @@
 package com.gio.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.gio.dto.DashboardStatsDTO;
 import com.gio.entity.Category;
 import java.util.List;
 
@@ -18,4 +19,9 @@ public interface CategoryService extends IService<Category> {
      * 获取所有分类（含禁用，用于后台）
      */
     List<Category> getAllCategories();
+
+    /**
+     * 获取仪表盘统计数据
+     */
+    DashboardStatsDTO getDashboardStats();
 }

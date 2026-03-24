@@ -55,9 +55,16 @@ gio/
 
 ### 必需环境
 ```
-- JDK 17 (推荐使用 ms-17.0.17 或 openjdk-17+)
+- JDK 17 (必须使用 ms-17.0.17，路径: C:/Users/Administrator/.jdks/ms-17.0.17)
 - Maven 3.6+
 - MySQL 8.0+
+```
+
+### 环境变量配置
+```bash
+# 必须设置 JAVA_HOME 为 JDK 17（重要：不要使用其他版本）
+export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17"
+export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
 ### 启动命令

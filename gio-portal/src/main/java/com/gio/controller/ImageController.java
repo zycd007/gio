@@ -1,6 +1,5 @@
 package com.gio.controller;
 
-import com.gio.common.Result;
 import com.gio.entity.ProjectImage;
 import com.gio.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,60 +7,27 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 /**
- * 后台管理 - 图片管理
+ * C 端 - 图片接口
  */
 @RestController
-@RequestMapping("/api/admin")
-public class AdminImageController {
+@RequestMapping("/api")
+public class ImageController {
 
     @Autowired
     private ImageService imageService;
 
     /**
-     * 上传项目图片
+     * 获取图片文件（C端）- 兼容前端旧路径
      */
-    @PostMapping("/projects/{projectId}/images")
-    public Result<List<ProjectImage>> uploadImages(
-            @PathVariable Integer projectId,
-            @RequestParam("files") List<MultipartFile> files) {
-        List<ProjectImage> images = imageService.uploadImages(projectId, files);
-        return Result.success(images);
+    @GetMapping("/images/{imageId}")
+    public ResponseEntity<byte[]> getImageFileCompat(@PathVariable Integer imageId) {
+        return getImageFile(imageId);
     }
 
     /**
-     * 获取项目图片列表
-     */
-    @GetMapping("/projects/{projectId}/images")
-    public Result<List<ProjectImage>> getProjectImages(@PathVariable Integer projectId) {
-        List<ProjectImage> images = imageService.getImagesByProject(projectId);
-        return Result.success(images);
-    }
-
-    /**
-     * 删除图片
-     */
-    @DeleteMapping("/images/{imageId}")
-    public Result<Void> deleteImage(@PathVariable Integer imageId) {
-        imageService.deleteImage(imageId);
-        return Result.success();
-    }
-
-    /**
-     * 设置封面图
-     */
-    @PutMapping("/images/{imageId}/cover")
-    public Result<Void> setAsCover(@PathVariable Integer imageId) {
-        imageService.setAsCover(imageId);
-        return Result.success();
-    }
-
-    /**
-     * 获取图片文件
+     * 获取图片文件（C端）
      */
     @GetMapping("/images/{imageId}/file")
     public ResponseEntity<byte[]> getImageFile(@PathVariable Integer imageId) {
@@ -85,6 +51,7 @@ public class AdminImageController {
     }
 
     private String getContentType(String imageType) {
+        if (imageType == null) return "image/jpeg";
         switch (imageType.toLowerCase()) {
             case "png": return "image/png";
             case "gif": return "image/gif";

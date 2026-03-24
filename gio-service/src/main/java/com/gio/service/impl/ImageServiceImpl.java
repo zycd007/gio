@@ -2,11 +2,15 @@ package com.gio.service.impl;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
+import java.util.Base64;
+import com.gio.entity.Attachment;
 import com.gio.entity.ProjectImage;
+import com.gio.mapper.AttachmentMapper;
 import com.gio.mapper.ProjectImageMapper;
 import com.gio.mapper.ProjectMapper;
 import com.gio.service.ImageService;
 import net.coobird.thumbnailator.Thumbnails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,10 +36,13 @@ public class ImageServiceImpl implements ImageService {
 
     private final ProjectImageMapper projectImageMapper;
     private final ProjectMapper projectMapper;
+    private final AttachmentMapper attachmentMapper;
 
-    public ImageServiceImpl(ProjectImageMapper projectImageMapper, ProjectMapper projectMapper) {
+    @Autowired
+    public ImageServiceImpl(ProjectImageMapper projectImageMapper, ProjectMapper projectMapper, AttachmentMapper attachmentMapper) {
         this.projectImageMapper = projectImageMapper;
         this.projectMapper = projectMapper;
+        this.attachmentMapper = attachmentMapper;
     }
 
     @Override
@@ -62,11 +69,11 @@ public class ImageServiceImpl implements ImageService {
             byte[] compressedData = compressImage(filePath);
             int[] dimensions = getImageDimensions(filePath);
 
-            // 保存到数据库
+            // 先保存到 project_image 表，获取 ID
             ProjectImage projectImage = new ProjectImage();
             projectImage.setProjectId(projectId);
             projectImage.setImageName(originalFilename);
-            projectImage.setImagePath("/uploads/" + fileName);
+            projectImage.setAttachmentId(null); // 先不设置，等Attachment保存后更新
             projectImage.setImageType(extension.replace(".", ""));
             projectImage.setFileSize((int) file.getSize());
             projectImage.setWidth(dimensions[0]);
@@ -76,6 +83,23 @@ public class ImageServiceImpl implements ImageService {
             projectImage.setStatus(1);
 
             projectImageMapper.insert(projectImage);
+
+            // 保存到 attachment 表，关联 project_image
+            Attachment attachment = new Attachment();
+            attachment.setBusinessType("project_image");
+            attachment.setBusinessId(projectImage.getId());
+            attachment.setFileName(originalFilename);
+            attachment.setFileType(extension.replace(".", ""));
+            attachment.setFileSize((int) file.getSize());
+            attachment.setBase64Data(Base64.getEncoder().encodeToString(file.getBytes()));
+            attachment.setWidth(dimensions[0]);
+            attachment.setHeight(dimensions[1]);
+            attachmentMapper.insert(attachment);
+
+            // 更新 project_image 的 attachment_id
+            projectImage.setAttachmentId(attachment.getId());
+            projectImageMapper.updateById(projectImage);
+
             return projectImage;
         } catch (IOException e) {
             throw new RuntimeException("图片上传失败：" + e.getMessage(), e);
@@ -112,9 +136,10 @@ public class ImageServiceImpl implements ImageService {
     public boolean deleteImage(Integer id) {
         ProjectImage image = projectImageMapper.selectById(id);
         if (image != null) {
-            // 删除文件
-            String filePath = image.getImagePath().replace("/uploads/", uploadPath);
-            FileUtil.del(filePath);
+            // 通过 attachmentId 删除 attachment 记录
+            if (image.getAttachmentId() != null) {
+                attachmentMapper.deleteById(image.getAttachmentId());
+            }
             // 逻辑删除
             image.setStatus(0);
             projectImageMapper.updateById(image);
@@ -148,17 +173,20 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public byte[] getImageFile(Integer id) {
         ProjectImage image = projectImageMapper.selectById(id);
-        if (image == null || image.getImagePath() == null) {
+        if (image == null || image.getAttachmentId() == null) {
             return null;
         }
-        try {
-            String filePath = image.getImagePath().startsWith("/")
-                    ? image.getImagePath().substring(1)
-                    : image.getImagePath();
-            return Files.readAllBytes(Paths.get(filePath));
-        } catch (IOException e) {
+        // 通过 attachmentId 获取图片数据
+        Attachment attachment = attachmentMapper.selectById(image.getAttachmentId());
+        if (attachment == null) {
             return null;
         }
+        // 优先使用 base64Data
+        if (attachment.getBase64Data() != null && !attachment.getBase64Data().isEmpty()) {
+            return Base64.getDecoder().decode(attachment.getBase64Data());
+        }
+        // 没有可用的图片数据
+        return null;
     }
 
     /**
@@ -183,5 +211,27 @@ public class ImageServiceImpl implements ImageService {
             return new int[]{image.getWidth(), image.getHeight()};
         }
         return new int[]{0, 0};
+    }
+
+    @Override
+    public Long getTotalImageCount() {
+        var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<ProjectImage>();
+        queryWrapper.eq("status", 1);
+        return projectImageMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public void deleteImagesByProject(Integer projectId) {
+        // 获取项目的所有图片
+        List<ProjectImage> images = getImagesByProject(projectId);
+        for (ProjectImage image : images) {
+            // 通过 attachmentId 删除 attachment 记录
+            if (image.getAttachmentId() != null) {
+                attachmentMapper.deleteById(image.getAttachmentId());
+            }
+            // 逻辑删除
+            image.setStatus(0);
+            projectImageMapper.updateById(image);
+        }
     }
 }

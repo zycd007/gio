@@ -18,7 +18,8 @@ public class ProjectImage {
 
     private String imageName;
 
-    private String imagePath;
+    @TableField("attachment_id")
+    private Integer attachmentId;
 
     @TableField(exist = false)
     private byte[] imageData;

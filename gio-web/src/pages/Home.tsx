@@ -2,13 +2,24 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategories, getProjects } from '@/services/project';
 
+// 分类图片映射
+const categoryImages: Record<string, string> = {
+  residential: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80',
+  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80',
+  entertainment: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
+  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80',
+  hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80',
+  wedding: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80',
+  club: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=600&q=80',
+  medical: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80',
+  exhibition: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80',
+  clothing: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80',
+};
+
 interface Category {
   id: number;
   name: string;
-  nameEn: string;
   code: string;
-  icon: string;
-  sortOrder: number;
 }
 
 interface Project {
@@ -17,7 +28,7 @@ interface Project {
   location: string;
   year: string;
   categoryName: string;
-  coverImagePath?: string;
+  coverImageId?: number;
 }
 
 const Home = () => {
@@ -76,13 +87,20 @@ const Home = () => {
               <Link
                 key={cat.id}
                 to={`/projects?category=${cat.code}`}
-                className="group text-center p-4 md:p-6 border border-gray-100 hover:border-primary/30 transition-all duration-300 active:scale-95"
+                className="group relative aspect-[3/4] overflow-hidden rounded-lg"
               >
-                <div className="text-3xl md:text-4xl mb-3">{cat.icon}</div>
-                <h3 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
-                  {cat.name}
-                </h3>
-                <p className="text-xs text-gray-400 mt-1">{cat.nameEn}</p>
+                <img
+                  src={categoryImages[cat.code] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80'}
+                  alt={cat.name}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                  <h3 className="text-white text-sm font-medium group-hover:text-primary transition-colors">
+                    {cat.name}
+                  </h3>
+                </div>
               </Link>
             ))}
           </div>
@@ -105,7 +123,7 @@ const Home = () => {
               >
                 <div className="aspect-[4/3] md:aspect-square overflow-hidden">
                   <img
-                    src={project.coverImagePath || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80'}
+                    src={project.coverImageId ? `/api/images/${project.coverImageId}` : 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80'}
                     alt={project.name}
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -33,4 +33,14 @@ public interface ProjectService extends IService<Project> {
      * 获取分类下的所有项目（用于后台）
      */
     List<Project> getProjectsByCategory(Integer categoryId);
+
+    /**
+     * 更新项目状态（发布/下架）
+     */
+    boolean updateProjectStatus(Integer id, Integer status);
+
+    /**
+     * 删除项目（级联删除图片）
+     */
+    boolean deleteProjectWithImages(Integer id);
 }

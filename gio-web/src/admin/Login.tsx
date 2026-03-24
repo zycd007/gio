@@ -30,7 +30,7 @@ const AdminLogin = () => {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-light tracking-widest text-dark">GIO&SJ</h1>
+            <h1 className="text-2xl font-light tracking-widest text-dark">GIO</h1>
             <p className="text-gray-500 mt-2">后台管理系统</p>
           </div>
 
@@ -77,10 +77,6 @@ const AdminLogin = () => {
               {loading ? '登录中...' : '登录'}
             </button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>默认账号：admin / admin123</p>
-          </div>
         </div>
       </div>
     </div>

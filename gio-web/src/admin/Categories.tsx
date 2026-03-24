@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/services/admin';
+import { toast } from 'sonner';
 
 interface Category {
   id: number;
   name: string;
-  name_en: string;
+  nameEn: string;
   code: string;
   icon: string;
   sortOrder: number;
@@ -18,12 +19,18 @@ const AdminCategories = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    name_en: '',
+    nameEn: '',
     code: '',
     icon: '',
     sortOrder: 0,
     status: 1,
   });
+  const [confirmConfig, setConfirmConfig] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -41,11 +48,18 @@ const AdminCategories = () => {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('确定要删除这个分类吗？')) {
-      deleteCategory(id).then(() => {
-        loadCategories();
-      });
-    }
+    setConfirmConfig({
+      show: true,
+      title: '确认删除',
+      message: '确定要删除这个分类吗？',
+      onConfirm: () => {
+        deleteCategory(id).then(() => {
+          loadCategories();
+          toast.success('分类已删除');
+        });
+        setConfirmConfig(null);
+      }
+    });
   };
 
   const handleOpenModal = (category?: Category) => {
@@ -53,7 +67,7 @@ const AdminCategories = () => {
       setEditingCategory(category);
       setFormData({
         name: category.name,
-        name_en: category.name_en,
+        nameEn: category.nameEn,
         code: category.code,
         icon: category.icon,
         sortOrder: category.sortOrder,
@@ -63,7 +77,7 @@ const AdminCategories = () => {
       setEditingCategory(null);
       setFormData({
         name: '',
-        name_en: '',
+        nameEn: '',
         code: '',
         icon: '',
         sortOrder: 0,
@@ -120,7 +134,7 @@ const AdminCategories = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">{category.id}</td>
                   <td className="px-6 py-4 text-sm">{category.icon}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-800">{category.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{category.name_en}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{category.nameEn}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{category.code}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{category.sortOrder}</td>
                   <td className="px-6 py-4 text-sm">
@@ -165,8 +179,8 @@ const AdminCategories = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">英文名称</label>
                 <input
                   type="text"
-                  value={formData.name_en}
-                  onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                  value={formData.nameEn}
+                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
                   required
                 />
@@ -220,6 +234,30 @@ const AdminCategories = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 确认对话框 */}
+      {confirmConfig?.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{confirmConfig.title}</h3>
+            <p className="text-gray-500 mb-6">{confirmConfig.message}</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmConfig(null)}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmConfig.onConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                确认删除
+              </button>
+            </div>
           </div>
         </div>
       )}

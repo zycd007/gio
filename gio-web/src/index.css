@@ -183,3 +183,14 @@ img {
 main > div {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* 底部安全区适配 (iPhone刘海屏) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

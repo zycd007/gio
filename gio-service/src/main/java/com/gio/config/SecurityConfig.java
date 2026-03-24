@@ -1,6 +1,5 @@
 package com.gio.config;
 
-import com.gio.common.exception.GlobalExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,7 +33,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/projects/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
-                        // 后台管理接口需要认证
+                        // 管理端图片文件接口公开（图片非敏感数据，通过imageId控制访问）
+                        .requestMatchers("/api/admin/images/**/file").permitAll()
+                        // 登录接口公开
+                        .requestMatchers("/api/admin/login", "/api/admin/logout").permitAll()
+                        // 后台管理接口需要认证（除图片文件外）
                         .requestMatchers("/api/admin/**").authenticated()
                         // 其他接口
                         .anyRequest().permitAll()

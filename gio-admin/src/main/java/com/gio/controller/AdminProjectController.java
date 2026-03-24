@@ -77,7 +77,10 @@ public class AdminProjectController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> deleteProject(@PathVariable Integer id) {
-        projectService.removeById(id);
+        boolean success = projectService.deleteProjectWithImages(id);
+        if (!success) {
+            return Result.error(404, "项目不存在");
+        }
         return Result.success();
     }
 
@@ -88,5 +91,17 @@ public class AdminProjectController {
     public Result<List<Project>> getProjectsByCategory(@PathVariable Integer categoryId) {
         List<Project> projects = projectService.getProjectsByCategory(categoryId);
         return Result.success(projects);
+    }
+
+    /**
+     * 更新项目状态（发布/下架）
+     */
+    @PutMapping("/{id}/status")
+    public Result<Void> updateProjectStatus(@PathVariable Integer id, @RequestParam Integer status) {
+        boolean success = projectService.updateProjectStatus(id, status);
+        if (!success) {
+            return Result.error(404, "项目不存在");
+        }
+        return Result.success();
     }
 }

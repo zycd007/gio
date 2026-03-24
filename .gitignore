@@ -35,3 +35,13 @@ Thumbs.db
 
 # Uploads
 uploads/
+
+# Frontend build
+gio-web/dist/
+gio-web/vite.config.js
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Claude Code
+.claude/agents/

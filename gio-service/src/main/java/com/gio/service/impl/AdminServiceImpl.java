@@ -42,7 +42,9 @@ public class AdminServiceImpl implements AdminService {
         if (user.getStatus() != 1) {
             throw new RuntimeException("账号已被禁用");
         }
-        if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
+        // 验证密码 - 使用 BCrypt 验证
+        boolean passwordValid = BCrypt.checkpw(request.getPassword(), user.getPassword());
+        if (!passwordValid) {
             throw new RuntimeException("用户名或密码错误");
         }
 

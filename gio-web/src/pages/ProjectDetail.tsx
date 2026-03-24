@@ -4,7 +4,7 @@ import { getProjectDetail } from '@/services/project';
 
 interface ImageInfo {
   id: number;
-  imagePath?: string;
+  attachmentId?: number;
   imageName?: string;
   width?: number;
   height?: number;
@@ -115,7 +115,7 @@ const ProjectDetail = () => {
         <div className="container mx-auto px-4">
           <div className="aspect-[4/3] md:aspect-[16/10] bg-white overflow-hidden shadow-lg">
             <img
-              src={project.images?.[selectedImage]?.imagePath || ''}
+              src={project.images?.[selectedImage] ? `/api/images/${project.images[selectedImage].id}` : ''}
               alt={project.name}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -141,7 +141,7 @@ const ProjectDetail = () => {
                   }`}
                 >
                   <img
-                    src={image.imagePath || ''}
+                    src={`/api/images/${image.id}`}
                     alt={image.imageName}
                     loading="lazy"
                     className="w-full h-full object-cover"
@@ -178,7 +178,7 @@ const ProjectDetail = () => {
                   }`}
                 >
                   <img
-                    src={image.imagePath || ''}
+                    src={`/api/images/${image.id}`}
                     alt={image.imageName}
                     loading="lazy"
                     className="w-full h-full object-cover"

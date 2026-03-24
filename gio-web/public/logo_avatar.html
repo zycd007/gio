@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIO Logo Avatar Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        /* 144x144 Logo Container */
+        .logo-wrapper {
+            width: 144px;
+            height: 144px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .logo-gio {
+            font-size: 52px;
+            font-weight: 700;
+            color: #c9a962;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .logo-text {
+            font-size: 11px;
+            color: #ffffff;
+            letter-spacing: 3px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .logo-sub {
+            font-size: 9px;
+            color: #c9a962;
+            letter-spacing: 2px;
+            margin-top: 2px;
+            line-height: 1;
+        }
+
+        /* Preview sizes */
+        .preview-section {
+            margin-top: 40px;
+            display: flex;
+            gap: 30px;
+            align-items: flex-end;
+        }
+
+        .preview-item {
+            text-align: center;
+        }
+
+        .preview-item span {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .size-144 { transform: scale(1); }
+        .size-100 { transform: scale(0.694); }
+        .size-64 { transform: scale(0.444); }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .instructions {
+            color: #666;
+            font-size: 14px;
+            margin-top: 30px;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #c9a962;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #b89650;
+        }
+
+        /* Canvas隐藏 */
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>光里光外 GIO - 微信小程序头像</h1>
+
+        <div class="logo-wrapper" id="logoTarget">
+            <div class="logo-gio">GIO</div>
+            <div class="logo-text">光里光外</div>
+            <div class="logo-sub">LIGHTING</div>
+        </div>
+
+        <button class="download-btn" onclick="downloadLogo()">下载 PNG (144×144)</button>
+
+        <div class="preview-section">
+            <div class="preview-item">
+                <div class="logo-wrapper size-64">
+                    <div class="logo-gio">GIO</div>
+                    <div class="logo-text">光里光外</div>
+                    <div class="logo-sub">LIGHTING</div>
+                </div>
+                <span>64px</span>
+            </div>
+            <div class="preview-item">
+                <div class="logo-wrapper size-100">
+                    <div class="logo-gio">GIO</div>
+                    <div class="logo-text">光里光外</div>
+                    <div class="logo-sub">LIGHTING</div>
+                </div>
+                <span>100px</span>
+            </div>
+            <div class="preview-item">
+                <div class="logo-wrapper size-144">
+                    <div class="logo-gio">GIO</div>
+                    <div class="logo-text">光里光外</div>
+                    <div class="logo-sub">LIGHTING</div>
+                </div>
+                <span>144px (推荐)</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <p><strong>使用说明：</strong></p>
+            <p>1. 点击"下载 PNG"按钮保存 144×144 像素的 logo</p>
+            <p>2. 文件大小约为 3-5 KB，远小于 2MB 限制</p>
+            <p>3. 格式为 PNG，支持透明背景</p>
+            <p>4. 在微信小程序后台【设置】→【基本设置】→【头像】处上传</p>
+        </div>
+    </div>
+
+    <canvas id="canvas" width="144" height="144"></canvas>
+
+    <script>
+        function downloadLogo() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 背景色 #1a1a1a
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, 144, 144);
+
+            // 绘制圆角矩形背景（可选）
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 144, 144, 12);
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fill();
+
+            // GIO 文字 - 金色 #c9a962
+            ctx.fillStyle = '#c9a962';
+            ctx.font = 'bold 52px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GIO', 72, 58);
+
+            // 光里光外 - 白色
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.letterSpacing = '3px';
+            ctx.fillText('光里光外', 72, 92);
+
+            // LIGHTING - 金色小字
+            ctx.fillStyle = '#c9a962';
+            ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.letterSpacing = '2px';
+            ctx.fillText('LIGHTING', 72, 108);
+
+            // 下载
+            const link = document.createElement('a');
+            link.download = 'gio-logo-avatar-144x144.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

@@ -17,7 +17,7 @@ interface Project {
   location: string;
   year: string;
   categoryName: string;
-  coverImagePath?: string;
+  coverImageId?: number;
   viewCount?: number;
 }
 
@@ -88,7 +88,6 @@ const Projects = () => {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <span className="mr-1">{cat.icon}</span>
                 {cat.name}
               </button>
             ))}
@@ -115,7 +114,7 @@ const Projects = () => {
                 >
                   <div className="aspect-[4/3] md:aspect-square overflow-hidden bg-gray-200">
                     <img
-                      src={project.coverImagePath || `https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80`}
+                      src={project.coverImageId ? `/api/images/${project.coverImageId}` : `https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80`}
                       alt={project.name}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

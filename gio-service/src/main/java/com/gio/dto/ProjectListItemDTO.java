@@ -22,5 +22,9 @@ public class ProjectListItemDTO {
 
     private String coverImagePath;
 
+    private Integer coverImageId;
+
     private Integer viewCount;
+
+    private Integer status;
 }

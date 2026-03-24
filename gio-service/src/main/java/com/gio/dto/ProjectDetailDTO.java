@@ -35,7 +35,7 @@ public class ProjectDetailDTO {
     @Data
     public static class ImageInfo {
         private Integer id;
-        private String imagePath;
+        private Integer attachmentId;
         private String imageName;
         private Integer width;
         private Integer height;

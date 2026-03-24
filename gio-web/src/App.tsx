@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Projects from './pages/Projects';
@@ -14,6 +15,7 @@ import AdminCategories from './admin/Categories';
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" richColors />
       <Routes>
         {/* 前台官网路由 */}
         <Route path="/" element={<Layout />}>

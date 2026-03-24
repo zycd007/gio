@@ -44,4 +44,14 @@ public interface ImageService {
      * 获取图片文件
      */
     byte[] getImageFile(Integer id);
+
+    /**
+     * 获取图片总数
+     */
+    Long getTotalImageCount();
+
+    /**
+     * 删除项目的所有图片
+     */
+    void deleteImagesByProject(Integer projectId);
 }
