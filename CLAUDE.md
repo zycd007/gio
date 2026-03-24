@@ -129,55 +129,75 @@ curl -X POST http://localhost:8082/api/admin/login \
 
 ## 部署
 
-### 服务器部署（推荐）
+### 部署方式：本地打包 + 上传服务器
 
-在腾讯云服务器上直接拉取代码并构建部署：
+#### 第一步：本地构建
 
 ```bash
-# 1. SSH 到服务器
-ssh ubuntu@140.143.87.54
-# 密码: @yuku007@
+# 1. 设置 Java 环境
+export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17"
+export PATH="$JAVA_HOME/bin:$PATH"
 
-# 2. 安装必要的软件 (首次部署需要)
-# Java 17
-sudo apt update && sudo apt install openjdk-17-jdk
-# Node.js 和 pnpm
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-source ~/.bashrc
-pnpm env use 18
-
-# 3. 拉取代码
-cd ~
-git clone https://github.com/zycd007/gio.git || (cd gio && git pull)
+# 2. 构建后端
 cd gio
-
-# 4. 构建后端
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 mvn clean package -DskipTests
 
-# 5. 构建前端
+# 3. 构建前端
 cd gio-web
 pnpm install
 pnpm build
+```
 
-# 6. 创建必要的目录
-mkdir -p ~/gio/logs ~/gio/uploads
+#### 第二步：上传到服务器
 
-# 7. 停止旧服务并部署后端
+```bash
+# 上传后端 jar 包
+scp gio-portal/target/gio-portal-1.0.0.jar ubuntu@140.143.87.54:/tmp/
+scp gio-admin/target/gio-admin-1.0.0.jar ubuntu@140.143.87.54:/tmp/
+
+# 上传前端构建文件
+scp -r gio-web/dist ubuntu@140.143.87.54:/tmp/
+```
+
+#### 第三步：服务器部署
+
+```bash
+# SSH 到服务器
+ssh ubuntu@140.143.87.54
+# 密码: @yuku007@
+
+# 1. 创建目录
+mkdir -p ~/gio/logs ~/gio/uploads ~/gio/static
+
+# 2. 移动文件
+mv /tmp/gio-portal-1.0.0.jar ~/gio/
+mv /tmp/gio-admin-1.0.0.jar ~/gio/
+mv /tmp/dist/* ~/gio/static/
+
+# 3. 停止旧服务
 pkill -f "gio-.*\.jar" 2>/dev/null || true
-nohup java -jar gio-portal/target/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
-nohup java -jar gio-admin/target/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
+pkill -f "vite" 2>/dev/null || true
 
-# 6. 部署前端 (使用 80 端口)
-cd gio-web
-pnpm preview --port 80 --host 0.0.0.0 &
+# 4. 部署后端服务
+nohup java -jar ~/gio/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
+nohup java -jar ~/gio/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
+
+# 5. 部署前端 (使用静态服务器)
+# 方式一：使用 pnpm preview
+cd ~/gio/static && nohup pnpm preview --port 80 --host 0.0.0.0 > ~/gio/logs/frontend.log 2>&1 &
+
+# 方式二：使用 Python 简单服务器
+cd ~/gio/static && nohup python3 -m http.server 80 > ~/gio/logs/frontend.log 2>&1 &
 ```
 
 **访问地址：**
-- 前端页面：http://140.143.87.54 （默认 80 端口）
+- 前端页面：http://140.143.87.54
+- 后端 API：http://140.143.87.54:8081
+- 管理后台：http://140.143.87.54:8082
 
 **日志查看：**
 ```bash
+ssh ubuntu@140.143.87.54
 tail -f ~/gio/logs/portal.log
 tail -f ~/gio/logs/admin.log
 ```
