@@ -3,8 +3,7 @@ import { ContactInfo, SocialMedia, PhilosophyItem } from '@/types';
 export const CONTACT_INFO: ContactInfo[] = [
   { icon: '📍', title: '地址', content: '四川省成都市锦江区 XXX 路 XXX 号' },
   { icon: '📧', title: '邮箱', content: 'contact@gio-light.com' },
-  { icon: '📱', title: '电话', content: '+86 028-XXXXXXXX' },
-  { icon: '⏰', title: '工作时间', content: '周一至周五 9:00 - 18:00' }
+  { icon: '📱', title: '电话', content: '+86 028-XXXXXXXX' }
 ];
 
 export const SOCIAL_MEDIA: SocialMedia[] = [

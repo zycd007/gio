@@ -33,8 +33,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/projects/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
+                        .requestMatchers("/api/messages/**").permitAll()
                         // 管理端图片文件接口公开（图片非敏感数据，通过imageId控制访问）
-                        .requestMatchers("/api/admin/images/**/file").permitAll()
+                        .requestMatchers("/api/admin/images/**").permitAll()
                         // 登录接口公开
                         .requestMatchers("/api/admin/login", "/api/admin/logout").permitAll()
                         // 后台管理接口需要认证（除图片文件外）

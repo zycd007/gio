@@ -101,8 +101,8 @@ const HomePage = () => {
               <span className="section-label">Our Expertise</span>
               <h2 className="section-title text-2xl md:text-3xl lg:text-4xl mt-3">专业领域</h2>
             </AnimatedSection>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-              {categories.slice(0, 6).map((cat, index) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+              {categories.map((cat, index) => (
                 <CategoryCard key={cat.id} category={cat} index={index} />
               ))}
             </div>
@@ -185,24 +185,6 @@ const HomePage = () => {
                     <p className="text-xs md:text-sm leading-relaxed" style={{ color: '#666666' }}>
                       {item.desc}
                     </p>
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
-          </AnimatedSection>
-
-          {/* 服务领域 */}
-          <AnimatedSection>
-            <div className="text-center mb-10 md:mb-12">
-              <span className="section-label">Our Services</span>
-              <h3 className="section-title text-xl md:text-2xl mt-3">服务领域</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 max-w-5xl mx-auto">
-              {categories.map((cat, index) => (
-                <AnimatedSection key={cat.id} delay={index * 80}>
-                  <div className="text-center p-5 md:p-6 transition-all duration-300 hover:card-hover" style={{ backgroundColor: '#1a1a1a', border: '1px solid #1a1a1a' }}>
-                    <div className="text-2xl md:text-3xl mb-3">💡</div>
-                    <h4 className="text-xs font-light text-white tracking-wider">{cat.name}</h4>
                   </div>
                 </AnimatedSection>
               ))}

@@ -1,5 +1,5 @@
 import AnimatedSection from './AnimatedSection';
-import { CONTACT_INFO, SOCIAL_MEDIA } from '@/constants/contact';
+import { CONTACT_INFO } from '@/constants/contact';
 
 interface ContactInfoProps {
   delayClassName?: string;
@@ -23,24 +23,6 @@ const ContactInfo = ({ delayClassName = '' }: ContactInfoProps) => {
         ))}
       </div>
 
-      {/* 社交媒体 */}
-      <div className="mt-10 md:mt-12">
-        <h4 className="font-light text-white mb-5 text-sm tracking-wide">关注我们</h4>
-        <div className="flex gap-4">
-          {SOCIAL_MEDIA.map((social) => (
-            <a
-              key={social.label}
-              href="#"
-              className="w-11 h-11 flex items-center justify-center transition-all duration-300 hover:-translate-y-1"
-              style={{ backgroundColor: '#1a1a1a', color: '#a0a0a0' }}
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d={social.icon} />
-              </svg>
-            </a>
-          ))}
-        </div>
-      </div>
     </AnimatedSection>
   );
 };
