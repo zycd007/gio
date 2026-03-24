@@ -168,19 +168,13 @@ pkill -f "gio-.*\.jar" 2>/dev/null || true
 nohup java -jar gio-portal/target/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
 nohup java -jar gio-admin/target/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
 
-# 8. 部署前端 (使用静态文件服务器或 Nginx)
-# 方式一：使用 pnpm preview
+# 6. 部署前端 (使用 80 端口)
 cd gio-web
-pnpm preview --port 3000 --host 0.0.0.0 &
-
-# 方式二：配置 Nginx (推荐)
-# 将 gio-web/dist 目录配置为 Nginx root
+pnpm preview --port 80 --host 0.0.0.0 &
 ```
 
 **访问地址：**
-- C 端官网：http://140.143.87.54:8081
-- 管理后台：http://140.143.87.54:8082
-- 前端页面：http://140.143.87.54:3000（preview 模式）
+- 前端页面：http://140.143.87.54 （默认 80 端口）
 
 **日志查看：**
 ```bash
