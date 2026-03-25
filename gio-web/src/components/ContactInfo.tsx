@@ -23,6 +23,25 @@ const ContactInfo = ({ delayClassName = '' }: ContactInfoProps) => {
         ))}
       </div>
 
+      {/* 微信二维码 */}
+      <div className="mt-8 pt-8" style={{ borderTop: '1px solid #1a1a1a' }}>
+        <h4 className="font-light text-white text-sm mb-4 tracking-wide text-center">扫码咨询</h4>
+        <div className="flex justify-center">
+          <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-white p-2">
+            <img
+              src="/wechat-qr.png"
+              alt="微信二维码"
+              className="w-full h-full object-contain"
+              style={{
+                imageRendering: 'pixelated',
+                filter: 'none',
+                colorScheme: 'light'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
     </AnimatedSection>
   );
 };
