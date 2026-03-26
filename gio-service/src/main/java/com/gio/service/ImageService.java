@@ -46,6 +46,21 @@ public interface ImageService {
     byte[] getImageFile(Integer id);
 
     /**
+     * 根据attachmentId获取图片文件（带缓存）
+     */
+    byte[] getImageFileByAttachmentId(Integer attachmentId);
+
+    /**
+     * 获取缩略图文件
+     */
+    byte[] getThumbnailFile(Integer id);
+
+    /**
+     * 根据attachmentId获取缩略图文件（带缓存）
+     */
+    byte[] getThumbnailFileByAttachmentId(Integer attachmentId);
+
+    /**
      * 获取图片总数
      */
     Long getTotalImageCount();

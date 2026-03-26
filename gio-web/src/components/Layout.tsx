@@ -13,10 +13,13 @@ const Layout = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('home');
   const [scrolled, setScrolled] = useState(false);
+  const [isAtContactSection, setIsAtContactSection] = useState(false);
   const isNavigatingRef = useRef(false);
 
   // 检查是否在首页（根路径）
   const isHomePage = location.pathname === '/';
+  // 检查是否在联系我们页面
+  const isContactPage = location.pathname === '/contact';
 
   // 处理 hash 路由导航
   useEffect(() => {
@@ -88,11 +91,22 @@ const Layout = () => {
           }
         }
       }
+
+      // 检测首页的联系区域
+      if (isHomePage) {
+        const contactEl = document.getElementById('contact');
+        if (contactEl) {
+          const contactTop = contactEl.offsetTop;
+          const contactHeight = contactEl.offsetHeight;
+          // 当滚动到联系区域时隐藏按钮
+          setIsAtContactSection(scrollPos >= contactTop);
+        }
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHomePage]);
 
   // 导航点击处理
   const handleNavClick = (sectionId: string) => {
@@ -130,6 +144,15 @@ const Layout = () => {
       const headerHeight = 60;
       const targetY = el.offsetTop - headerHeight;
       window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+  };
+
+  // 滚动到联系表单
+  const scrollToContact = () => {
+    if (!isHomePage) {
+      navigate('/contact');
+    } else {
+      scrollToSection('contact');
     }
   };
 
@@ -226,11 +249,6 @@ const Layout = () => {
               <p className="text-xs tracking-wider" style={{ color: '#a0a0a0' }}>© 2026 光里光外 GIO。All rights reserved.</p>
               <p className="text-xs mt-2" style={{ color: '#666666' }}>智能照明全案设计</p>
             </div>
-            <div className="flex space-x-8">
-              <button className="text-xs tracking-wider transition-colors hover:text-[#d4a853]" style={{ color: '#a0a0a0' }}>微信公众号</button>
-              <button className="text-xs tracking-wider transition-colors hover:text-[#d4a853]" style={{ color: '#a0a0a0' }}>微博</button>
-              <button className="text-xs tracking-wider transition-colors hover:text-[#d4a853]" style={{ color: '#a0a0a0' }}>小红书</button>
-            </div>
           </div>
         </div>
       </footer>
@@ -257,6 +275,17 @@ const Layout = () => {
           })}
         </div>
       </nav>
+
+      {/* 悬浮咨询按钮 */}
+      {!isContactPage && !isAtContactSection && (
+        <button
+          onClick={scrollToContact}
+          className="fixed bottom-24 right-6 z-40 md:bottom-8 md:right-8 px-6 py-3 rounded-full text-white text-sm tracking-wider shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+          style={{ backgroundColor: '#d4a853' }}
+        >
+          免费获取方案
+        </button>
+      )}
     </div>
   );
 };

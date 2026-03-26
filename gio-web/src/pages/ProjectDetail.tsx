@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { getProjectDetail } from '@/services/project';
 import AnimatedSection from '@/components/AnimatedSection';
 
@@ -194,7 +195,7 @@ const ProjectDetail = () => {
             </div>
           )}
           <img
-            src={getImageUrl(currentImage)}
+            src={getImageUrl(currentImage, true)}
             alt={currentImage.imageName || `图片 ${viewerImageIndex + 1}`}
             className={`max-w-full max-h-[85vh] object-contain transition-all duration-300 cursor-zoom-in ${
               isZoomed ? 'scale-150 cursor-zoom-out' : ''
@@ -280,9 +281,10 @@ const ProjectDetail = () => {
   }, [id]);
 
   // 获取当前图片URL
-  const getImageUrl = (img?: ImageInfo) => {
+  // useOriginal: true 返回原图，false 返回缩略图
+  const getImageUrl = (img?: ImageInfo, useOriginal: boolean = false) => {
     if (!img) return DEFAULT_IMAGE;
-    return `/api/images/${img.id}`;
+    return useOriginal ? `/api/images/${img.id}/file` : `/api/images/${img.id}/thumbnail`;
   };
 
   if (loading) {
@@ -318,6 +320,13 @@ const ProjectDetail = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <Helmet>
+        <title>{project?.name ? `${project.name} - 光里光外 GIO` : '项目详情 - 光里光外 GIO'}</title>
+        <meta name="description" content={project?.name ? `${project.name}，位于${project.location}，${project.year}年完成的专业照明设计项目` : '光里光外GIO智能照明设计案例详情'} />
+        <meta name="keywords" content={`${project?.name || '照明设计'}${project?.location || ''}${project?.categoryName || ''},成都照明设计,智能照明`} />
+        <link rel="canonical" href={`http://140.143.87.54/projects/${project?.id}`} />
+      </Helmet>
+
       {/* 全屏图片查看器 */}
       <ImageViewer />
 
@@ -339,13 +348,6 @@ const ProjectDetail = () => {
                   {project.location || '-'}
                 </span>
                 <span>{project.year || '-'}</span>
-                <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  </svg>
-                  {project.viewCount || 0}
-                </span>
               </div>
             </div>
           </AnimatedSection>
@@ -356,15 +358,6 @@ const ProjectDetail = () => {
       {project.images && project.images.length > 0 && (
         <AnimatedSection delay={200} className="pb-10 md:pb-14">
           <div className="container mx-auto px-4">
-            {/* 标题 */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-8 h-px" style={{ backgroundColor: '#333333' }} />
-              <span className="text-xs md:text-sm tracking-widest uppercase" style={{ color: '#666666' }}>
-                项目图片 {project.images.length} 张
-              </span>
-              <div className="flex-1 h-px" style={{ backgroundColor: '#333333' }} />
-            </div>
-
             {/* 移动端：垂直网格布局 */}
             <div className="md:hidden">
               <div className="grid grid-cols-4 gap-2">
@@ -447,18 +440,16 @@ const ProjectDetail = () => {
       )}
 
       {/* 项目详情 */}
-      <AnimatedSection delay={400} className="py-10 md:py-14" style={{ backgroundColor: '#141414' }}>
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-xl md:text-2xl font-light text-white mb-6 tracking-wide">项目详情</h2>
-            {project.description ? (
+      {project.description && project.description.trim() && (
+        <AnimatedSection delay={400} className="py-10 md:py-14" style={{ backgroundColor: '#141414' }}>
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-xl md:text-2xl font-light text-white mb-6 tracking-wide">项目详情</h2>
               <p className="leading-relaxed whitespace-pre-line text-sm md:text-base" style={{ color: '#a0a0a0' }}>{project.description}</p>
-            ) : (
-              <p className="italic text-sm md:text-base" style={{ color: '#666666' }}>暂无项目描述</p>
-            )}
+            </div>
           </div>
-        </div>
-      </AnimatedSection>
+        </AnimatedSection>
+      )}
 
       {/* 联系我们 */}
       <AnimatedSection delay={500} className="py-12 md:py-16" style={{ backgroundColor: '#0a0a0a' }}>
