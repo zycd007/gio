@@ -22,7 +22,6 @@ interface Category {
   name: string;
   nameEn: string;
   code: string;
-  icon: string;
   sortOrder: number;
   status: number;
 }
@@ -128,9 +127,9 @@ export const deleteCategory = (id: number): Promise<void> => {
 /**
  * 获取项目列表
  */
-export const getProjects = (page: number = 1, size: number = 10, categoryId?: number): Promise<ProjectListResult> => {
+export const getProjects = (page: number = 1, size: number = 10, categoryId?: number, keyword?: string): Promise<ProjectListResult> => {
   return request.get('/admin/projects', {
-    params: { page, size, categoryId }
+    params: { page, size, categoryId, keyword }
   });
 };
 
@@ -210,4 +209,56 @@ export const setAsCover = (imageId: number): Promise<void> => {
  */
 export const getDashboardStats = (): Promise<DashboardStats> => {
   return request.get('/admin/dashboard/stats');
+};
+
+// ========== 留言管理 ==========
+
+interface Message {
+  id: number;
+  name: string;
+  phone: string;
+  content: string;
+  status: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 获取留言列表
+ */
+export const getMessages = (page: number = 1, size: number = 10, status?: number): Promise<{ list: Message[]; total: number; page: number; size: number }> => {
+  return request.get('/admin/messages', {
+    params: { page, size, status }
+  }).then((res) => {
+    const data = res.data || res;
+    return {
+      list: data.records || [],
+      total: data.total || 0,
+      page: data.current || 1,
+      size: data.size || 10
+    };
+  });
+};
+
+/**
+ * 获取留言详情
+ */
+export const getMessageDetail = (id: number): Promise<Message> => {
+  return request.get(`/admin/messages/${id}`);
+};
+
+/**
+ * 更新留言状态
+ */
+export const updateMessageStatus = (id: number, status: number): Promise<void> => {
+  return request.put(`/admin/messages/${id}/status`, null, {
+    params: { status }
+  });
+};
+
+/**
+ * 删除留言
+ */
+export const deleteMessage = (id: number): Promise<void> => {
+  return request.delete(`/admin/messages/${id}`);
 };

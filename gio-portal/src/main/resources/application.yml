@@ -36,6 +36,21 @@ file:
   upload-path: ./uploads/
   image-types: jpg,jpeg,png,gif,webp
 
+# 邮件配置
+spring.mail:
+  host: smtp.qq.com
+  port: 587
+  username: 597667676@qq.com
+  password: fymhnpxcresobcah
+  properties:
+    mail.smtp.auth: true
+    mail.smtp.starttls.enable: true
+    mail.smtp.starttls.required: true
+
+# 管理员通知邮箱
+notification:
+  admin-email: 597667676@qq.com
+
 # 日志配置
 logging:
   level:
