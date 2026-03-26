@@ -28,7 +28,6 @@ def init_database():
       `name` VARCHAR(50) NOT NULL,
       `name_en` VARCHAR(50) NOT NULL,
       `code` VARCHAR(50) UNIQUE NOT NULL,
-      `icon` VARCHAR(100),
       `sort_order` INT DEFAULT 0,
       `status` TINYINT DEFAULT 1,
       `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -108,20 +107,20 @@ def init_database():
 
     # 插入分类数据
     categories = [
-        ('私宅空间', 'Residence', 'residential', 'home', 1, 1),
-        ('餐饮空间', 'Restaurant', 'restaurant', 'restaurant', 2, 1),
-        ('娱乐空间', 'Entertainment', 'entertainment', 'entertainment', 3, 1),
-        ('办公空间', 'Office', 'office', 'office', 4, 1),
-        ('酒店民宿', 'Hotel', 'hotel', 'hotel', 5, 1),
-        ('婚纱摄影', 'Wedding', 'wedding', 'wedding', 6, 1),
-        ('酒吧俱乐部', 'Club', 'club', 'club', 7, 1),
-        ('医美空间', 'Medical', 'medical', 'medical', 8, 1),
-        ('展厅展览', 'Exhibition', 'exhibition', 'exhibition', 9, 1),
-        ('服装买手店', 'Clothing', 'clothing', 'clothing', 10, 1),
+        ('私宅空间', 'Residence', 'residential', 1, 1),
+        ('餐饮空间', 'Restaurant', 'restaurant', 2, 1),
+        ('娱乐空间', 'Entertainment', 'entertainment', 3, 1),
+        ('办公空间', 'Office', 'office', 4, 1),
+        ('酒店民宿', 'Hotel', 'hotel', 5, 1),
+        ('婚纱摄影', 'Wedding', 'wedding', 6, 1),
+        ('酒吧俱乐部', 'Club', 'club', 7, 1),
+        ('医美空间', 'Medical', 'medical', 8, 1),
+        ('展厅展览', 'Exhibition', 'exhibition', 9, 1),
+        ('服装买手店', 'Clothing', 'clothing', 10, 1),
     ]
 
     cursor.executemany(
-        "INSERT INTO category (name, name_en, code, icon, sort_order, status) VALUES (%s, %s, %s, %s, %s, %s)",
+        "INSERT INTO category (name, name_en, code, sort_order, status) VALUES (%s, %s, %s, %s, %s)",
         categories
     )
 

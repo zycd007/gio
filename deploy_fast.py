@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+GIO 项目自动化部署脚本
+使用方式: python deploy_fast.py
+
+特点:
+- 不弹窗输入密码
+- 自动构建前后端
+- 自动部署到服务器
+"""
+import os
+import sys
+import time
+import subprocess
+import paramiko
+from pathlib import Path
+import tarfile
+import tempfile
+import shutil
+
+# 服务器配置
+SERVER = "140.143.87.54"
+USER = "ubuntu"
+PASSWORD = "@yuku007@"
+REMOTE_DIR = "/home/ubuntu/gio"
+LOCAL_PROJECT = Path(__file__).parent.parent.absolute()
+
+def run_cmd(cmd, capture=True):
+    print(f"> {cmd}")
+    result = subprocess.run(cmd, shell=True, capture_output=capture, text=True, timeout=600)
+    return result
+
+def deploy():
+    start_time = time.time()
+
+    print("=" * 50)
+    print("GIO 项目部署开始")
+    print("=" * 50)
+
+    # 1. 本地构建
+    print("\n[1/5] 本地构建...")
+    os.environ["JAVA_HOME"] = "C:/Users/Administrator/.jdks/ms-17.0.17"
+    os.environ["PATH"] = f"{os.environ['JAVA_HOME']}/bin;{os.environ['PATH']}"
+
+    result = run_cmd('cd "%s" && mvn clean package -DskipTests -q' % LOCAL_PROJECT, capture=False)
+    if result.returncode != 0:
+        print("ERROR: 后端构建失败")
+        return
+
+    result = run_cmd('cd "%s/gio-web" && pnpm build' % LOCAL_PROJECT, capture=False)
+    if result.returncode != 0:
+        print("ERROR: 前端构建失败")
+        return
+
+    build_time = time.time() - start_time
+    print(f"  OK 构建完成 ({build_time:.1f}s)")
+
+    # 2. 准备上传文件
+    print("\n[2/5] 准备上传文件...")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+
+        # 复制 jar 包
+        shutil.copy(f'{LOCAL_PROJECT}/gio-portal/target/gio-portal-1.0.0.jar', tmpdir / 'gio-portal-1.0.0.jar')
+        shutil.copy(f'{LOCAL_PROJECT}/gio-admin/target/gio-admin-1.0.0.jar', tmpdir / 'gio-admin-1.0.0.jar')
+
+        # 打包前端
+        dist_dir = LOCAL_PROJECT / 'gio-web' / 'dist'
+        with tarfile.open(tmpdir / 'dist.tar.gz', 'w:gz') as tar:
+            tar.add(dist_dir, arcname='dist')
+
+        # 3. 上传文件
+        print("\n[3/5] 上传文件...")
+
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(SERVER, username=USER, password=PASSWORD, timeout=60)
+
+        sftp = client.open_sftp()
+
+        # 上传 jar 包
+        print("  上传 jar...")
+        sftp.put(str(tmpdir / 'gio-portal-1.0.0.jar'), f'{REMOTE_DIR}/gio-portal-1.0.0.jar')
+        sftp.put(str(tmpdir / 'gio-admin-1.0.0.jar'), f'{REMOTE_DIR}/gio-admin-1.0.0.jar')
+
+        # 上传压缩包
+        print("  上传前端...")
+        sftp.put(str(tmpdir / 'dist.tar.gz'), '/tmp/dist.tar.gz')
+
+        sftp.close()
+        upload_time = time.time() - start_time - build_time
+        print(f"  OK 上传完成 ({upload_time:.1f}s)")
+
+    # 4. 部署
+    print("\n[4/5] 部署服务...")
+
+    # 停止 nginx 和旧服务
+    client.exec_command('sudo systemctl stop nginx 2>/dev/null || true')
+    client.exec_command('pkill -f "gio-.*\.jar" 2>/dev/null || true')
+    client.exec_command('pkill -f "python3.*http.server" 2>/dev/null || true')
+    time.sleep(1)
+
+    # 解压并移动文件
+    client.exec_command(f'cd /tmp && tar -xzf dist.tar.gz -C {REMOTE_DIR}/')
+    client.exec_command(f'rm -rf {REMOTE_DIR}/static && mv {REMOTE_DIR}/dist {REMOTE_DIR}/static')
+
+    # 启动服务
+    client.exec_command(f'cd {REMOTE_DIR} && nohup java -jar gio-portal-1.0.0.jar --server.port=8081 > {REMOTE_DIR}/logs/portal.log 2>&1 &')
+    client.exec_command(f'cd {REMOTE_DIR} && nohup java -jar gio-admin-1.0.0.jar --server.port=8082 > {REMOTE_DIR}/logs/admin.log 2>&1 &')
+    client.exec_command(f'cd {REMOTE_DIR}/static && nohup python3 -m http.server 80 > {REMOTE_DIR}/logs/frontend.log 2>&1 &')
+
+    client.close()
+    print(f"  OK 部署完成")
+
+    # 5. 验证
+    print("\n[5/5] 验证部署...")
+    time.sleep(10)
+
+    result = subprocess.run(f'curl -s -o /dev/null -w "%{{http_code}}" http://{SERVER}', shell=True, capture_output=True, text=True)
+    print(f"  前端: {'OK' if result.stdout.strip() == '200' else 'FAIL'}")
+
+    result = subprocess.run(f'curl -s -o /dev/null -w "%{{http_code}}" http://{SERVER}:8081/api/categories', shell=True, capture_output=True, text=True)
+    print(f"  后端: {'OK' if result.stdout.strip() == '200' else 'FAIL'}")
+
+    total_time = time.time() - start_time
+    print(f"\n部署完成! 总耗时: {total_time:.1f}s")
+    print(f"访问地址: http://{SERVER}")
+
+if __name__ == "__main__":
+    deploy()

@@ -129,7 +129,12 @@ curl -X POST http://localhost:8082/api/admin/login \
 
 ## 部署
 
-### 部署方式：本地打包 + 上传服务器
+### 部署方式：本地打包 + 上传服务器（推荐）
+
+> **服务器信息：腾讯云**
+> - IP: 140.143.87.54
+> - 用户名: ubuntu
+> - 密码: @yuku007@
 
 #### 第一步：本地构建
 
@@ -139,7 +144,7 @@ export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17"
 export PATH="$JAVA_HOME/bin:$PATH"
 
 # 2. 构建后端
-cd gio
+cd E:/my_projects/gio
 mvn clean package -DskipTests
 
 # 3. 构建前端
@@ -162,32 +167,60 @@ scp -r gio-web/dist ubuntu@140.143.87.54:/tmp/
 #### 第三步：服务器部署
 
 ```bash
-# SSH 到服务器
-ssh ubuntu@140.143.87.54
-# 密码: @yuku007@
+# 使用 Python + paramiko 远程部署（推荐）
+python -c "
+import paramiko
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+client.connect('140.143.87.54', username='ubuntu', password='@yuku007@')
 
-# 1. 创建目录
-mkdir -p ~/gio/logs ~/gio/uploads ~/gio/static
+# 1. 创建目录并移动文件
+stdin, stdout, stderr = client.exec_command(
+    'mkdir -p ~/gio/logs ~/gio/uploads ~/gio/static && ' +
+    'rm -rf ~/gio/static/* && ' +
+    'mv /tmp/gio-portal-1.0.0.jar ~/gio/ && ' +
+    'mv /tmp/gio-admin-1.0.0.jar ~/gio/ && ' +
+    'mv /tmp/dist/* ~/gio/static/')
 
-# 2. 移动文件
-mv /tmp/gio-portal-1.0.0.jar ~/gio/
-mv /tmp/gio-admin-1.0.0.jar ~/gio/
-mv /tmp/dist/* ~/gio/static/
+# 2. 停止旧服务
+stdin, stdout, stderr = client.exec_command(
+    'pkill -f \"gio-.*\.jar\" 2>/dev/null || true')
 
-# 3. 停止旧服务
-pkill -f "gio-.*\.jar" 2>/dev/null || true
-pkill -f "vite" 2>/dev/null || true
+# 3. 启动后端服务
+stdin, stdout, stderr = client.exec_command(
+    'cd ~/gio && nohup java -jar gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &')
+stdin, stdout, stderr = client.exec_command(
+    'cd ~/gio && nohup java -jar gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &')
 
-# 4. 部署后端服务
-nohup java -jar ~/gio/gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &
-nohup java -jar ~/gio/gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &
+# 4. 配置 Nginx 反向代理
+nginx_config = '''server {
+    listen 80;
+    server_name _;
+    location / {
+        root /home/ubuntu/gio/static;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+    location /admin-api/ {
+        proxy_pass http://127.0.0.1:8082/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+}'''
+stdin.channel.send(nginx_config.encode())
+stdin.channel.send(b'\n')
+stdin.channel.shutdown_write()
+stdin, stdout, stderr = client.exec_command('sudo tee /etc/nginx/sites-available/gio')
+stdin, stdout, stderr = client.exec_command('sudo nginx -t && sudo nginx -s reload')
 
-# 5. 部署前端 (使用静态服务器)
-# 方式一：使用 pnpm preview
-cd ~/gio/static && nohup pnpm preview --port 80 --host 0.0.0.0 > ~/gio/logs/frontend.log 2>&1 &
-
-# 方式二：使用 Python 简单服务器
-cd ~/gio/static && nohup python3 -m http.server 80 > ~/gio/logs/frontend.log 2>&1 &
+client.close()
+print('部署完成')
+"
 ```
 
 **访问地址：**

@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Read(//e/GIO/images_output/ppt/media/**)",
-      "Read(//e/GIO/images_output/**)"
+      "Read(//e/GIO/images_output/**)",
+      "Bash(mysql -h 8.137.63.159 -u root -p'@Yuku007@' gio_design 2)",
+      "Bash(/dev/null:*)",
+      "Bash(claude mcp:*)",
+      "Bash(where bash:*)",
+      "Bash(CLAUDE_CODE_GIT_BASH_PATH=\"D:/soft_install/Git/usr/bin/bash.exe\" claude mcp add playwright -- npx -y @playwright/mcp-server)",
+      "Bash(CLAUDE_CODE_GIT_BASH_PATH=\"D:\\\\\\\\soft_install\\\\\\\\Git\\\\\\\\usr\\\\\\\\bin\\\\\\\\bash.exe\" claude mcp add playwright -- npx -y @playwright/mcp-server)",
+      "Bash(source:*)",
+      "Bash(alias cs:*)",
+      "Bash(echo $PATH)"
     ]
   }
 }

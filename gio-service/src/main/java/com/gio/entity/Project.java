@@ -34,6 +34,12 @@ public class Project {
     @TableField("view_count")
     private Integer viewCount;
 
+    /**
+     * 是否精选：0-普通 1-精选
+     */
+    @TableField("is_featured")
+    private Integer isFeatured;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 

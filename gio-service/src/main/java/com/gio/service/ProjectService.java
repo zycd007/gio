@@ -17,7 +17,7 @@ public interface ProjectService extends IService<Project> {
     /**
      * 分页获取项目列表
      */
-    PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId);
+    PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword);
 
     /**
      * 获取项目详情
@@ -43,4 +43,9 @@ public interface ProjectService extends IService<Project> {
      * 删除项目（级联删除图片）
      */
     boolean deleteProjectWithImages(Integer id);
+
+    /**
+     * 获取精选项目列表
+     */
+    List<ProjectListItemDTO> getFeaturedProjects();
 }

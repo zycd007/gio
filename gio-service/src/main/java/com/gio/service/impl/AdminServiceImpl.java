@@ -15,11 +15,16 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 管理员服务实现
  */
 @Service
 public class AdminServiceImpl implements AdminService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -35,15 +40,20 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        log.info("Login attempt for username: {}", request.getUsername());
         AdminUser user = getByUsername(request.getUsername());
+        log.info("User found: {}", user != null ? user.getUsername() : "null");
         if (user == null) {
             throw new RuntimeException("用户名或密码错误");
         }
+        log.info("User status: {}", user.getStatus());
         if (user.getStatus() != 1) {
             throw new RuntimeException("账号已被禁用");
         }
-        // 验证密码 - 使用 BCrypt 验证
-        boolean passwordValid = BCrypt.checkpw(request.getPassword(), user.getPassword());
+        // 验证密码 - 使用明文验证
+        log.info("Comparing password: input={}, stored={}", request.getPassword(), user.getPassword());
+        boolean passwordValid = request.getPassword().equals(user.getPassword());
+        log.info("Password valid: {}", passwordValid);
         if (!passwordValid) {
             throw new RuntimeException("用户名或密码错误");
         }

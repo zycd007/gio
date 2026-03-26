@@ -42,8 +42,17 @@ public class PortalController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer categoryId) {
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId);
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, null);
         return Result.success(result);
+    }
+
+    /**
+     * 获取精选项目列表
+     */
+    @GetMapping("/projects/featured")
+    public Result<List<ProjectListItemDTO>> getFeaturedProjects() {
+        List<ProjectListItemDTO> list = projectService.getFeaturedProjects();
+        return Result.success(list);
     }
 
     /**

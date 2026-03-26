@@ -1,15 +1,29 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import CompanyIntro from '@/components/CompanyIntro';
 import PhilosophyCard from '@/components/PhilosophyCard';
-import ServiceAreas from '@/components/ServiceAreas';
 
 // 公司介绍文字
 const COMPANY_DESCRIPTIONS = [
-  '光里光外 GIO 成立于 2010 年，是一家专注于智能照明全案设计的知名公司。我们的团队由经验丰富的照明设计师组成，致力于为客户创造独特而富有灵感的照明方案。',
-  '我们相信照明设计不仅仅是提供光源，更是对生活品质的提升和空间氛围的营造。每一个项目都是独一无二的，我们用心倾听客户的需求，将他们的愿景转化为现实。',
-  '多年来，我们完成了众多备受赞誉的智能照明项目，涵盖私宅空间、餐饮空间、娱乐空间等多个领域。我们的设计理念是"以光塑形，以影传情"，追求光影与空间的完美融合，同时注重节能与智能化。'
+  '光里光外 GIO 成立于 2010 年，是深耕成都的专业智能照明全案设计公司，由资深照明设计师组成核心团队，专注为私宅、餐饮、办公、酒店等多元空间提供定制化照明解决方案。',
+  '我们坚信，照明设计不止是提供光源，更是生活品质的提升、空间氛围的营造、品牌价值的强化。十余年来，我们深耕光影设计领域，用心倾听每一位客户的需求，将空间愿景与智能照明技术结合，让每一个项目都拥有专属的光影表达。'
+];
+
+// 团队优势数据
+const TEAM_ADVANTAGES = [
+  { value: '14+', label: '行业经验' },
+  { value: '15+', label: '覆盖城市' },
+  { value: '100+', label: '完成项目' }
+];
+
+// 服务流程
+const SERVICE_PROCESS = [
+  { step: '01', title: '需求沟通', desc: '深入了解客户需求，现场勘测，分析空间布局与使用场景' },
+  { step: '02', title: '方案设计', desc: '根据需求定制照明方案，提供效果图与灯光模拟，确认设计' },
+  { step: '03', title: '施工安装', desc: '专业团队施工安装，设备调试，确保照明效果完美呈现' },
+  { step: '04', title: '售后维护', desc: '定期回访效果调试，智能系统后期维护，灯光效果优化' }
 ];
 
 const About = () => {
@@ -20,6 +34,13 @@ const About = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <Helmet>
+        <title>关于我们 - 光里光外 GIO</title>
+        <meta name="description" content="光里光外GIO成立于2010年，是成都专业智能照明设计公司，14年行业经验，提供私宅、餐饮、办公、酒店等空间照明设计服务" />
+        <meta name="keywords" content="关于照明设计公司,成都照明设计,智能照明设计团队,照明设计公司优势" />
+        <link rel="canonical" href="http://140.143.87.54/about" />
+      </Helmet>
+
       {/* 页面头部 */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4 text-center">
@@ -39,6 +60,43 @@ const About = () => {
         </div>
       </section>
 
+      {/* 团队优势 */}
+      <section className="py-16 md:py-20" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="container mx-auto px-4">
+          <AnimatedSection className="text-center mb-12">
+            <span className="section-label">Our Advantages</span>
+            <h2 className="section-title text-2xl md:text-3xl mt-3">团队优势</h2>
+          </AnimatedSection>
+          <div className="flex justify-center gap-8 md:gap-16">
+            {TEAM_ADVANTAGES.map((item, index) => (
+              <div key={index} className="text-center">
+                <div className="text-3xl md:text-4xl font-light mb-2" style={{ color: '#d4a853' }}>{item.value}</div>
+                <div className="text-xs md:text-sm tracking-wider" style={{ color: '#666666' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 服务流程 */}
+      <section className="py-16 md:py-20" style={{ backgroundColor: '#141414' }}>
+        <div className="container mx-auto px-4">
+          <AnimatedSection className="text-center mb-12">
+            <span className="section-label">Service Process</span>
+            <h2 className="section-title text-2xl md:text-3xl mt-3">服务流程</h2>
+          </AnimatedSection>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            {SERVICE_PROCESS.map((item, index) => (
+              <div key={index} className="text-center">
+                <div className="text-2xl md:text-3xl font-light mb-3" style={{ color: '#d4a853' }}>{item.step}</div>
+                <h3 className="text-white text-sm md:text-base mb-2 tracking-wide">{item.title}</h3>
+                <p className="text-xs md:text-sm" style={{ color: '#666666' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 核心理念 - 使用 PhilosophyCard 组件 */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4">
@@ -47,13 +105,6 @@ const About = () => {
             <h2 className="section-title text-2xl md:text-3xl mt-3">核心理念</h2>
           </AnimatedSection>
           <PhilosophyCard />
-        </div>
-      </section>
-
-      {/* 服务领域 - 使用 ServiceAreas 组件 */}
-      <section className="py-16 md:py-20" style={{ backgroundColor: '#141414' }}>
-        <div className="container mx-auto px-4">
-          <ServiceAreas />
         </div>
       </section>
 

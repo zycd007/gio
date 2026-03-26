@@ -20,7 +20,17 @@ public class Category {
 
     private String code;
 
-    private String icon;
+    /**
+     * 核心设计亮点
+     */
+    @TableField("design_highlights")
+    private String designHighlights;
+
+    /**
+     * 适配场景
+     */
+    @TableField("suitable_scenes")
+    private String suitableScenes;
 
     @TableField("sort_order")
     private Integer sortOrder;

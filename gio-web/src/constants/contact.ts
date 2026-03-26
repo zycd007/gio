@@ -1,9 +1,9 @@
-import { ContactInfo, SocialMedia, PhilosophyItem } from '@/types';
+import { ContactInfo, SocialMedia, PhilosophyItem, Testimonial } from '@/types';
 
 export const CONTACT_INFO: ContactInfo[] = [
-  { icon: '📍', title: '地址', content: '四川省成都市锦江区 XXX 路 XXX 号' },
-  { icon: '📧', title: '邮箱', content: 'contact@gio-light.com' },
-  { icon: '📱', title: '电话', content: '+86 028-XXXXXXXX' }
+  { icon: '📍', title: '地址', content: '四川省成都市锦江区静安路1号' },
+  { icon: '📧', title: '邮箱', content: '523094173@qq.com' },
+  { icon: '📱', title: '电话', content: '13880840378' }
 ];
 
 export const SOCIAL_MEDIA: SocialMedia[] = [
@@ -13,15 +13,15 @@ export const SOCIAL_MEDIA: SocialMedia[] = [
 ];
 
 export const PHILOSOPHY_ITEMS: PhilosophyItem[] = [
-  { icon: '🎯', title: '专注品质', desc: '我们坚持高标准的照明设计品质，关注每一个细节，确保每个项目都能达到最佳效果。' },
-  { icon: '💡', title: '智能创新', desc: '我们不断探索智能照明新技术，为客户创造节能、环保、智能化的照明解决方案。' },
-  { icon: '🤝', title: '客户至上', desc: '我们以客户需求为核心，提供个性化的照明设计服务，确保客户满意。' }
+  { icon: '🎯', title: '专注品质', desc: '以行业高标准把控设计与落地全流程，聚焦光影细节设计、灯光参数调试，确保每一个照明方案落地即精品，适配空间长期使用需求。' },
+  { icon: '💡', title: '智能创新', desc: '持续探索前沿智能照明技术，融合节能、环保、智能化核心需求，打造支持手机/语音一键控制的光环境，实现光影模式灵活切换。' },
+  { icon: '🤝', title: '客户至上', desc: '以客户空间需求为核心，提供一对一个性化定制服务，从需求沟通、方案设计到落地调试、后期维护，全流程专人跟进，确保需求精准落地。' }
 ];
 
 export const COMPANY_INFO = {
   name: '光里光外 GIO',
   nameEn: 'GIO',
-  slogan: '智能照明全案设计公司',
+  slogan: '专注空间智能照明设计',
   established: '2010',
   description: [
     '光里光外 GIO 成立于 2010 年，是一家专注于智能照明全案设计的知名公司。我们的团队由经验丰富的照明设计师组成，致力于为客户创造独特而富有灵感的照明方案。',
@@ -29,3 +29,28 @@ export const COMPANY_INFO = {
     '多年来，我们完成了众多备受赞誉的智能照明项目，涵盖私宅空间、餐饮空间、娱乐空间等多个领域。我们的设计理念是"以光塑形，以影传情"，追求光影与空间的完美融合，同时注重节能与智能化。'
   ]
 };
+
+// 客户评价
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 1,
+    customerName: '王总',
+    content: '光里光外的设计完美匹配我们的酒店定位，灯光氛围超出预期。专业团队从方案设计到落地调试都非常用心，强力推荐！',
+    projectName: '某酒店项目',
+    rating: 5
+  },
+  {
+    id: 2,
+    customerName: '李女士',
+    content: '别墅的照明设计效果非常棒，设计师充分考虑了我们家人的生活习惯，每个空间的光线都很舒适。售后服务也很到位。',
+    projectName: '私宅项目',
+    rating: 5
+  },
+  {
+    id: 3,
+    customerName: '张先生',
+    content: '餐厅照明设计后，客人用餐体验明显提升，生意也更好了。设计师很专业，能get到我们的需求，沟通起来很顺畅。',
+    projectName: '餐饮空间',
+    rating: 5
+  }
+];

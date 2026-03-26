@@ -7,7 +7,6 @@ interface Category {
   name: string;
   nameEn: string;
   code: string;
-  icon: string;
   sortOrder: number;
   status: number;
 }
@@ -21,7 +20,6 @@ const AdminCategories = () => {
     name: '',
     nameEn: '',
     code: '',
-    icon: '',
     sortOrder: 0,
     status: 1,
   });
@@ -69,7 +67,6 @@ const AdminCategories = () => {
         name: category.name,
         nameEn: category.nameEn,
         code: category.code,
-        icon: category.icon,
         sortOrder: category.sortOrder,
         status: category.status,
       });
@@ -79,7 +76,6 @@ const AdminCategories = () => {
         name: '',
         nameEn: '',
         code: '',
-        icon: '',
         sortOrder: 0,
         status: 1,
       });
@@ -103,133 +99,150 @@ const AdminCategories = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-light text-gray-800">分类管理</h1>
-        <button onClick={() => handleOpenModal()} className="btn-primary px-4 py-2">
-          + 新建分类
+    <div className="h-full flex flex-col">
+      {/* 顶部操作栏 */}
+      <div className="bg-white p-4 border-b border-slate-100 flex items-center gap-3 shrink-0">
+        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg shadow-emerald-200 flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          新建分类
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-gray-400">加载中...</div>
+        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm flex-1">
+          <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-slate-600">加载中...</p>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm flex-1">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          </div>
+          <p className="text-slate-600 mb-4">暂无分类</p>
+          <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all">
+            创建第一个分类
+          </button>
+        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">图标</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">中文名称</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">英文名称</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">编码</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">排序</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-500">{category.id}</td>
-                  <td className="px-6 py-4 text-sm">{category.icon}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800">{category.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{category.nameEn}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{category.code}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{category.sortOrder}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      category.status === 1 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {category.status === 1 ? '启用' : '禁用'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm space-x-2">
-                    <button onClick={() => handleOpenModal(category)} className="text-primary hover:underline">
-                      编辑
-                    </button>
-                    <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:underline">
-                      删除
-                    </button>
-                  </td>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 flex-1 flex flex-col">
+          <div className="overflow-auto flex-1">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">中文名称</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">英文名称</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">编码</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">排序</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {categories.map((category, index) => (
+                  <tr key={category.id} className={`hover:bg-slate-50/80 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
+                    <td className="px-6 py-4 text-sm text-slate-600">{category.id}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-800">{category.name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{category.nameEn}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{category.code}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{category.sortOrder}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                        category.status === 1 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        {category.status === 1 ? '启用' : '禁用'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleOpenModal(category)} className="px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors font-medium">
+                          编辑
+                        </button>
+                        <button onClick={() => handleDelete(category.id)} className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* 新建/编辑分类弹窗 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-medium mb-4">{editingCategory ? '编辑分类' : '新建分类'}</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-slate-800">{editingCategory ? '编辑分类' : '新建分类'}</h2>
+              <button onClick={() => setShowModal(false)} className="text-slate-600 hover:text-slate-600 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">中文名称</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">中文名称</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">英文名称</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">英文名称</label>
                 <input
                   type="text"
                   value={formData.nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">编码</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">编码</label>
                 <input
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">图标</label>
-                <input
-                  type="text"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
-                  placeholder="如：🏠"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">排序</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">排序</label>
                 <input
                   type="number"
                   value={formData.sortOrder}
                   onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">状态</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">状态</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-primary outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all"
                 >
                   <option value={1}>启用</option>
                   <option value={0}>禁用</option>
                 </select>
               </div>
               <div className="flex gap-3 justify-end mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50">
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all">
                   取消
                 </button>
-                <button type="submit" className="px-4 py-2 btn-primary rounded">
+                <button type="submit" className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg shadow-emerald-200">
                   保存
                 </button>
               </div>
@@ -240,20 +253,20 @@ const AdminCategories = () => {
 
       {/* 确认对话框 */}
       {confirmConfig?.show && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{confirmConfig.title}</h3>
-            <p className="text-gray-500 mb-6">{confirmConfig.message}</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">{confirmConfig.title}</h3>
+            <p className="text-slate-600 mb-6">{confirmConfig.message}</p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmConfig(null)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                className="px-5 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all"
               >
                 取消
               </button>
               <button
                 onClick={confirmConfig.onConfirm}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-lg shadow-red-200"
               >
                 确认删除
               </button>

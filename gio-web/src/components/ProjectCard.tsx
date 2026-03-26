@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedSection from './AnimatedSection';
 import { Project } from '@/types';
+import PLACEHOLDER_IMAGE from '@/constants/placeholder';
 
 interface ProjectCardProps {
   project: Project;
   index: number;
 }
 
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80';
-
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <AnimatedSection key={project.id} delay={index * 100}>
       <Link
@@ -19,12 +21,16 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
       >
         <div className="aspect-[4/3] md:aspect-square overflow-hidden relative">
           <img
-            src={project.coverImageId ? `/api/images/${project.coverImageId}` : DEFAULT_IMAGE}
+            src={project.coverImageId ? `/api/images/${project.coverImageId}/thumbnail` : PLACEHOLDER_IMAGE}
             alt={project.name}
-            loading="lazy"
-            className="w-full h-full object-cover img-zoom-hover"
+            loading={index < 3 ? "eager" : "lazy"}
+            fetchPriority={index < 3 ? "high" : "auto"}
+            decoding="async"
+            className={`w-full h-full object-cover img-zoom-hover ${imgLoaded ? 'img-loaded' : 'opacity-0'}`}
+            onLoad={() => setImgLoaded(true)}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
+              (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+              setImgLoaded(true);
             }}
           />
           {/* 悬停遮罩 */}

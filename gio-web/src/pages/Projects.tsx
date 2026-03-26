@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { getCategories, getProjects } from '@/services/project';
 import { useAppContext } from '@/App';
 import AnimatedSection from '@/components/AnimatedSection';
+import { ProjectCardSkeleton } from '@/components/Skeleton';
+import PLACEHOLDER_IMAGE from '@/constants/placeholder';
 
 interface Category {
   id: number;
@@ -29,7 +32,7 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const { categories: contextCategories, projects: contextProjects, setCategories: setContextCategories, setProjects: setContextProjects } = useAppContext();
+  const { setCategories: setContextCategories, setProjects: setContextProjects } = useAppContext();
 
   // 监听URL参数变化，同步到selectedCategory
   useEffect(() => {
@@ -44,17 +47,8 @@ const Projects = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // 加载数据 - 优先使用 Context 中的数据，避免重复请求
+  // 加载数据 - 始终发起请求获取完整数据
   useEffect(() => {
-    // 如果 Context 中已有数据，直接使用
-    if (contextCategories.length > 0) {
-      setCategories(contextCategories);
-      setProjects(contextProjects);
-      setLoading(false);
-      return;
-    }
-
-    // Context 中没有数据时才请求（备用方案）
     const loadData = async () => {
       try {
         const [categoriesData, projectsData] = await Promise.all([
@@ -93,6 +87,13 @@ const Projects = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <Helmet>
+        <title>案例作品 - 光里光外 GIO</title>
+        <meta name="description" content="查看光里光外GIO智能照明设计案例，涵盖私宅、餐饮、办公、酒店等空间照明设计作品" />
+        <meta name="keywords" content="照明设计案例,餐厅照明,酒店照明,办公照明,会所照明,成都照明设计" />
+        <link rel="canonical" href="http://140.143.87.54/projects" />
+      </Helmet>
+
       {/* 页面头部 */}
       <section className="py-12 md:py-14" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4 text-center">
@@ -144,7 +145,13 @@ const Projects = () => {
       <section className="py-10 md:py-16">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="text-center py-20" style={{ color: '#666666' }}>加载中...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <AnimatedSection key={index} delay={index * 80} immediate>
+                  <ProjectCardSkeleton />
+                </AnimatedSection>
+              ))}
+            </div>
           ) : filteredProjects.length === 0 ? (
             <div className="text-center py-20" style={{ color: '#666666' }}>
               暂无项目数据
@@ -160,12 +167,16 @@ const Projects = () => {
                   >
                     <div className="aspect-[4/3] md:aspect-square overflow-hidden relative">
                       <img
-                        src={project.coverImageId ? `/api/images/${project.coverImageId}` : 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80'}
+                        src={project.coverImageId ? `/api/images/${project.coverImageId}/thumbnail` : PLACEHOLDER_IMAGE}
                         alt={project.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover img-zoom-hover"
+                        loading={index < 3 ? "eager" : "lazy"}
+                        fetchPriority={index < 3 ? "high" : "auto"}
+                        decoding="async"
+                        className="w-full h-full object-cover img-zoom-hover opacity-0 transition-opacity duration-300"
+                        onLoad={(e) => e.currentTarget.classList.add('img-loaded')}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80';
+                          (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                          e.currentTarget.classList.add('img-loaded');
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

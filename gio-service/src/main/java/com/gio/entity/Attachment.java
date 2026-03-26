@@ -55,6 +55,21 @@ public class Attachment {
      */
     private Integer height;
 
+    /**
+     * 缩略图 Base64 数据
+     */
+    private String thumbnailData;
+
+    /**
+     * 缩略图宽度
+     */
+    private Integer thumbnailWidth;
+
+    /**
+     * 缩略图高度
+     */
+    private Integer thumbnailHeight;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }

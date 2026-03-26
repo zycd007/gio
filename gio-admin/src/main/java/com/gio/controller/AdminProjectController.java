@@ -28,16 +28,9 @@ public class AdminProjectController {
     public Result<PageResult<ProjectListItemDTO>> getProjects(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) Integer categoryId) {
-        // 后台可以看到所有项目（包括草稿）
-        var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Project>();
-        if (categoryId != null) {
-            queryWrapper.eq("category_id", categoryId);
-        }
-        queryWrapper.orderByAsc("sort_order").orderByDesc("id");
-
-        // 简化处理，直接使用 service 方法
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId);
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) String keyword) {
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, keyword);
         return Result.success(result);
     }
 

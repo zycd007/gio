@@ -58,11 +58,22 @@ const CategoryCard = ({ category, index, onClick, showEnName = true }: CategoryC
           <h3 className="text-white text-sm font-light tracking-wider transition-all duration-300 group-hover:text-[#d4a853]">
             {category.name}
           </h3>
+          {/* 设计亮点 - 悬停时显示 */}
+          {category.designHighlights && (
+            <p className="text-xs text-[#999999] mt-1 opacity-0 group-hover:opacity-100 transition-all duration-300 line-clamp-2">
+              {category.designHighlights}
+            </p>
+          )}
         </div>
-        {/* 悬停时显示英文 */}
+        {/* 悬停时显示英文和适配场景 */}
         {showEnName && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <span className="text-[#d4a853] text-xs tracking-[0.3em] uppercase">{category.nameEn}</span>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 text-center px-4">
+            <span className="text-[#d4a853] text-xs tracking-[0.3em] uppercase block mb-2">{category.nameEn}</span>
+            {category.suitableScenes && (
+              <span className="text-white text-xs tracking-wide block" style={{ color: '#cccccc' }}>
+                {category.suitableScenes}
+              </span>
+            )}
           </div>
         )}
       </button>

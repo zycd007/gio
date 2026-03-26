@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600&display=swap');
+/* 移除 Google Fonts 依赖，使用系统字体（Google Fonts 国内不可用） */
 
 @tailwind base;
 @tailwind components;
@@ -208,7 +208,13 @@ input, textarea {
 
 /* 图片加载占位 */
 img {
-  background-color: #f3f4f6;
+  background-color: #1a1a1a;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* 图片加载完成淡入 */
+.img-loaded {
+  opacity: 1 !important;
 }
 
 /* 页面过渡动画 - 交错reveal效果 */
@@ -263,6 +269,12 @@ img {
   100% {
     background-position: 200% 0;
   }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
 }
 
 /* 缓动函数 */

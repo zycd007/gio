@@ -4,7 +4,8 @@ export interface Category {
   name: string;
   nameEn: string;
   code: string;
-  icon: string;
+  designHighlights?: string;
+  suitableScenes?: string;
   sortOrder: number;
 }
 
@@ -16,6 +17,7 @@ export interface Project {
   categoryName: string;
   coverImageId?: number;
   viewCount?: number;
+  isFeatured?: number;
 }
 
 export interface ProjectDetail extends Project {
@@ -61,4 +63,14 @@ export interface PhilosophyItem {
   icon: string;
   title: string;
   desc: string;
+}
+
+// 客户评价类型
+export interface Testimonial {
+  id: number;
+  customerName: string;
+  avatar?: string;
+  content: string;
+  projectName?: string;
+  rating: number;
 }

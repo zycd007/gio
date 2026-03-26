@@ -73,6 +73,13 @@ export const getProjectDetail = (id: number): Promise<ProjectDetail> => {
 };
 
 /**
+ * 获取精选项目列表
+ */
+export const getFeaturedProjects = (): Promise<Project[]> => {
+  return request.get('/projects/featured');
+};
+
+/**
  * 获取项目图片
  */
 export const getProjectImages = (projectId: number): Promise<ProjectImage[]> => {

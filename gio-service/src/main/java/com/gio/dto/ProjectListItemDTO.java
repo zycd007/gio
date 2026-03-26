@@ -27,4 +27,9 @@ public class ProjectListItemDTO {
     private Integer viewCount;
 
     private Integer status;
+
+    /**
+     * 是否精选：0-普通 1-精选
+     */
+    private Integer isFeatured;
 }

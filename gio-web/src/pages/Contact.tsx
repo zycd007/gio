@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContactInfo from '@/components/ContactInfo';
 import ContactForm from '@/components/ContactForm';
@@ -11,6 +12,13 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <Helmet>
+        <title>联系我们 - 光里光外 GIO</title>
+        <meta name="description" content="联系光里光外GIO智能照明设计公司，获取免费照明设计方案咨询" />
+        <meta name="keywords" content="成都照明设计咨询,智能照明联系方式,照明设计公司地址" />
+        <link rel="canonical" href="http://140.143.87.54/contact" />
+      </Helmet>
+
       {/* 页面头部 */}
       <section className="py-10 md:py-14" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4 text-center">

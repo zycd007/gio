@@ -33,27 +33,45 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private ImageService imageService;
 
     @Override
-    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId) {
+    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword) {
         if (page == null || page <= 0) page = 1;
         if (size == null || size <= 0) size = 10;
 
         Page<Project> projectPage = new Page<>(page, size);
 
-        // 构建查询条件（后台可以看到所有项目，包括草稿）
+        // 只查询列表需要的字段，减少数据传输
         var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Project>();
+        queryWrapper.select("id", "category_id", "name", "location", "year", "cover_image_id", "view_count", "status", "is_featured", "sort_order");
         if (categoryId != null) {
             queryWrapper.eq("category_id", categoryId);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like("name", keyword.trim());
         }
         queryWrapper.orderByAsc("sort_order").orderByDesc("id");
 
         Page<Project> resultPage = this.page(projectPage, queryWrapper);
 
-        // 转换为 DTO
-        List<ProjectListItemDTO> dtoList = resultPage.getRecords().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        // 批量获取分类信息，避免 N+1 查询
+        List<Project> projects = resultPage.getRecords();
+        if (!projects.isEmpty()) {
+            List<Integer> categoryIds = projects.stream()
+                    .map(Project::getCategoryId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            List<Category> categories = categoryService.listByIds(categoryIds);
+            final java.util.Map<Integer, Category> categoryMap = categories.stream()
+                    .collect(Collectors.toMap(Category::getId, c -> c));
 
-        return PageResult.of(dtoList, resultPage.getTotal(), page, size);
+            // 转换为 DTO，使用已查询的分类数据
+            List<ProjectListItemDTO> dtoList = projects.stream()
+                    .map(p -> convertToDTO(p, categoryMap))
+                    .collect(Collectors.toList());
+
+            return PageResult.of(dtoList, resultPage.getTotal(), page, size);
+        }
+
+        return PageResult.of(new ArrayList<>(), resultPage.getTotal(), page, size);
     }
 
     @Override
@@ -143,7 +161,38 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return this.removeById(id);
     }
 
+    @Override
+    public List<ProjectListItemDTO> getFeaturedProjects() {
+        List<Project> projects = this.lambdaQuery()
+                .eq(Project::getIsFeatured, 1)
+                .eq(Project::getStatus, 1)
+                .select(Project.class, info -> !"description".equals(info.getColumn())) // 不查询 description
+                .orderByAsc(Project::getSortOrder)
+                .list();
+
+        // 批量获取分类信息
+        if (!projects.isEmpty()) {
+            List<Integer> categoryIds = projects.stream()
+                    .map(Project::getCategoryId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            List<Category> categories = categoryService.listByIds(categoryIds);
+            final java.util.Map<Integer, Category> categoryMap = categories.stream()
+                    .collect(Collectors.toMap(Category::getId, c -> c));
+
+            return projects.stream()
+                    .map(p -> convertToDTO(p, categoryMap))
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
+
     private ProjectListItemDTO convertToDTO(Project project) {
+        // 单个查询方式（保留用于其他场景）
+        return convertToDTO(project, null);
+    }
+
+    private ProjectListItemDTO convertToDTO(Project project, java.util.Map<Integer, Category> categoryMap) {
         ProjectListItemDTO dto = new ProjectListItemDTO();
         dto.setId(project.getId());
         dto.setCategoryId(project.getCategoryId());
@@ -152,11 +201,17 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         dto.setYear(project.getYear());
         dto.setViewCount(project.getViewCount());
         dto.setStatus(project.getStatus());
+        dto.setIsFeatured(project.getIsFeatured());
 
         // 获取分类名称
-        Category category = categoryService.getById(project.getCategoryId());
-        if (category != null) {
-            dto.setCategoryName(category.getName());
+        if (categoryMap != null && categoryMap.containsKey(project.getCategoryId())) {
+            dto.setCategoryName(categoryMap.get(project.getCategoryId()).getName());
+        } else {
+            // 备用：直接查询
+            Category category = categoryService.getById(project.getCategoryId());
+            if (category != null) {
+                dto.setCategoryName(category.getName());
+            }
         }
 
         // 获取封面图

@@ -97,7 +97,6 @@ const Layout = () => {
         const contactEl = document.getElementById('contact');
         if (contactEl) {
           const contactTop = contactEl.offsetTop;
-          const contactHeight = contactEl.offsetHeight;
           // 当滚动到联系区域时隐藏按钮
           setIsAtContactSection(scrollPos >= contactTop);
         }
