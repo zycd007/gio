@@ -2,6 +2,7 @@ package com.gio.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.gio.common.Result;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
@@ -48,4 +49,17 @@ public interface ProjectService extends IService<Project> {
      * 获取精选项目列表
      */
     List<ProjectListItemDTO> getFeaturedProjects();
+
+    /**
+     * 设置/取消精品项目
+     * @param id 项目ID
+     * @param isFeatured 1-设为精品 0-取消精品
+     * @return 结果
+     */
+    Result<Void> setProjectFeatured(Integer id, Integer isFeatured);
+
+    /**
+     * 获取当前精品项目数量
+     */
+    long getFeaturedCount();
 }

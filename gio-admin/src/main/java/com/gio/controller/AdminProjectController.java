@@ -97,4 +97,12 @@ public class AdminProjectController {
         }
         return Result.success();
     }
+
+    /**
+     * 设置/取消精品项目
+     */
+    @PutMapping("/{id}/featured")
+    public Result<Void> setProjectFeatured(@PathVariable Integer id, @RequestParam Integer isFeatured) {
+        return projectService.setProjectFeatured(id, isFeatured);
+    }
 }

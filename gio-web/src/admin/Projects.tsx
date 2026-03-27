@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProjects, deleteProject, uploadImages, createProject, updateProject, updateProjectStatus, getCategories, getProjectImages, deleteImage, setAsCover } from '@/services/admin';
+import { getProjects, deleteProject, uploadImages, createProject, updateProject, updateProjectStatus, getCategories, getProjectImages, deleteImage, setAsCover, setProjectFeatured } from '@/services/admin';
 import { toast } from 'sonner';
 
 interface Project {
@@ -10,6 +10,7 @@ interface Project {
   categoryId: number;
   categoryName: string;
   status: number;
+  isFeatured?: number;
 }
 
 interface Category {
@@ -102,6 +103,16 @@ const AdminProjects = () => {
     const newStatus = currentStatus === 1 ? 0 : 1;
     updateProjectStatus(id, newStatus).then(() => {
       loadProjects();
+    });
+  };
+
+  const handleFeaturedChange = (id: number, currentFeatured?: number) => {
+    const newFeatured = (currentFeatured || 0) === 1 ? 0 : 1;
+    setProjectFeatured(id, newFeatured).then(() => {
+      loadProjects();
+      toast.success(newFeatured === 1 ? '已设为精品项目' : '已取消精品项目');
+    }).catch((err: any) => {
+      toast.error(err.message || '操作失败');
     });
   };
 
@@ -288,6 +299,7 @@ const AdminProjects = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">位置</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">年份</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">精品</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
@@ -307,6 +319,13 @@ const AdminProjects = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                        project.isFeatured === 1 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        {project.isFeatured === 1 ? '精品' : '普通'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleOpenModal(project)} className="px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors font-medium">
                           编辑
@@ -316,6 +335,12 @@ const AdminProjects = () => {
                           className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${project.status === 1 ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                         >
                           {project.status === 1 ? '下架' : '发布'}
+                        </button>
+                        <button
+                          onClick={() => handleFeaturedChange(project.id, project.isFeatured)}
+                          className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${project.isFeatured === 1 ? 'text-amber-600 hover:bg-amber-50' : 'text-orange-600 hover:bg-orange-50'}`}
+                        >
+                          {project.isFeatured === 1 ? '取消精品' : '设为精品'}
                         </button>
                         <button onClick={() => handleManageImages(project.id)} className="px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors font-medium">
                           图片管理

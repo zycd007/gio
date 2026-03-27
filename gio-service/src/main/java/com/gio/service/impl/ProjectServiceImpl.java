@@ -2,6 +2,7 @@ package com.gio.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.gio.common.Result;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
@@ -185,6 +186,36 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                     .collect(Collectors.toList());
         }
         return new ArrayList<>();
+    }
+
+    private static final int MAX_FEATURED_COUNT = 6;
+
+    @Override
+    public Result<Void> setProjectFeatured(Integer id, Integer isFeatured) {
+        Project project = this.getById(id);
+        if (project == null) {
+            return Result.error(404, "项目不存在");
+        }
+
+        // 如果是设为精品
+        if (isFeatured == 1) {
+            // 检查当前精品项目数量
+            long currentCount = this.getFeaturedCount();
+            if (currentCount >= MAX_FEATURED_COUNT && project.getIsFeatured() != 1) {
+                return Result.error(400, "最多设置 " + MAX_FEATURED_COUNT + " 个精品项目");
+            }
+        }
+
+        project.setIsFeatured(isFeatured);
+        this.updateById(project);
+        return Result.success();
+    }
+
+    @Override
+    public long getFeaturedCount() {
+        return this.lambdaQuery()
+                .eq(Project::getIsFeatured, 1)
+                .count();
     }
 
     private ProjectListItemDTO convertToDTO(Project project) {

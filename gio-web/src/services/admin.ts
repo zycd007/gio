@@ -171,6 +171,15 @@ export const updateProjectStatus = (id: number, status: number): Promise<void> =
 };
 
 /**
+ * 设置/取消精品项目
+ */
+export const setProjectFeatured = (id: number, isFeatured: number): Promise<void> => {
+  return request.put(`/admin/projects/${id}/featured`, null, {
+    params: { isFeatured }
+  });
+};
+
+/**
  * 上传项目图片
  */
 export const uploadImages = (projectId: number, files: File[]): Promise<ProjectImage[]> => {

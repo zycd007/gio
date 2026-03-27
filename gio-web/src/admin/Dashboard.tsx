@@ -97,14 +97,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-800">仪表盘</h1>
-          <p className="text-slate-600 text-sm mt-1">欢迎回来，这里是系统概览</p>
-        </div>
-      </div>
-
       {/* 统计卡片 - 2x2 网格 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, index) => (
