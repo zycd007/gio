@@ -41,7 +41,6 @@ const ProjectDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
   const [viewerImageIndex, setViewerImageIndex] = useState<number>(0);
   const [isImageLoading, setIsImageLoading] = useState(false);
 
@@ -82,13 +81,11 @@ const ProjectDetail = () => {
   const goToPrev = useCallback(() => {
     if (!project?.images) return;
     setViewerImageIndex((prev) => (prev === 0 ? project.images!.length - 1 : prev - 1));
-    setIsZoomed(false);
   }, [project?.images]);
 
   const goToNext = useCallback(() => {
     if (!project?.images) return;
     setViewerImageIndex((prev) => (prev === project.images!.length - 1 ? 0 : prev + 1));
-    setIsZoomed(false);
   }, [project?.images]);
 
   // 触摸事件处理
@@ -102,7 +99,7 @@ const ProjectDetail = () => {
 
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50;
+    const threshold = 30;
 
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
@@ -182,8 +179,8 @@ const ProjectDetail = () => {
 
         {/* 图片内容 */}
         <div
-          className="max-w-[90vw] max-h-[85vh] relative"
-          onClick={(e) => e.stopPropagation()}
+          className="max-w-[90vw] max-h-[85vh] relative transition-opacity duration-200"
+          style={{ touchAction: 'none' }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -197,11 +194,10 @@ const ProjectDetail = () => {
           <img
             src={getImageUrl(currentImage, true)}
             alt={currentImage.imageName || `图片 ${viewerImageIndex + 1}`}
-            className={`max-w-full max-h-[85vh] object-contain transition-all duration-300 cursor-zoom-in ${
-              isZoomed ? 'scale-150 cursor-zoom-out' : ''
-            } ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
-            style={{ transform: isZoomed ? 'scale(1.5)' : 'scale(1)' }}
-            onClick={() => setIsZoomed(!isZoomed)}
+            className={`max-w-full max-h-[85vh] object-contain transition-opacity duration-200 ${
+              isImageLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            onClick={() => setIsViewerOpen(false)}
             onLoad={() => setIsImageLoading(false)}
             onError={(e) => {
               setIsImageLoading(false);
@@ -231,7 +227,6 @@ const ProjectDetail = () => {
                     e.stopPropagation();
                     setIsImageLoading(true);
                     setViewerImageIndex(idx);
-                    setIsZoomed(false);
                   }}
                 />
               ))}
@@ -239,7 +234,7 @@ const ProjectDetail = () => {
           )}
           {project.images.length > 1 && (
             <span className="text-xs mt-1" style={{ color: '#666666' }}>
-              左右滑动或使用 ← → 键切换，点击图片放大/缩小
+              左右滑动或使用 ← → 键切换，点击图片关闭
             </span>
           )}
         </div>

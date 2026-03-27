@@ -18,7 +18,7 @@ public interface ProjectService extends IService<Project> {
     /**
      * 分页获取项目列表
      */
-    PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword);
+    PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured);
 
     /**
      * 获取项目详情

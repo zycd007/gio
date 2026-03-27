@@ -42,7 +42,7 @@ public class PortalController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer categoryId) {
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, null);
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, null, null);
         return Result.success(result);
     }
 

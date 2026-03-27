@@ -127,9 +127,9 @@ export const deleteCategory = (id: number): Promise<void> => {
 /**
  * 获取项目列表
  */
-export const getProjects = (page: number = 1, size: number = 10, categoryId?: number, keyword?: string): Promise<ProjectListResult> => {
+export const getProjects = (page: number = 1, size: number = 10, categoryId?: number, keyword?: string, isFeatured?: number): Promise<ProjectListResult> => {
   return request.get('/admin/projects', {
-    params: { page, size, categoryId, keyword }
+    params: { page, size, categoryId, keyword, isFeatured }
   });
 };
 

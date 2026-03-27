@@ -29,8 +29,9 @@ public class AdminProjectController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) String keyword) {
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, keyword);
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer isFeatured) {
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, keyword, isFeatured);
         return Result.success(result);
     }
 

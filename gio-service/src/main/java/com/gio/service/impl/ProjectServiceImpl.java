@@ -34,7 +34,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private ImageService imageService;
 
     @Override
-    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword) {
+    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured) {
         if (page == null || page <= 0) page = 1;
         if (size == null || size <= 0) size = 10;
 
@@ -48,6 +48,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             queryWrapper.like("name", keyword.trim());
+        }
+        if (isFeatured != null) {
+            queryWrapper.eq("is_featured", isFeatured);
         }
         queryWrapper.orderByAsc("sort_order").orderByDesc("id");
 
@@ -188,22 +191,11 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return new ArrayList<>();
     }
 
-    private static final int MAX_FEATURED_COUNT = 6;
-
     @Override
     public Result<Void> setProjectFeatured(Integer id, Integer isFeatured) {
         Project project = this.getById(id);
         if (project == null) {
             return Result.error(404, "项目不存在");
-        }
-
-        // 如果是设为精品
-        if (isFeatured == 1) {
-            // 检查当前精品项目数量
-            long currentCount = this.getFeaturedCount();
-            if (currentCount >= MAX_FEATURED_COUNT && project.getIsFeatured() != 1) {
-                return Result.error(400, "最多设置 " + MAX_FEATURED_COUNT + " 个精品项目");
-            }
         }
 
         project.setIsFeatured(isFeatured);

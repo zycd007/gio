@@ -59,6 +59,7 @@ const AdminProjects = () => {
   const [pagination, setPagination] = useState({ page: 1, size: 10, total: 0 });
   // 筛选状态
   const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
+  const [filterFeatured, setFilterFeatured] = useState<number | undefined>(undefined);
   // 搜索关键词
   const [searchKeyword, setSearchKeyword] = useState('');
 
@@ -70,11 +71,11 @@ const AdminProjects = () => {
 
   useEffect(() => {
     loadProjects();
-  }, [pagination.page, pagination.size, filterCategory, searchKeyword]);
+  }, [pagination.page, pagination.size, filterCategory, filterFeatured, searchKeyword]);
 
   const loadProjects = () => {
     setLoading(true);
-    getProjects(pagination.page, pagination.size, filterCategory, searchKeyword || undefined)
+    getProjects(pagination.page, pagination.size, filterCategory, searchKeyword || undefined, filterFeatured)
       .then((data) => {
         setProjects(data.list || []);
         setPagination(prev => ({ ...prev, total: data.total || 0 }));
@@ -266,6 +267,19 @@ const AdminProjects = () => {
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
+          </select>
+
+          <select
+            value={filterFeatured ?? ''}
+            onChange={(e) => {
+              setFilterFeatured(e.target.value === '' ? undefined : Number(e.target.value));
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm min-w-[100px]"
+          >
+            <option value="">全部</option>
+            <option value="1">精品项目</option>
+            <option value="0">普通项目</option>
           </select>
         </div>
       </div>
