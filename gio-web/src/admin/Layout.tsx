@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { getCurrentUser } from '../services/admin';
 
 // 面包屑配置
 const breadcrumbMap: Record<string, string> = {
@@ -12,13 +13,36 @@ const breadcrumbMap: Record<string, string> = {
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+  const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
+    // 验证 token 有效性
+    const validateToken = async () => {
+      setIsValidating(true);
+      try {
+        await getCurrentUser();
+      } catch {
+        localStorage.removeItem('admin_token');
+        navigate('/admin/login', { replace: true });
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
     const token = localStorage.getItem('admin_token');
-    setIsLoggedIn(!!token);
+    if (token) {
+      validateToken();
+      // 定期验证（每5分钟）
+      const interval = setInterval(validateToken, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    } else {
+      setIsValidating(false);
+      if (location.pathname !== '/admin/login') {
+        navigate('/admin/login', { replace: true });
+      }
+    }
 
     // 更新时间
     const updateTime = () => {
@@ -33,20 +57,28 @@ const AdminLayout = () => {
     updateTime();
     const timer = setInterval(updateTime, 60000);
     return () => clearInterval(timer);
-  }, [location]);
+  }, [location.pathname, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     navigate('/admin/login');
   };
 
-  if (!isLoggedIn && location.pathname !== '/admin/login') {
-    navigate('/admin/login');
-    return null;
-  }
-
+  // 登录页单独渲染
   if (location.pathname === '/admin/login') {
     return <Outlet />;
+  }
+
+  // 验证中显示加载状态
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-slate-600">验证中...</span>
+        </div>
+      </div>
+    );
   }
 
   return (

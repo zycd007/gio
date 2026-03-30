@@ -16,6 +16,21 @@ spring:
     resources:
       static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/,file:./uploads/,file:E:\\my_projects\\gio\\uploads\\
 
+  # 邮件配置（与 portal 保持一致）
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 597667676@qq.com
+    password: fymhnpxcresobcah
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+
+# 管理员通知邮箱
+notification:
+  admin-email: 597667676@qq.com
+
 # MyBatis Plus 配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
