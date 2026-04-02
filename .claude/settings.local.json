@@ -11,7 +11,21 @@
       "Bash(CLAUDE_CODE_GIT_BASH_PATH=\"D:\\\\\\\\soft_install\\\\\\\\Git\\\\\\\\usr\\\\\\\\bin\\\\\\\\bash.exe\" claude mcp add playwright -- npx -y @playwright/mcp-server)",
       "Bash(source:*)",
       "Bash(alias cs:*)",
-      "Bash(echo $PATH)"
+      "Bash(alias deploy:*)",
+      "Bash(alias commit:*)",
+      "Bash(echo $PATH)",
+      "Bash(netstat -tlnp)",
+      "Bash(taskkill *)",
+      "Bash(pnpm dev)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(python .claude/skills/deploy/scripts/deploy.py)",
+      "Bash(python .claude/skills/dev/scripts/dev.sh)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git log *)"
     ]
   }
 }

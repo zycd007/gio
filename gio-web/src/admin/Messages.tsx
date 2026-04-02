@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMessages, updateMessageStatus, deleteMessage } from '@/services/admin';
+import { getMessages, updateMessageStatus, deleteMessage, clearAllMessages } from '@/services/admin';
 import { toast } from 'sonner';
 
 interface Message {
@@ -18,6 +18,7 @@ const AdminMessages = () => {
   const [pagination, setPagination] = useState({ page: 1, size: 10, total: 0 });
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{
     show: boolean;
     title: string;
@@ -72,6 +73,15 @@ const AdminMessages = () => {
     });
   };
 
+  // 清空所有留言
+  const handleClearAll = () => {
+    clearAllMessages().then(() => {
+      toast.success('所有留言已清空');
+      loadMessages();
+      setShowClearModal(false);
+    });
+  };
+
   // 格式化日期
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -92,28 +102,36 @@ const AdminMessages = () => {
     { label: '已处理', value: 1 },
   ];
 
-  const totalPages = Math.ceil(pagination.total / pagination.size);
-
   return (
     <div>
       {/* 筛选栏 */}
-      <div className="mb-4 flex gap-2">
-        {filterButtons.map((btn) => (
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex gap-2">
+          {filterButtons.map((btn) => (
+            <button
+              key={btn.label}
+              onClick={() => {
+                setFilterStatus(btn.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                filterStatus === btn.value
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+        {pagination.total > 0 && (
           <button
-            key={btn.label}
-            onClick={() => {
-              setFilterStatus(btn.value);
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              filterStatus === btn.value
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
+            onClick={() => setShowClearModal(true)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-all"
           >
-            {btn.label}
+            清空所有
           </button>
-        ))}
+        )}
       </div>
 
       {/* 列表 */}
@@ -190,25 +208,39 @@ const AdminMessages = () => {
       </div>
 
       {/* 分页 */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-            disabled={pagination.page === 1}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            上一页
-          </button>
-          <span className="px-4 py-2 text-sm text-slate-600">
-            第 {pagination.page} / {totalPages} 页
-          </span>
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-            disabled={pagination.page >= totalPages}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            下一页
-          </button>
+      {pagination.total > 0 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+          <div className="text-sm text-slate-600">
+            共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={pagination.size}
+              onChange={(e) => setPagination(prev => ({ ...prev, size: Number(e.target.value), page: 1 }))}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value={10}>10 条/页</option>
+              <option value={20}>20 条/页</option>
+              <option value={50}>50 条/页</option>
+            </select>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.page === 1}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              上一页
+            </button>
+            <span className="px-3 py-1.5 text-sm text-slate-600 font-medium">
+              {pagination.page} / {Math.ceil(pagination.total / pagination.size)}
+            </span>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              下一页
+            </button>
+          </div>
         </div>
       )}
 
@@ -288,6 +320,31 @@ const AdminMessages = () => {
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 清空所有弹窗 */}
+      {showClearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowClearModal(false)}></div>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">清空所有留言</h2>
+            <p className="text-slate-600 mb-6">确定要清空所有留言吗？此操作不可恢复。</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                确认清空
               </button>
             </div>
           </div>

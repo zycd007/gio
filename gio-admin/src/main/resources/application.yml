@@ -27,9 +27,9 @@ spring:
       mail.smtp.starttls.enable: true
       mail.smtp.starttls.required: true
 
-# 管理员通知邮箱
+# 管理员通知邮箱（多个用逗号分隔）
 notification:
-  admin-email: 597667676@qq.com
+  admin-emails: 523094173@qq.com,597667676@qq.com
 
 # MyBatis Plus 配置
 mybatis-plus:

@@ -271,3 +271,10 @@ export const updateMessageStatus = (id: number, status: number): Promise<void> =
 export const deleteMessage = (id: number): Promise<void> => {
   return request.delete(`/admin/messages/${id}`);
 };
+
+/**
+ * 清空所有留言
+ */
+export const clearAllMessages = (): Promise<void> => {
+  return request.delete('/admin/messages');
+};

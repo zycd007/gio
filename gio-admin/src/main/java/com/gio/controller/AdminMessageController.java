@@ -78,4 +78,13 @@ public class AdminMessageController {
         }
         return Result.success();
     }
+
+    /**
+     * 清空所有留言
+     */
+    @DeleteMapping
+    public Result<Void> clearAllMessages() {
+        messageService.remove(new LambdaQueryWrapper<>());
+        return Result.success();
+    }
 }
