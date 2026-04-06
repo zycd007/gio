@@ -1,6 +1,8 @@
 package com.gio.common.exception;
 
 import com.gio.common.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,6 +19,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     /**
      * 处理业务异常 - 返回具体的业务错误信息
      */
@@ -29,6 +33,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception e) {
+        logger.error("服务器异常: ", e);
         // 生产环境不暴露详细错误信息
         return Result.error(500, "服务器内部错误");
     }
@@ -42,6 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleRuntimeException(RuntimeException e) {
+        logger.error("运行时异常: ", e);
         // 生产环境不暴露详细错误信息
         return Result.error(500, "服务器内部错误");
     }

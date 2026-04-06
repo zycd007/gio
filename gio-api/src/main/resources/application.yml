@@ -19,13 +19,14 @@ spring:
   # 邮件配置
   mail:
     host: smtp.qq.com
-    port: 587
+    port: 465
     username: 597667676@qq.com
-    password: QSUXaeinsy4BIQYhq0BNZm0ETiyFWo7Q
+    password: fymhnpxcresobcah
     properties:
       mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-      mail.smtp.starttls.required: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.ssl.required: true
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
 
 # 管理员通知邮箱
 notification:
