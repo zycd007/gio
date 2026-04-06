@@ -394,6 +394,7 @@ def deploy():
             client,
             f'cd {REMOTE_DIR} && nohup java -Xms512m -Xmx1g -jar '
             f'gio-api-1.0.0.jar --server.port={API_PORT} '
+            f'--spring.datasource.password="@Yuku007@" '
             f'> {REMOTE_DIR}/logs/api.log 2>&1 &'
         )
 

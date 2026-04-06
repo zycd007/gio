@@ -36,7 +36,6 @@ request.interceptors.response.use(
     }
   },
   (error) => {
-    console.error('请求错误:', error);
     return Promise.reject(error);
   }
 );

@@ -1,0 +1,67 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: gio-api
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://8.137.63.159:3306/gio_design?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: "@Yuku007@"
+
+  # 静态文件配置
+  web:
+    resources:
+      static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/,file:./uploads/,file:E:\\my_projects\\gio\\uploads\\
+
+  # 邮件配置
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 597667676@qq.com
+    password: QSUXaeinsy4BIQYhq0BNZm0ETiyFWo7Q
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+
+# 管理员通知邮箱
+notification:
+  admin-emails: 523094173@qq.com,597667676@qq.com
+
+# MyBatis Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.gio.entity
+  global-config:
+    db-config:
+      id-type: auto
+  configuration:
+    map-underscore-to-camel-case: true
+
+# JWT 配置
+jwt:
+  secret: gio-design-secret-key-2026-production-use-this
+  expiration: 86400000  # 24 小时
+  header: Authorization
+  prefix: Bearer
+
+# 文件上传配置
+file:
+  upload-path: ./uploads/
+  image-types: jpg,jpeg,png,gif,webp
+
+# 日志配置
+logging:
+  level:
+    com.gio: debug
+    com.gio.mapper: debug
+
+# AI 配置（通义千问）
+ai:
+  dashscope:
+    api-key: sk-sp-ccff0d12fb58427ca9e3f09545b5c43d
+    base-url: https://coding.dashscope.aliyuncs.com/v1
+    model: qwen3.5-plus

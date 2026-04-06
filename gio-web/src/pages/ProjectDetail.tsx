@@ -47,6 +47,17 @@ const ProjectDetail = () => {
   // 触摸滑动相关
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  // 图片查看器打开时，焦点锁定到关闭按钮
+  useEffect(() => {
+    if (isViewerOpen) {
+      // 延迟聚焦，确保 DOM 已渲染
+      setTimeout(() => {
+        closeBtnRef.current?.focus();
+      }, 50);
+    }
+  }, [isViewerOpen]);
 
   // 处理键盘事件
   useEffect(() => {
@@ -130,6 +141,7 @@ const ProjectDetail = () => {
       >
         {/* 关闭按钮 */}
         <button
+          ref={closeBtnRef}
           className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full transition-all hover:bg-white/10 z-10"
           style={{ color: '#fff' }}
           aria-label="关闭"
@@ -266,8 +278,7 @@ const ProjectDetail = () => {
         const coverIndex = data.images?.findIndex((img) => img.isCover === 1) ?? -1;
         setSelectedImage(coverIndex >= 0 ? coverIndex : 0);
       })
-      .catch((err) => {
-        console.error('Failed to load project:', err);
+      .catch(() => {
         setError('加载项目失败');
       })
       .finally(() => {
@@ -355,7 +366,7 @@ const ProjectDetail = () => {
           <div className="container mx-auto px-4">
             {/* 移动端：垂直网格布局 */}
             <div className="md:hidden">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {project.images.slice(0, 8).map((image, index) => (
                   <button
                     key={image.id}

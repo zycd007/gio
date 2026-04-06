@@ -61,7 +61,7 @@ const Projects = () => {
         setContextCategories(categoriesData);
         setContextProjects(projectsData.list);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        // 加载数据失败
       } finally {
         setLoading(false);
       }
@@ -107,7 +107,7 @@ const Projects = () => {
       </section>
 
       {/* 分类过滤 - 独特设计 */}
-      <section className="sticky top-[60px] left-0 right-0 z-40 py-3 backdrop-blur-md" style={{ backgroundColor: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
+      <section className="relative md:sticky md:top-[60px] left-0 right-0 z-40 py-3 backdrop-blur-md" style={{ backgroundColor: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap gap-2 justify-center">
             <button

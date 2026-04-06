@@ -74,6 +74,8 @@ const AdminProjects = () => {
   // 搜索关键词（带防抖）
   const [searchInput, setSearchInput] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 下拉菜单状态
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
   useEffect(() => {
     getCategories().then((data) => {
@@ -465,31 +467,65 @@ const AdminProjects = () => {
 
                         {/* 更多操作下拉菜单 */}
                         <div className="relative">
-                          <select
-                            onChange={(e) => {
-                              const action = e.target.value;
-                              e.target.value = ''; // 重置选择
-                              if (!action) return;
-
-                              if (action === 'ai') {
-                                handleOpenAiCopywriting(project.id, project.name);
-                              } else if (action === 'status') {
-                                handleStatusChange(project.id, project.status);
-                              } else if (action === 'featured') {
-                                handleFeaturedChange(project.id, project.isFeatured);
-                              } else if (action === 'delete') {
-                                handleDelete(project.id);
-                              }
-                            }}
-                            value=""
-                            className="px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors font-medium text-xs cursor-pointer outline-none border border-slate-200"
+                          <button
+                            onClick={() => setOpenDropdownId(openDropdownId === project.id ? null : project.id)}
+                            className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
+                            aria-haspopup="true"
+                            aria-expanded={openDropdownId === project.id}
                           >
-                            <option value="">更多</option>
-                            <option value="ai">✨ AI 文案</option>
-                            <option value="status">{project.status === 1 ? '下架' : '发布'}</option>
-                            <option value="featured">{project.isFeatured === 1 ? '取消精品' : '设为精品'}</option>
-                            <option value="delete" className="text-red-600">删除</option>
-                          </select>
+                            更多
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          {openDropdownId === project.id && (
+                            <>
+                              {/* 点击外部关闭 */}
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setOpenDropdownId(null)}
+                              />
+                              <div className="absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-20">
+                                <button
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    handleOpenAiCopywriting(project.id, project.name);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                                >
+                                  ✨ AI 文案
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    handleStatusChange(project.id, project.status);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                                >
+                                  {project.status === 1 ? '下架' : '发布'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    handleFeaturedChange(project.id, project.isFeatured);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                                >
+                                  {project.isFeatured === 1 ? '取消精品' : '设为精品'}
+                                </button>
+                                <hr className="my-1 border-slate-200" />
+                                <button
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    handleDelete(project.id);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                >
+                                  删除
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </td>
