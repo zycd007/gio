@@ -17,7 +17,7 @@ interface User {
   avatar?: string;
 }
 
-interface Category {
+export interface Category {
   id: number;
   name: string;
   nameEn: string;
@@ -45,7 +45,7 @@ interface ProjectListResult {
   size: number;
 }
 
-interface ProjectDetail {
+export interface ProjectDetail {
   id: number;
   name: string;
   location: string;
@@ -55,6 +55,7 @@ interface ProjectDetail {
   categoryName: string;
   coverImageId?: number;
   viewCount: number;
+  status: number;
   images: ProjectImage[];
 }
 
@@ -65,7 +66,7 @@ interface DashboardStats {
   totalImages: number;
 }
 
-interface ProjectImage {
+export interface ProjectImage {
   id: number;
   attachmentId: number;
   imageName: string;

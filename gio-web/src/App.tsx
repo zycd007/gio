@@ -12,6 +12,8 @@ import AdminDashboard from './admin/Dashboard';
 import AdminProjects from './admin/Projects';
 import AdminCategories from './admin/Categories';
 import AdminMessages from './admin/Messages';
+import AdminCopywritings from './admin/Copywriting';
+import ProjectDetailPage from './admin/ProjectDetailPage';
 import Projects from './pages/Projects';
 
 // 数据类型定义
@@ -80,8 +82,10 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="login" element={<AdminLogin />} />
             <Route path="projects" element={<AdminProjects />} />
+            <Route path="projects/:id" element={<ProjectDetailPage />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="messages" element={<AdminMessages />} />
+            <Route path="copywritings" element={<AdminCopywritings />} />
           </Route>
         </Routes>
       </AppContext.Provider>

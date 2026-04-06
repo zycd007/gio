@@ -45,3 +45,8 @@ gio-web/vite.config.js
 
 # Claude Code
 .claude/agents/
+
+# Environment variables (sensitive)
+.env
+*.env.local
+gio-api/.env

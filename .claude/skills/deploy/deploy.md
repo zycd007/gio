@@ -1,6 +1,20 @@
+---
+name: deploy
+description: 一键部署 GIO 项目到腾讯云服务器
+user-invocable: true
+---
+
 # deploy
 
-一键部署 GIO 项目到腾讯云服务器。
+一键部署 GIO 项目到腾讯云服务器（单体架构）。
+
+## 架构说明
+
+项目从微服务架构已合并为**单体架构**：
+- 后端：`gio-api` (单 jar 包，包含 C 端和管理后台)
+- 前端：`gio-web`
+- API 端口：8081
+- 前端端口：80
 
 ## 使用方式
 
@@ -45,8 +59,7 @@ python .claude/skills/deploy/scripts/deploy.py
 | 用户名 | ubuntu |
 | 密码 | @yuku007@ |
 | 部署路径 | /home/ubuntu/gio |
-| Portal 端口 | 8081 |
-| Admin 端口 | 8082 |
+| API 端口 | 8081 |
 | 前端端口 | 80 |
 
 ## 部署后访问
@@ -54,8 +67,7 @@ python .claude/skills/deploy/scripts/deploy.py
 | 服务 | 地址 |
 |------|------|
 | 前端页面 | http://140.143.87.54 |
-| Portal API | http://140.143.87.54:8081 |
-| Admin 后台 | http://140.143.87.54:8082/admin/ |
+| API 服务 | http://140.143.87.54:8081 |
 
 ## 配置说明
 
@@ -86,11 +98,8 @@ RETRY_DELAY = 5    # 重试间隔 (秒)
 # 登录服务器
 ssh ubuntu@140.143.87.54
 
-# 查看 Portal 日志
-tail -f ~/gio/logs/portal.log
-
-# 查看 Admin 日志
-tail -f ~/gio/logs/admin.log
+# 查看 API 日志
+tail -f ~/gio/logs/api.log
 
 # 查看前端日志
 tail -f ~/gio/logs/frontend.log
@@ -103,11 +112,10 @@ tail -f ~/gio/logs/frontend.log
 ps aux | grep gio
 
 # 检查端口监听
-netstat -tlnp | grep -E "(8081|8082|80)"
+netstat -tlnp | grep -E "(8081|80)"
 
 # 测试 API
 curl http://140.143.87.54:8081/api/categories
-curl http://140.143.87.54:8082/api/admin/login
 ```
 
 ## 常见问题
@@ -122,14 +130,14 @@ curl http://140.143.87.54:8082/api/admin/login
 **解决方案：**
 ```bash
 # 1. 查看日志
-tail -f ~/gio/logs/admin.log
+tail -f ~/gio/logs/api.log
 
 # 2. 检查端口
-netstat -tlnp | grep 8082
+netstat -tlnp | grep 8081
 
 # 3. 手动启动
 cd ~/gio
-java -jar gio-admin-1.0.0.jar --server.port=8082
+java -jar gio-api-1.0.0.jar --server.port=8081
 ```
 
 ### Q2: 上传速度慢

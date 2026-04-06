@@ -1,3 +1,9 @@
+---
+name: commit
+description: 提交代码到 GitHub
+user-invocable: true
+---
+
 # commit
 
 提交代码到 GitHub。

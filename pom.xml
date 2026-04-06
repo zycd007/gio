@@ -13,9 +13,7 @@
     <description>GIO 设计事务所 - 微服务架构</description>
 
     <modules>
-        <module>gio-service</module>
-        <module>gio-portal</module>
-        <module>gio-admin</module>
+        <module>gio-api</module>
     </modules>
 
     <properties>
@@ -83,12 +81,6 @@
                 <version>5.8.24</version>
             </dependency>
 
-            <!-- 共享服务模块 -->
-            <dependency>
-                <groupId>com.gio</groupId>
-                <artifactId>gio-service</artifactId>
-                <version>${project.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

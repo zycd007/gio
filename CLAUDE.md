@@ -4,49 +4,32 @@
 - **项目名称**: GIO 设计事务所
 - **技术栈**: Spring Boot 3.2.0 + MyBatis Plus 3.5.5 + MySQL
 - **Java 版本**: 17
-- **架构**: 微服务架构
-
-## 微服务架构
+- **架构**: 单体架构（后端合并为 gio-api）
 
 ### 服务列表
 | 服务名 | 端口 | 说明 | 访问范围 |
 |--------|------|------|----------|
-| gio-portal | 8081 | C 端官网服务 | 公开 |
-| gio-admin | 8082 | 后台管理服务 | 需登录 |
-| gio-service | - | 共享服务层 | 内部依赖 |
+| gio-api | 8081 | 后端 API 服务 | 公开 |
 
 ### 访问地址
 - **C 端官网**: http://localhost:8081
-- **后台管理**: http://localhost:8082
+- **后台管理**: http://localhost:8081/admin/
 
 ### 项目结构
 ```
 gio/
 ├── pom.xml                  # 父 POM
-├── gio-service/             # 共享服务模块
+├── gio-api/                 # 后端 API 服务（单体）
 │   ├── src/main/java/com/gio/
 │   │   ├── entity/         # 实体类
 │   │   ├── dto/            # DTO
 │   │   ├── mapper/         # MyBatis Mapper
 │   │   ├── service/        # 服务层
+│   │   ├── controller/     # 控制器
 │   │   ├── common/         # 通用类
 │   │   └── config/         # 配置类
 │   └── pom.xml
-├── gio-portal/              # C 端官网服务
-│   ├── src/main/java/com/gio/
-│   │   ├── controller/     # 控制器
-│   │   └── PortalApplication.java
-│   ├── src/main/resources/
-│   │   └── application.yml
-│   └── pom.xml
-├── gio-admin/               # 后台管理服务
-│   ├── src/main/java/com/gio/
-│   │   ├── controller/     # 控制器
-│   │   └── AdminApplication.java
-│   ├── src/main/resources/
-│   │   └── application.yml
-│   └── pom.xml
-├── gio-web/                # 小程序前端
+├── gio-web/                # 前端
 ├── init_db.py              # 数据库初始化脚本
 └── migrate_images.py       # 图片迁移脚本
 ```
@@ -73,12 +56,8 @@ export PATH="$JAVA_HOME/bin:$PATH"
 cd gio
 mvn clean install -DskipTests
 
-# 启动 C 端服务
-cd gio-portal
-mvn spring-boot:run
-
-# 启动后台管理服务
-cd gio-admin
+# 启动后端服务
+cd gio-api
 mvn spring-boot:run
 ```
 
@@ -122,7 +101,7 @@ curl http://localhost:8081/api/categories
 curl http://localhost:8081/api/projects
 
 # 管理端 - 登录
-curl -X POST http://localhost:8082/api/admin/login \
+curl -X POST http://localhost:8081/api/admin/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 ```
@@ -157,8 +136,7 @@ pnpm build
 
 ```bash
 # 上传后端 jar 包
-scp gio-portal/target/gio-portal-1.0.0.jar ubuntu@140.143.87.54:/tmp/
-scp gio-admin/target/gio-admin-1.0.0.jar ubuntu@140.143.87.54:/tmp/
+scp gio-api/target/gio-api-1.0.0.jar ubuntu@140.143.87.54:/tmp/
 
 # 上传前端构建文件
 scp -r gio-web/dist ubuntu@140.143.87.54:/tmp/
@@ -178,8 +156,7 @@ client.connect('140.143.87.54', username='ubuntu', password='@yuku007@')
 stdin, stdout, stderr = client.exec_command(
     'mkdir -p ~/gio/logs ~/gio/uploads ~/gio/static && ' +
     'rm -rf ~/gio/static/* && ' +
-    'mv /tmp/gio-portal-1.0.0.jar ~/gio/ && ' +
-    'mv /tmp/gio-admin-1.0.0.jar ~/gio/ && ' +
+    'mv /tmp/gio-api-1.0.0.jar ~/gio/ && ' +
     'mv /tmp/dist/* ~/gio/static/')
 
 # 2. 停止旧服务
@@ -188,9 +165,7 @@ stdin, stdout, stderr = client.exec_command(
 
 # 3. 启动后端服务
 stdin, stdout, stderr = client.exec_command(
-    'cd ~/gio && nohup java -jar gio-portal-1.0.0.jar --server.port=8081 > ~/gio/logs/portal.log 2>&1 &')
-stdin, stdout, stderr = client.exec_command(
-    'cd ~/gio && nohup java -jar gio-admin-1.0.0.jar --server.port=8082 > ~/gio/logs/admin.log 2>&1 &')
+    'cd ~/gio && nohup java -jar gio-api-1.0.0.jar --server.port=8081 > ~/gio/logs/api.log 2>&1 &')
 
 # 4. 配置 Nginx 反向代理
 nginx_config = '''server {
@@ -203,11 +178,6 @@ nginx_config = '''server {
     }
     location /api/ {
         proxy_pass http://127.0.0.1:8081/api/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
-    location /admin-api/ {
-        proxy_pass http://127.0.0.1:8082/api/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
     }
@@ -226,27 +196,18 @@ print('部署完成')
 **访问地址：**
 - 前端页面：http://140.143.87.54
 - 后端 API：http://140.143.87.54:8081
-- 管理后台：http://140.143.87.54:8082
 
 **日志查看：**
 ```bash
 ssh ubuntu@140.143.87.54
-tail -f ~/gio/logs/portal.log
-tail -f ~/gio/logs/admin.log
+tail -f ~/gio/logs/api.log
 ```
 
 ### 本地部署（开发测试）
 1. 确保 MySQL 服务运行
 2. 运行 `mvn clean install -DskipTests` 构建所有模块
-3. 分别启动两个服务
+3. 启动 gio-api 服务
 4. 上传目录确保有写权限
-
-### 服务器部署（旧方式 - 不推荐）
-1. 数据库已在阿里云 (8.137.63.159)
-2. 上传 jar 包到服务器
-3. 使用 `nohup java -jar gio-portal.jar &` 后台运行
-4. 使用 `nohup java -jar gio-admin.jar &` 后台运行
-5. 配置 Nginx 反向代理（可选）
 
 ### 数据库迁移
 ```bash
@@ -272,7 +233,7 @@ mysql -h 8.137.63.159 -u root -p gio_design < backup.sql
 ```
 
 ### Spring Boot 启动失败
-- 检查端口是否被占用（8081/8082）
+- 检查端口是否被占用（8081）
 - 检查数据库连接配置
 - 确保 MyBatis Plus 版本与 Spring Boot 兼容
 
@@ -290,7 +251,6 @@ mysql -h 8.137.63.159 -u root -p gio_design < backup.sql
 ## 代码清理规范
 - 每次重构后，删除旧的不再使用的代码文件
 - 清理无用的 import 和依赖
-- 确保删除旧的模块文件夹（如 gio-api）
 - 使用 `git status` 检查是否有残留文件
 
 ## 安全注意事项

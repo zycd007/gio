@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getProjects, deleteProject, uploadImages, createProject, updateProject, updateProjectStatus, getCategories, getProjectImages, deleteImage, setAsCover, setProjectFeatured } from '@/services/admin';
 import { toast } from 'sonner';
+import AiCopywritingModal from './components/AiCopywritingModal';
+import { useNavigate } from 'react-router-dom';
 
 interface Project {
   id: number;
@@ -29,6 +31,7 @@ interface ProjectImage {
 }
 
 const AdminProjects = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,12 +58,21 @@ const AdminProjects = () => {
     onConfirm: () => void;
   } | null>(null);
 
+  // AI 文案生成
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [currentAiProjectId, setCurrentAiProjectId] = useState<number | null>(null);
+  const [currentAiProjectName, setCurrentAiProjectName] = useState<string>('');
+  // AI 生成的文案内容，用于一键应用
+  const [aiGeneratedContent, setAiGeneratedContent] = useState<string>('');
+
   // 分页状态
   const [pagination, setPagination] = useState({ page: 1, size: 10, total: 0 });
   // 筛选状态
   const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
   const [filterFeatured, setFilterFeatured] = useState<number | undefined>(undefined);
-  // 搜索关键词
+  const [filterStatus, setFilterStatus] = useState<number | undefined>(undefined);
+  // 搜索关键词（带防抖）
+  const [searchInput, setSearchInput] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
 
   useEffect(() => {
@@ -69,9 +81,18 @@ const AdminProjects = () => {
     });
   }, []);
 
+  // 搜索防抖：300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchKeyword(searchInput);
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     loadProjects();
-  }, [pagination.page, pagination.size, filterCategory, filterFeatured, searchKeyword]);
+  }, [pagination.page, pagination.size, filterCategory, filterFeatured, filterStatus, searchKeyword]);
 
   const loadProjects = () => {
     setLoading(true);
@@ -84,6 +105,19 @@ const AdminProjects = () => {
         setLoading(false);
       });
   };
+
+  // 清除所有筛选条件
+  const handleClearFilters = () => {
+    setFilterCategory(undefined);
+    setFilterFeatured(undefined);
+    setFilterStatus(undefined);
+    setSearchInput('');
+    setSearchKeyword('');
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // 是否有激活的筛选条件
+  const hasActiveFilters = filterCategory !== undefined || filterFeatured !== undefined || filterStatus !== undefined || searchInput !== '';
 
   const handleDelete = (id: number) => {
     setConfirmConfig({
@@ -117,6 +151,30 @@ const AdminProjects = () => {
     });
   };
 
+  const handleOpenAiCopywriting = (projectId: number, projectName: string) => {
+    setCurrentAiProjectId(projectId);
+    setCurrentAiProjectName(projectName);
+    setAiGeneratedContent('');
+    setShowAiModal(true);
+  };
+
+  const handleViewDetail = (projectId: number) => {
+    navigate(`/admin/projects/${projectId}`);
+  };
+
+  // AI 文案一键应用到项目描述
+  const handleApplyAiContent = (content: string) => {
+    setAiGeneratedContent(content);
+    // 如果有正在编辑的项目，直接填充描述字段
+    if (editingProject) {
+      setFormData(prev => ({ ...prev, description: content }));
+    }
+    // 打开编辑弹窗
+    handleOpenModal(editingProject || undefined);
+    setShowAiModal(false);
+    toast.success('文案已应用到项目描述');
+  };
+
   const handleOpenModal = (project?: Project) => {
     if (project) {
       setEditingProject(project);
@@ -125,10 +183,11 @@ const AdminProjects = () => {
         location: project.location || '',
         year: project.year || '',
         categoryId: project.categoryId || 1,
-        description: '',
+        description: aiGeneratedContent || '', // 优先使用 AI 生成的文案
         sortOrder: 0,
         status: project.status,
       });
+      setAiGeneratedContent(''); // 清空临时内容
     } else {
       setEditingProject(null);
       setFormData({
@@ -238,13 +297,13 @@ const AdminProjects = () => {
         </button>
 
         <div className="flex-1 flex items-center gap-2">
-          {/* 搜索框 */}
+          {/* 搜索框 - 带防抖 */}
           <div className="relative flex-1 max-w-xs">
             <input
               type="text"
-              value={searchKeyword}
+              value={searchInput}
               onChange={(e) => {
-                setSearchKeyword(e.target.value);
+                setSearchInput(e.target.value);
                 setPagination(prev => ({ ...prev, page: 1 }));
               }}
               placeholder="搜索项目名称..."
@@ -255,6 +314,7 @@ const AdminProjects = () => {
             </svg>
           </div>
 
+          {/* 分类筛选 */}
           <select
             value={filterCategory || ''}
             onChange={(e) => {
@@ -269,6 +329,21 @@ const AdminProjects = () => {
             ))}
           </select>
 
+          {/* 状态筛选 */}
+          <select
+            value={filterStatus ?? ''}
+            onChange={(e) => {
+              setFilterStatus(e.target.value === '' ? undefined : Number(e.target.value));
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm min-w-[100px]"
+          >
+            <option value="">全部状态</option>
+            <option value="1">已发布</option>
+            <option value="0">草稿</option>
+          </select>
+
+          {/* 精品筛选 */}
           <select
             value={filterFeatured ?? ''}
             onChange={(e) => {
@@ -281,6 +356,19 @@ const AdminProjects = () => {
             <option value="1">精品项目</option>
             <option value="0">普通项目</option>
           </select>
+
+          {/* 清除筛选按钮 */}
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors text-sm font-medium flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              清除筛选
+            </button>
+          )}
         </div>
       </div>
 
@@ -340,28 +428,69 @@ const AdminProjects = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleOpenModal(project)} className="px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors font-medium">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* 主要操作：查看 */}
+                        <button
+                          onClick={() => handleViewDetail(project.id)}
+                          className="px-3 py-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          查看
+                        </button>
+
+                        {/* 主要操作：编辑 */}
+                        <button
+                          onClick={() => handleOpenModal(project)}
+                          className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
                           编辑
                         </button>
+
+                        {/* 主要操作：图片管理 */}
                         <button
-                          onClick={() => handleStatusChange(project.id, project.status)}
-                          className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${project.status === 1 ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                          onClick={() => handleManageImages(project.id)}
+                          className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
                         >
-                          {project.status === 1 ? '下架' : '发布'}
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          图片
                         </button>
-                        <button
-                          onClick={() => handleFeaturedChange(project.id, project.isFeatured)}
-                          className={`px-3 py-1.5 rounded-lg transition-colors font-medium ${project.isFeatured === 1 ? 'text-amber-600 hover:bg-amber-50' : 'text-orange-600 hover:bg-orange-50'}`}
-                        >
-                          {project.isFeatured === 1 ? '取消精品' : '设为精品'}
-                        </button>
-                        <button onClick={() => handleManageImages(project.id)} className="px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors font-medium">
-                          图片管理
-                        </button>
-                        <button onClick={() => handleDelete(project.id)} className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
-                          删除
-                        </button>
+
+                        {/* 更多操作下拉菜单 */}
+                        <div className="relative">
+                          <select
+                            onChange={(e) => {
+                              const action = e.target.value;
+                              e.target.value = ''; // 重置选择
+                              if (!action) return;
+
+                              if (action === 'ai') {
+                                handleOpenAiCopywriting(project.id, project.name);
+                              } else if (action === 'status') {
+                                handleStatusChange(project.id, project.status);
+                              } else if (action === 'featured') {
+                                handleFeaturedChange(project.id, project.isFeatured);
+                              } else if (action === 'delete') {
+                                handleDelete(project.id);
+                              }
+                            }}
+                            value=""
+                            className="px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors font-medium text-xs cursor-pointer outline-none border border-slate-200"
+                          >
+                            <option value="">更多</option>
+                            <option value="ai">✨ AI 文案</option>
+                            <option value="status">{project.status === 1 ? '下架' : '发布'}</option>
+                            <option value="featured">{project.isFeatured === 1 ? '取消精品' : '设为精品'}</option>
+                            <option value="delete" className="text-red-600">删除</option>
+                          </select>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -386,6 +515,15 @@ const AdminProjects = () => {
                   <option value={20}>20 条/页</option>
                   <option value={50}>50 条/页</option>
                 </select>
+                {/* 首页按钮 */}
+                <button
+                  onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
+                  disabled={pagination.page === 1}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+                >
+                  首页
+                </button>
+                {/* 上一页按钮 */}
                 <button
                   onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                   disabled={pagination.page === 1}
@@ -393,9 +531,27 @@ const AdminProjects = () => {
                 >
                   上一页
                 </button>
-                <span className="px-3 py-1.5 text-sm text-slate-600 font-medium">
-                  {pagination.page} / {Math.ceil(pagination.total / pagination.size)}
-                </span>
+                {/* 页码输入 */}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max={Math.ceil(pagination.total / pagination.size)}
+                    defaultValue={pagination.page}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const page = parseInt((e.target as HTMLInputElement).value);
+                        const maxPage = Math.ceil(pagination.total / pagination.size);
+                        if (page >= 1 && page <= maxPage) {
+                          setPagination(prev => ({ ...prev, page }));
+                        }
+                      }
+                    }}
+                    className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-sm bg-white text-slate-800 focus:border-emerald-400 outline-none"
+                  />
+                  <span className="text-sm text-slate-600">/ {Math.ceil(pagination.total / pagination.size)}</span>
+                </div>
+                {/* 下一页按钮 */}
                 <button
                   onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
@@ -403,19 +559,35 @@ const AdminProjects = () => {
                 >
                   下一页
                 </button>
+                {/* 末页按钮 */}
+                <button
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.ceil(pagination.total / pagination.size) }))}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+                >
+                  末页
+                </button>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* 新建/编辑项目弹窗 */}
+      {/* 新建/编辑项目弹窗 - 支持 ESC 和点击遮罩关闭 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-slate-800">{editingProject ? '编辑项目' : '新建项目'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-600 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -423,11 +595,14 @@ const AdminProjects = () => {
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">分类</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">
+                  分类 <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all"
+                  required
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -437,12 +612,15 @@ const AdminProjects = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">项目名称</label>
+                <label className="block text-sm font-medium text-slate-600 mb-2">
+                  项目名称 <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
+                  placeholder="请输入项目名称"
                   required
                 />
               </div>
@@ -453,15 +631,29 @@ const AdminProjects = () => {
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
+                  placeholder="例如：上海、北京"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-2">年份</label>
                 <input
-                  type="text"
+                  type="number"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
+                  placeholder="例如：2024"
+                  min="1900"
+                  max="2100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">项目描述</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400 resize-none"
+                  placeholder="请输入项目描述，可从 AI 文案生成后一键应用"
+                  rows={4}
                 />
               </div>
               <div className="flex gap-3 justify-end mt-6">
@@ -477,13 +669,21 @@ const AdminProjects = () => {
         </div>
       )}
 
-      {/* 图片管理弹窗 */}
+      {/* 图片管理弹窗 - 支持 ESC 和点击遮罩关闭 */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowImageModal(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowImageModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-slate-800">图片管理</h2>
-              <button onClick={() => setShowImageModal(false)} className="text-slate-600 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowImageModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -557,10 +757,18 @@ const AdminProjects = () => {
           </div>
         </div>
       )}
-      {/* 确认对话框 */}
+      {/* 确认对话框 - 支持 ESC 和点击遮罩关闭 */}
       {confirmConfig?.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmConfig(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setConfirmConfig(null);
+          }}
+        >
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-slate-800 mb-2">{confirmConfig.title}</h3>
             <p className="text-slate-600 mb-6">{confirmConfig.message}</p>
             <div className="flex gap-3 justify-end">
@@ -579,6 +787,17 @@ const AdminProjects = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI 文案生成对话框 */}
+      {currentAiProjectId && (
+        <AiCopywritingModal
+          projectId={currentAiProjectId}
+          projectName={currentAiProjectName}
+          visible={showAiModal}
+          onClose={() => setShowAiModal(false)}
+          onApply={handleApplyAiContent}
+        />
       )}
     </div>
   );

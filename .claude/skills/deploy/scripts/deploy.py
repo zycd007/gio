@@ -43,8 +43,7 @@ MAX_RETRIES = 2
 RETRY_DELAY = 5
 
 # 服务配置
-PORTAL_PORT = 8081
-ADMIN_PORT = 8082
+API_PORT = 8081
 FRONTEND_PORT = 80
 # ==================== 配置区域 ====================
 
@@ -212,15 +211,10 @@ def verify_deployment(client):
     # 等待服务完全启动
     log_info("等待服务启动...")
 
-    # 检查 portal 服务
-    portal_ready = wait_for_service(client, PORTAL_PORT, max_attempts=20)
-    if not portal_ready:
-        log_error(f"Portal 服务 (端口{PORTAL_PORT}) 启动超时")
-
-    # 检查 admin 服务
-    admin_ready = wait_for_service(client, ADMIN_PORT, max_attempts=20)
-    if not admin_ready:
-        log_error(f"Admin 服务 (端口{ADMIN_PORT}) 启动超时")
+    # 检查 API 服务
+    api_ready = wait_for_service(client, API_PORT, max_attempts=20)
+    if not api_ready:
+        log_error(f"API 服务 (端口{API_PORT}) 启动超时")
 
     # 检查前端服务
     frontend_ready = wait_for_service(client, FRONTEND_PORT, max_attempts=10)
@@ -247,33 +241,19 @@ def verify_deployment(client):
     status_str = f"{Colors.GREEN}OK{Colors.RESET}" if frontend_ok else f"{Colors.RED}FAIL{Colors.RESET}"
     print(f"  前端页面：{status_str} (HTTP {frontend_status})")
 
-    # 验证 Portal API
-    portal_status = 0
+    # 验证 API 服务
+    api_status = 0
     for i in range(max_verify_retries):
-        portal_status = check_url(f"{base_url}:{PORTAL_PORT}/api/categories")
-        if portal_status == 200:
+        api_status = check_url(f"{base_url}:{API_PORT}/api/categories")
+        if api_status == 200:
             break
         if i < max_verify_retries - 1:
             time.sleep(2)
-    portal_ok = portal_status == 200
-    status_str = f"{Colors.GREEN}OK{Colors.RESET}" if portal_ok else f"{Colors.RED}FAIL{Colors.RESET}"
-    print(f"  Portal API: {status_str} (HTTP {portal_status})")
+    api_ok = api_status == 200
+    status_str = f"{Colors.GREEN}OK{Colors.RESET}" if api_ok else f"{Colors.RED}FAIL{Colors.RESET}"
+    print(f"  API 服务:   {status_str} (HTTP {api_status})")
 
-    # 验证 Admin API (登录接口 - POST 方法)
-    admin_status = 0
-    for i in range(max_verify_retries):
-        admin_status = check_url(f"{base_url}:{ADMIN_PORT}/api/admin/login")
-        # 200/401/403/405 都表示服务正常运行
-        if admin_status in [200, 401, 403, 405, 500]:
-            break
-        if i < max_verify_retries - 1:
-            time.sleep(2)
-    # 500 也表示服务已启动（可能有内部错误但服务存在）
-    admin_ok = admin_status in [200, 401, 403, 405, 500]
-    status_str = f"{Colors.GREEN}OK{Colors.RESET}" if admin_ok else f"{Colors.RED}FAIL{Colors.RESET}"
-    print(f"  Admin API:  {status_str} (HTTP {admin_status})")
-
-    return frontend_ok and portal_ok and admin_ok
+    return frontend_ok and api_ok
 
 
 def cleanup_temp_files(client):
@@ -302,7 +282,7 @@ def deploy():
     original_dir = os.getcwd()
 
     # 构建后端
-    log_info("构建后端 (gio-portal)...")
+    log_info("构建后端 (gio-api)...")
     os.chdir(LOCAL_PROJECT)
     result = run_cmd('mvn package -DskipTests -q')
     os.chdir(original_dir)
@@ -310,21 +290,8 @@ def deploy():
         log_error("后端构建失败")
         return False
     if not check_file_exists(
-        f"{LOCAL_PROJECT}/gio-portal/target/gio-portal-1.0.0.jar",
-        "Portal JAR"
-    ):
-        return False
-
-    log_info("构建后端 (gio-admin)...")
-    os.chdir(LOCAL_PROJECT)
-    result = run_cmd('mvn package -DskipTests -q')
-    os.chdir(original_dir)
-    if result is None or result.returncode != 0:
-        log_error("后端构建失败")
-        return False
-    if not check_file_exists(
-        f"{LOCAL_PROJECT}/gio-admin/target/gio-admin-1.0.0.jar",
-        "Admin JAR"
+        f"{LOCAL_PROJECT}/gio-api/target/gio-api-1.0.0.jar",
+        "API JAR"
     ):
         return False
 
@@ -354,12 +321,8 @@ def deploy():
         # 复制 JAR 包
         log_info("准备 JAR 文件...")
         shutil.copy(
-            f"{LOCAL_PROJECT}/gio-portal/target/gio-portal-1.0.0.jar",
-            tmpdir / 'gio-portal-1.0.0.jar'
-        )
-        shutil.copy(
-            f"{LOCAL_PROJECT}/gio-admin/target/gio-admin-1.0.0.jar",
-            tmpdir / 'gio-admin-1.0.0.jar'
+            f"{LOCAL_PROJECT}/gio-api/target/gio-api-1.0.0.jar",
+            tmpdir / 'gio-api-1.0.0.jar'
         )
 
         # 打包前端 (使用更快的压缩级别)
@@ -386,12 +349,8 @@ def deploy():
             # 上传 JAR 包
             log_info("上传 JAR 文件...")
             sftp.put(
-                str(tmpdir / 'gio-portal-1.0.0.jar'),
-                f'{REMOTE_DIR}/gio-portal-1.0.0.jar'
-            )
-            sftp.put(
-                str(tmpdir / 'gio-admin-1.0.0.jar'),
-                f'{REMOTE_DIR}/gio-admin-1.0.0.jar'
+                str(tmpdir / 'gio-api-1.0.0.jar'),
+                f'{REMOTE_DIR}/gio-api-1.0.0.jar'
             )
             log_success("JAR 文件上传完成")
 
@@ -430,20 +389,12 @@ def deploy():
         exec_remote(client, f'mv {REMOTE_DIR}/dist {REMOTE_DIR}/static')
 
         # 启动服务
-        log_info("启动 Portal 服务...")
+        log_info("启动 API 服务...")
         exec_remote(
             client,
             f'cd {REMOTE_DIR} && nohup java -Xms512m -Xmx1g -jar '
-            f'gio-portal-1.0.0.jar --server.port={PORTAL_PORT} '
-            f'> {REMOTE_DIR}/logs/portal.log 2>&1 &'
-        )
-
-        log_info("启动 Admin 服务...")
-        exec_remote(
-            client,
-            f'cd {REMOTE_DIR} && nohup java -Xms512m -Xmx1g -jar '
-            f'gio-admin-1.0.0.jar --server.port={ADMIN_PORT} '
-            f'> {REMOTE_DIR}/logs/admin.log 2>&1 &'
+            f'gio-api-1.0.0.jar --server.port={API_PORT} '
+            f'> {REMOTE_DIR}/logs/api.log 2>&1 &'
         )
 
         log_info("启动前端服务...")
@@ -480,12 +431,10 @@ def deploy():
             print(f"\n  {Colors.GREEN}{Colors.BOLD}[{CHECK_MARK}] 部署成功!{Colors.RESET}")
             print(f"  访问地址：")
             print(f"    前端页面：http://{SERVER}")
-            print(f"    Portal API: http://{SERVER}:{PORTAL_PORT}")
-            print(f"    Admin 后台：http://{SERVER}:{ADMIN_PORT}/admin/")
+            print(f"    API 服务:  http://{SERVER}:{API_PORT}")
             print(f"\n  日志查看：")
             print(f"    ssh {USER}@{SERVER}")
-            print(f"    tail -f ~/gio/logs/portal.log")
-            print(f"    tail -f ~/gio/logs/admin.log")
+            print(f"    tail -f ~/gio/logs/api.log")
             return True
         else:
             print(f"\n  {Colors.YELLOW}{Colors.BOLD}[{WARNING_MARK}] 部署完成但验证失败，请检查日志{Colors.RESET}")

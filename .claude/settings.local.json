@@ -25,7 +25,13 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(mvn clean:*)",
+      "Bash(export JAVA_HOME=\"C:/Users/Administrator/.jdks/ms-17.0.17\")",
+      "Bash(pnpm build:*)",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(wmic process:*)",
+      "Bash(D:/soft_install/Git/usr/bin/bash.exe *)"
     ]
   }
 }
