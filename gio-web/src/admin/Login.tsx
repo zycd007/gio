@@ -145,7 +145,7 @@ const AdminLogin = () => {
 
         {/* 底部信息 */}
         <p className="text-center text-slate-600 text-xs mt-6">
-          GIO 设计事务所 © 2024
+          GIO 设计事务所 © 2025
         </p>
       </div>
     </div>

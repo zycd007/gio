@@ -202,7 +202,7 @@ const AdminCopywritings = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {copywritings.map((copywriting, index) => (
-                  <tr key={copywriting.id} className={`hover:bg-slate-50/80 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
+                  <tr key={copywriting.id} className={`hover:bg-emerald-50/50 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
                     <td className="px-6 py-4 text-sm text-slate-600">{copywriting.id}</td>
                     <td className="px-6 py-4 text-sm">
                       <div className="max-w-md">
@@ -281,7 +281,7 @@ const AdminCopywritings = () => {
 
           {/* 分页控件 */}
           {pagination.total > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+            <div className="shrink-0 flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white">
               <div className="text-sm text-slate-600">
                 共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
               </div>

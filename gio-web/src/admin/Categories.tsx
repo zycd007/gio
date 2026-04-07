@@ -144,7 +144,7 @@ const AdminCategories = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {categories.map((category, index) => (
-                  <tr key={category.id} className={`hover:bg-slate-50/80 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
+                  <tr key={category.id} className={`hover:bg-emerald-50/50 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
                     <td className="px-6 py-4 text-sm text-slate-600">{category.id}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-800">{category.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{category.nameEn}</td>

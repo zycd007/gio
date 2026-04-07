@@ -103,9 +103,9 @@ const AdminMessages = () => {
   ];
 
   return (
-    <div>
+    <div className="h-full flex flex-col overflow-hidden">
       {/* 筛选栏 */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between shrink-0">
         <div className="flex gap-2">
           {filterButtons.map((btn) => (
             <button
@@ -142,7 +142,7 @@ const AdminMessages = () => {
       </div>
 
       {/* 列表 */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex-1 flex flex-col">
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto"></div>
@@ -156,7 +156,8 @@ const AdminMessages = () => {
             <p className="text-slate-600 mt-2">暂无留言</p>
           </div>
         ) : (
-          <table className="w-full">
+          <div className="flex-1 overflow-auto">
+            <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">姓名</th>
@@ -169,7 +170,7 @@ const AdminMessages = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {messages.map((message) => (
-                <tr key={message.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={message.id} className="hover:bg-emerald-50/50 transition-colors">
                   <td className="px-6 py-4 text-slate-800">{message.name || '-'}</td>
                   <td className="px-6 py-4 text-slate-600">{message.phone || '-'}</td>
                   <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
@@ -210,13 +211,14 @@ const AdminMessages = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </div>
 
       {/* 分页 */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white rounded-b-2xl">
           <div className="text-sm text-slate-600">
             共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
           </div>

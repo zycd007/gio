@@ -96,7 +96,7 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-auto p-6 space-y-6">
       {/* 统计卡片 - 2x2 网格 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, index) => (
