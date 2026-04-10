@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getProjects, deleteProject, uploadImages, createProject, updateProject, updateProjectStatus, getCategories, getProjectImages, deleteImage, setAsCover, setProjectFeatured } from '@/services/admin';
-import { toast } from 'sonner';
-import AiCopywritingModal from './components/AiCopywritingModal';
+import { getProjects, getCategories, batchUpdateProjectStatus, batchSetProjectFeatured, batchDeleteProjects } from '@/services/admin';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Project {
   id: number;
@@ -13,6 +12,7 @@ interface Project {
   categoryName: string;
   status: number;
   isFeatured?: number;
+  coverImageId?: number;
 }
 
 interface Category {
@@ -20,62 +20,112 @@ interface Category {
   name: string;
 }
 
-interface ProjectImage {
-  id: number;
-  attachmentId: number;
-  imageName: string;
-  width: number;
-  height: number;
-  fileSize: number;
-  isCover: number;
-}
+// 简洁的项目卡片 - 只展示信息，点击进入详情
+const ProjectCard = ({
+  project,
+  onClick,
+  selectable,
+  selected,
+  onSelect
+}: {
+  project: Project;
+  onClick: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
+}) => {
+  const isPublished = project.status === 1;
+  const isFeatured = project.isFeatured === 1;
+
+  return (
+    <div
+      onClick={selectable ? onSelect : onClick}
+      className={`bg-white rounded-xl overflow-hidden border shadow-sm hover:shadow-md transition-all cursor-pointer group ${
+        selected ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-emerald-300'
+      }`}
+    >
+      {/* 封面 */}
+      <div className="relative h-36 bg-slate-100">
+        {project.coverImageId ? (
+          <img
+            src={`/api/images/${project.coverImageId}/thumbnail`}
+            alt={project.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-slate-400">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
+        {/* 状态标签 */}
+        <div className="absolute top-2 left-2 flex gap-1.5">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${isPublished ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-white'}`}>
+            {isPublished ? '已发布' : '草稿'}
+          </span>
+          {isFeatured && (
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+              精品
+            </span>
+          )}
+        </div>
+        {/* 选择模式下显示复选框 */}
+        {selectable && (
+          <div className="absolute top-2 right-2">
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+              selected
+                ? 'bg-emerald-500 border-emerald-500'
+                : 'bg-white border-slate-300 hover:border-emerald-400'
+            }`}>
+              {selected && (
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 信息 */}
+      <div className="p-3">
+        <h3 className="text-sm font-semibold text-slate-800 truncate">{project.name}</h3>
+        <p className="text-xs text-slate-500 mt-1 truncate">
+          {project.categoryName}
+          {project.location && ` · ${project.location}`}
+          {project.year && ` · ${project.year}`}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const AdminProjects = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    year: '',
-    categoryId: 1,
-    description: '',
-    sortOrder: 0,
-    status: 0,
-  });
-  const [uploading, setUploading] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
-  const [projectImages, setProjectImages] = useState<ProjectImage[]>([]);
-  const [loadingImages, setLoadingImages] = useState(false);
-  const [confirmConfig, setConfirmConfig] = useState<{
+
+  // 分页状态
+  const [pagination, setPagination] = useState({ page: 1, size: 20, total: 0 });
+
+  // 搜索筛选
+  const [searchInput, setSearchInput] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState<number | undefined>(undefined);
+  const [filterFeatured, setFilterFeatured] = useState<number | undefined>(undefined);
+
+  // 批量操作
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
     title: string;
     message: string;
     onConfirm: () => void;
   } | null>(null);
-
-  // AI 文案生成
-  const [showAiModal, setShowAiModal] = useState(false);
-  const [currentAiProjectId, setCurrentAiProjectId] = useState<number | null>(null);
-  const [currentAiProjectName, setCurrentAiProjectName] = useState<string>('');
-  // AI 生成的文案内容，用于一键应用
-  const [aiGeneratedContent, setAiGeneratedContent] = useState<string>('');
-
-  // 分页状态
-  const [pagination, setPagination] = useState({ page: 1, size: 10, total: 0 });
-  // 筛选状态
-  const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
-  const [filterFeatured, setFilterFeatured] = useState<number | undefined>(undefined);
-  const [filterStatus, setFilterStatus] = useState<number | undefined>(undefined);
-  // 搜索关键词（带防抖）
-  const [searchInput, setSearchInput] = useState('');
-  const [searchKeyword, setSearchKeyword] = useState('');
-  // 下拉菜单状态
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
   useEffect(() => {
     getCategories().then((data) => {
@@ -83,32 +133,34 @@ const AdminProjects = () => {
     });
   }, []);
 
-  // 搜索防抖：300ms
+  // 搜索防抖
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchKeyword(searchInput);
-      setPagination(prev => ({ ...prev, page: 1 }));
+      setPagination(prev => ({ ...prev, page: 1 })); // 搜索时重置页码
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
   useEffect(() => {
     loadProjects();
-  }, [pagination.page, pagination.size, filterCategory, filterFeatured, filterStatus, searchKeyword]);
+  }, [filterCategory, filterFeatured, filterStatus, searchKeyword, pagination.page, pagination.size]);
 
-  const loadProjects = () => {
+  const loadProjects = (clearSelection = true) => {
     setLoading(true);
-    getProjects(pagination.page, pagination.size, filterCategory, searchKeyword || undefined, filterFeatured)
+    getProjects(pagination.page, pagination.size, filterCategory, searchKeyword || undefined, filterFeatured, filterStatus)
       .then((data) => {
         setProjects(data.list || []);
         setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        if (clearSelection) {
+          setSelectedIds(new Set());
+        }
       })
       .finally(() => {
         setLoading(false);
       });
   };
 
-  // 清除所有筛选条件
   const handleClearFilters = () => {
     setFilterCategory(undefined);
     setFilterFeatured(undefined);
@@ -118,722 +170,435 @@ const AdminProjects = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  // 是否有激活的筛选条件
   const hasActiveFilters = filterCategory !== undefined || filterFeatured !== undefined || filterStatus !== undefined || searchInput !== '';
 
-  const handleDelete = (id: number) => {
-    setConfirmConfig({
+  // 新建项目
+  const handleCreateProject = () => {
+    navigate('/admin/projects/new');
+  };
+
+  // 批量操作
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (id: number) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(projects.map(p => p.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBatchStatus = (status: number) => {
+    const ids = Array.from(selectedIds);
+    const action = status === 1 ? '上架' : '下架';
+    setConfirmModal({
       show: true,
-      title: '确认删除',
-      message: '确定要删除这个项目吗？删除项目将同时删除所有相关图片。',
+      title: `批量${action}`,
+      message: `确定要将 ${ids.length} 个项目${action}吗？`,
       onConfirm: () => {
-        deleteProject(id).then(() => {
-          loadProjects();
-          toast.success('项目已删除');
+        batchUpdateProjectStatus(ids, status).then(() => {
+          toast.success(`已批量${action} ${ids.length} 个项目`);
+          loadProjects(false);
         });
-        setConfirmConfig(null);
+        setConfirmModal(null);
       }
     });
   };
 
-  const handleStatusChange = (id: number, currentStatus: number) => {
-    const newStatus = currentStatus === 1 ? 0 : 1;
-    updateProjectStatus(id, newStatus).then(() => {
-      loadProjects();
-    });
-  };
-
-  const handleFeaturedChange = (id: number, currentFeatured?: number) => {
-    const newFeatured = (currentFeatured || 0) === 1 ? 0 : 1;
-    setProjectFeatured(id, newFeatured).then(() => {
-      loadProjects();
-      toast.success(newFeatured === 1 ? '已设为精品项目' : '已取消精品项目');
-    }).catch((err: any) => {
-      toast.error(err.message || '操作失败');
-    });
-  };
-
-  const handleOpenAiCopywriting = (projectId: number, projectName: string) => {
-    setCurrentAiProjectId(projectId);
-    setCurrentAiProjectName(projectName);
-    setAiGeneratedContent('');
-    setShowAiModal(true);
-  };
-
-  const handleViewDetail = (projectId: number) => {
-    navigate(`/admin/projects/${projectId}`);
-  };
-
-  // AI 文案一键应用到项目描述
-  const handleApplyAiContent = (content: string) => {
-    setAiGeneratedContent(content);
-    // 如果有正在编辑的项目，直接填充描述字段
-    if (editingProject) {
-      setFormData(prev => ({ ...prev, description: content }));
-    }
-    // 打开编辑弹窗
-    handleOpenModal(editingProject || undefined);
-    setShowAiModal(false);
-    toast.success('文案已应用到项目描述');
-  };
-
-  const handleOpenModal = (project?: Project) => {
-    if (project) {
-      setEditingProject(project);
-      setFormData({
-        name: project.name,
-        location: project.location || '',
-        year: project.year || '',
-        categoryId: project.categoryId || 1,
-        description: aiGeneratedContent || '', // 优先使用 AI 生成的文案
-        sortOrder: 0,
-        status: project.status,
-      });
-      setAiGeneratedContent(''); // 清空临时内容
-    } else {
-      setEditingProject(null);
-      setFormData({
-        name: '',
-        location: '',
-        year: '',
-        categoryId: categories.length > 0 ? categories[0].id : 1,
-        description: '',
-        sortOrder: 0,
-        status: 0,
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingProject) {
-      updateProject(editingProject.id, formData).then(() => {
-        setShowModal(false);
-        loadProjects();
-      });
-    } else {
-      createProject(formData).then(() => {
-        setShowModal(false);
-        loadProjects();
-      });
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: number) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    try {
-      await uploadImages(projectId, Array.from(files));
-      toast.success('图片上传成功');
-      if (currentProjectId === projectId) {
-        loadProjectImages(projectId);
-      }
-    } catch (err: any) {
-      toast.error('上传失败：' + err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleManageImages = (projectId: number) => {
-    setCurrentProjectId(projectId);
-    setShowImageModal(true);
-    loadProjectImages(projectId);
-  };
-
-  const loadProjectImages = (projectId: number) => {
-    setLoadingImages(true);
-    getProjectImages(projectId)
-      .then((images) => {
-        setProjectImages(images || []);
-      })
-      .finally(() => {
-        setLoadingImages(false);
-      });
-  };
-
-  const handleDeleteImage = async (imageId: number) => {
-    setConfirmConfig({
+  const handleBatchFeatured = (isFeatured: number) => {
+    const ids = Array.from(selectedIds);
+    const action = isFeatured === 1 ? '设为精品' : '取消精品';
+    setConfirmModal({
       show: true,
-      title: '确认删除',
-      message: '确定要删除这张图片吗？',
-      onConfirm: async () => {
-        try {
-          await deleteImage(imageId);
-          toast.success('图片已删除');
-          if (currentProjectId) {
-            loadProjectImages(currentProjectId);
-          }
-        } catch (err: any) {
-          toast.error('删除失败：' + err.message);
-        }
-        setConfirmConfig(null);
+      title: `批量${action}`,
+      message: `确定要将 ${ids.length} 个项目${action}吗？`,
+      onConfirm: () => {
+        batchSetProjectFeatured(ids, isFeatured).then(() => {
+          toast.success(`已批量${action} ${ids.length} 个项目`);
+          loadProjects(false);
+        });
+        setConfirmModal(null);
       }
     });
   };
 
-  const handleSetCover = async (imageId: number) => {
-    try {
-      await setAsCover(imageId);
-      toast.success('封面设置成功');
-      if (currentProjectId) {
-        loadProjectImages(currentProjectId);
+  const handleBatchDelete = () => {
+    const ids = Array.from(selectedIds);
+    setConfirmModal({
+      show: true,
+      title: '批量删除',
+      message: `确定要删除 ${ids.length} 个项目吗？此操作不可恢复。`,
+      onConfirm: () => {
+        batchDeleteProjects(ids).then(() => {
+          toast.success(`已删除 ${ids.length} 个项目`);
+          loadProjects(false);
+        });
+        setConfirmModal(null);
       }
-    } catch (err: any) {
-      toast.error('设置封面失败：' + err.message);
-    }
+    });
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* 顶部操作栏 */}
-      <div className="bg-white p-4 border-b border-slate-100 flex items-center gap-3 shrink-0">
-        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg shadow-emerald-200 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          新建项目
-        </button>
-
-        <div className="flex-1 flex items-center gap-2">
-          {/* 搜索框 - 带防抖 */}
-          <div className="relative flex-1 max-w-xs">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value);
-                setPagination(prev => ({ ...prev, page: 1 }));
-              }}
-              placeholder="搜索项目名称..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm placeholder:text-slate-400"
-            />
-            <svg className="w-5 h-5 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-
-          {/* 分类筛选 */}
-          <select
-            value={filterCategory || ''}
-            onChange={(e) => {
-              setFilterCategory(e.target.value ? Number(e.target.value) : undefined);
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm min-w-[120px]"
-          >
-            <option value="">全部分类</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-
-          {/* 状态筛选 */}
-          <select
-            value={filterStatus ?? ''}
-            onChange={(e) => {
-              setFilterStatus(e.target.value === '' ? undefined : Number(e.target.value));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm min-w-[100px]"
-          >
-            <option value="">全部状态</option>
-            <option value="1">已发布</option>
-            <option value="0">草稿</option>
-          </select>
-
-          {/* 精品筛选 */}
-          <select
-            value={filterFeatured ?? ''}
-            onChange={(e) => {
-              setFilterFeatured(e.target.value === '' ? undefined : Number(e.target.value));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 outline-none transition-all text-sm min-w-[100px]"
-          >
-            <option value="">全部</option>
-            <option value="1">精品项目</option>
-            <option value="0">普通项目</option>
-          </select>
-
-          {/* 清除筛选按钮 */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors text-sm font-medium flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              清除筛选
-            </button>
+      {/* 顶部工具栏 */}
+      <div className="bg-white border-b border-slate-100 shrink-0 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-semibold text-slate-800">项目管理</h2>
+          <span className="text-sm text-slate-500">共 {pagination.total} 个项目</span>
+          {selectMode && selectedIds.size > 0 && (
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-sm font-medium">
+              已选 {selectedIds.size} 个
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {selectMode ? (
+            <>
+              <button
+                onClick={toggleSelectMode}
+                className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm"
+              >
+                取消选择
+              </button>
+              <button
+                onClick={handleCreateProject}
+                className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                新建
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={toggleSelectMode}
+                className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                批量操作
+              </button>
+              <button
+                onClick={handleCreateProject}
+                className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                新建
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {loading ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm flex-1">
-          <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-slate-600">加载中...</p>
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm flex-1">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          </div>
-          <p className="text-slate-600 mb-4">暂无项目</p>
-          <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all">
-            创建第一个项目
+      {/* 批量操作工具栏 */}
+      {selectMode && (
+        <div className="bg-emerald-50 border-b border-emerald-100 shrink-0 px-6 py-3 flex items-center gap-3">
+          <button
+            onClick={selectAll}
+            className="px-3 py-1.5 text-sm text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors"
+          >
+            全选
           </button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 flex-1 flex flex-col">
-          <div className="overflow-auto flex-1">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">项目名称</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">分类</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">位置</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">年份</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">精品</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {projects.map((project, index) => (
-                  <tr key={project.id} className={`hover:bg-slate-50/80 transition-colors ${index % 2 === 1 ? 'bg-slate-50/30' : ''}`}>
-                    <td className="px-6 py-4 text-sm text-slate-600">{project.id}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-800">{project.name}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{project.categoryName}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{project.location}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{project.year}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                        project.status === 1 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
-                        {project.status === 1 ? '已发布' : '草稿'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                        project.isFeatured === 1 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
-                        {project.isFeatured === 1 ? '精品' : '普通'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* 主要操作：查看 */}
-                        <button
-                          onClick={() => handleViewDetail(project.id)}
-                          className="px-3 py-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          查看
-                        </button>
-
-                        {/* 主要操作：编辑 */}
-                        <button
-                          onClick={() => handleOpenModal(project)}
-                          className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          编辑
-                        </button>
-
-                        {/* 主要操作：图片管理 */}
-                        <button
-                          onClick={() => handleManageImages(project.id)}
-                          className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          图片
-                        </button>
-
-                        {/* 更多操作下拉菜单 */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenDropdownId(openDropdownId === project.id ? null : project.id)}
-                            className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors font-medium text-xs flex items-center gap-1"
-                            aria-haspopup="true"
-                            aria-expanded={openDropdownId === project.id}
-                          >
-                            更多
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                          {openDropdownId === project.id && (
-                            <>
-                              {/* 点击外部关闭 */}
-                              <div
-                                className="fixed inset-0 z-10"
-                                onClick={() => setOpenDropdownId(null)}
-                              />
-                              <div className="absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-20">
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    handleOpenAiCopywriting(project.id, project.name);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                                >
-                                  ✨ AI 文案
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    handleStatusChange(project.id, project.status);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                                >
-                                  {project.status === 1 ? '下架' : '发布'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    handleFeaturedChange(project.id, project.isFeatured);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                                >
-                                  {project.isFeatured === 1 ? '取消精品' : '设为精品'}
-                                </button>
-                                <hr className="my-1 border-slate-200" />
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    handleDelete(project.id);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                >
-                                  删除
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* 分页控件 */}
-          {pagination.total > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
-              <div className="text-sm text-slate-600">
-                共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={pagination.size}
-                  onChange={(e) => setPagination(prev => ({ ...prev, size: Number(e.target.value), page: 1 }))}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
-                >
-                  <option value={10}>10 条/页</option>
-                  <option value={20}>20 条/页</option>
-                  <option value={50}>50 条/页</option>
-                </select>
-                {/* 首页按钮 */}
-                <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
-                  disabled={pagination.page === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-                >
-                  首页
-                </button>
-                {/* 上一页按钮 */}
-                <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                  disabled={pagination.page === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-                >
-                  上一页
-                </button>
-                {/* 页码输入 */}
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max={Math.ceil(pagination.total / pagination.size)}
-                    defaultValue={pagination.page}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const page = parseInt((e.target as HTMLInputElement).value);
-                        const maxPage = Math.ceil(pagination.total / pagination.size);
-                        if (page >= 1 && page <= maxPage) {
-                          setPagination(prev => ({ ...prev, page }));
-                        }
-                      }
-                    }}
-                    className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-sm bg-white text-slate-800 focus:border-emerald-400 outline-none"
-                  />
-                  <span className="text-sm text-slate-600">/ {Math.ceil(pagination.total / pagination.size)}</span>
-                </div>
-                {/* 下一页按钮 */}
-                <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-                >
-                  下一页
-                </button>
-                {/* 末页按钮 */}
-                <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: Math.ceil(pagination.total / pagination.size) }))}
-                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-                >
-                  末页
-                </button>
-              </div>
-            </div>
+          <button
+            onClick={clearSelection}
+            className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            清空
+          </button>
+          <div className="h-4 w-px bg-slate-300 mx-1"></div>
+          {selectedIds.size > 0 && (
+            <>
+              <button
+                onClick={() => handleBatchStatus(1)}
+                className="px-3 py-1.5 text-sm text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+               上架
+              </button>
+              <button
+                onClick={() => handleBatchStatus(0)}
+                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                下架
+              </button>
+              <button
+                onClick={() => handleBatchFeatured(1)}
+                className="px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                设为精品
+              </button>
+              <button
+                onClick={() => handleBatchFeatured(0)}
+                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                取消精品
+              </button>
+              <div className="h-4 w-px bg-slate-300 mx-1"></div>
+              <button
+                onClick={handleBatchDelete}
+                className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                删除
+              </button>
+            </>
           )}
         </div>
       )}
 
-      {/* 新建/编辑项目弹窗 - 支持 ESC 和点击遮罩关闭 */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setShowModal(false);
-          }}
-        >
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-800">{editingProject ? '编辑项目' : '新建项目'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">
-                  分类 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all"
-                  required
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">
-                  项目名称 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
-                  placeholder="请输入项目名称"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">位置</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
-                  placeholder="例如：上海、北京"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">年份</label>
-                <input
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400"
-                  placeholder="例如：2024"
-                  min="1900"
-                  max="2100"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2">项目描述</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 outline-none transition-all placeholder:text-slate-400 resize-none"
-                  placeholder="请输入项目描述，可从 AI 文案生成后一键应用"
-                  rows={4}
-                />
-              </div>
-              <div className="flex gap-3 justify-end mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all">
-                  取消
-                </button>
-                <button type="submit" className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg shadow-emerald-200">
-                  保存
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* 筛选工具 */}
+      <div className="bg-white border-b border-slate-100 shrink-0 px-6 py-2.5 flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 max-w-xs min-w-[200px]">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && setSearchKeyword(searchInput)}
+            placeholder="搜索项目..."
+            className="w-full pl-9 pr-9 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all"
+          />
+          <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <button
+            onClick={() => setSearchKeyword(searchInput)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-600 transition-colors"
+            title="搜索"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
         </div>
-      )}
 
-      {/* 图片管理弹窗 - 支持 ESC 和点击遮罩关闭 */}
-      {showImageModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowImageModal(false);
+        <select
+          value={filterCategory || ''}
+          onChange={(e) => {
+            setFilterCategory(e.target.value ? Number(e.target.value) : undefined);
+            setPagination(prev => ({ ...prev, page: 1 }));
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setShowImageModal(false);
-          }}
+          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
         >
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-slate-800">图片管理</h2>
-              <button onClick={() => setShowImageModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+          <option value="">全部分类</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+        {filterCategory && (
+          <button
+            onClick={() => {
+              setFilterCategory(undefined);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            className="px-2 py-1.5 text-slate-500 hover:bg-slate-100 rounded transition-colors text-sm flex items-center gap-1"
+            title="清除分类筛选"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
 
-            <div className="mb-4 flex items-center gap-2">
-              <label className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg shadow-emerald-200 cursor-pointer flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                上传图片
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files && currentProjectId) {
-                      handleImageUpload(e, currentProjectId);
-                    }
-                  }}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
-              <span className="text-sm text-slate-600">{uploading ? '上传中...' : ''}</span>
-            </div>
+        <select
+          value={filterStatus ?? ''}
+          onChange={(e) => {
+            setFilterStatus(e.target.value === '' ? undefined : Number(e.target.value));
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
+        >
+          <option value="">全部状态</option>
+          <option value="1">已发布</option>
+          <option value="0">草稿</option>
+        </select>
 
-            {loadingImages ? (
-              <div className="text-center py-10 text-slate-600">加载中...</div>
-            ) : projectImages.length === 0 ? (
-              <div className="text-center py-10 text-slate-600">暂无图片</div>
-            ) : (
-              <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-4 gap-4">
-                  {projectImages.map((img) => (
-                    <div key={img.id} className="relative border border-slate-200 rounded-xl p-3">
-                      <img
-                        src={`/api/images/${img.id}?t=${Date.now()}`}
-                        alt={img.imageName}
-                        className="w-full h-32 object-cover rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23ddd" width="100" height="100"/><text fill="%23999" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">加载失败</text></svg>';
-                        }}
-                      />
-                      {img.isCover === 1 && (
-                        <span className="absolute top-3 left-3 bg-emerald-500 text-white text-xs px-2 py-1 rounded-lg font-medium">封面</span>
-                      )}
-                      <div className="mt-3 flex gap-2 text-sm">
-                        {img.isCover !== 1 && (
-                          <button
-                            onClick={() => handleSetCover(img.id)}
-                            className="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors font-medium"
-                          >
-                            设为封面
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteImage(img.id)}
-                          className="text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors font-medium"
-                        >
-                          删除
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+        <select
+          value={filterFeatured ?? ''}
+          onChange={(e) => {
+            setFilterFeatured(e.target.value === '' ? undefined : Number(e.target.value));
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
+        >
+          <option value="">全部</option>
+          <option value="1">精品</option>
+          <option value="0">普通</option>
+        </select>
+
+        {hasActiveFilters && (
+          <button
+            onClick={handleClearFilters}
+            className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm flex items-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            清除
+          </button>
+        )}
+      </div>
+
+      {/* 卡片网格 */}
+      <div className="flex-1 overflow-auto p-4">
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="h-36 bg-slate-100 animate-pulse"></div>
+                <div className="p-3 space-y-2">
+                  <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4"></div>
+                  <div className="h-3 bg-slate-100 rounded animate-pulse w-1/2"></div>
                 </div>
               </div>
-            )}
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <p className="text-slate-500 mb-3">暂无项目</p>
+              <button onClick={handleCreateProject} className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg">
+                创建第一个项目
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onClick={() => navigate(`/admin/projects/${project.id}`)}
+                selectable={selectMode}
+                selected={selectedIds.has(project.id)}
+                onSelect={() => toggleSelect(project.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 分页控件 */}
+      {pagination.total > 0 && (
+        <div className="shrink-0 bg-white border-t border-slate-100 px-6 py-3 flex items-center justify-between">
+          <div className="text-sm text-slate-600">
+            共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={pagination.size}
+              onChange={(e) => setPagination(prev => ({ ...prev, size: Number(e.target.value), page: 1 }))}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
+            >
+              <option value={10}>10 条/页</option>
+              <option value={20}>20 条/页</option>
+              <option value={50}>50 条/页</option>
+            </select>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
+              disabled={pagination.page === 1}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+            >
+              首页
+            </button>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.page === 1}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+            >
+              上一页
+            </button>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="1"
+                max={Math.ceil(pagination.total / pagination.size)}
+                value={pagination.page}
+                onChange={(e) => {
+                  const page = parseInt(e.target.value);
+                  const maxPage = Math.ceil(pagination.total / pagination.size);
+                  if (page >= 1 && page <= maxPage) {
+                    setPagination(prev => ({ ...prev, page }));
+                  }
+                }}
+                className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-sm bg-white text-slate-800 focus:border-emerald-400 outline-none"
+              />
+              <span className="text-sm text-slate-600">/ {Math.ceil(pagination.total / pagination.size)}</span>
+            </div>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+            >
+              下一页
+            </button>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.ceil(pagination.total / pagination.size) }))}
+              disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
+            >
+              末页
+            </button>
           </div>
         </div>
       )}
-      {/* 确认对话框 - 支持 ESC 和点击遮罩关闭 */}
-      {confirmConfig?.show && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setConfirmConfig(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setConfirmConfig(null);
-          }}
-        >
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">{confirmConfig.title}</h3>
-            <p className="text-slate-600 mb-6">{confirmConfig.message}</p>
-            <div className="flex gap-3 justify-end">
+
+      {/* 确认弹窗 */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmModal(null)}></div>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">{confirmModal.title}</h2>
+            <p className="text-slate-600 mb-6">{confirmModal.message}</p>
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => setConfirmConfig(null)}
-                className="px-5 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all"
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
               >
                 取消
               </button>
               <button
-                onClick={confirmConfig.onConfirm}
-                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-rose-600 transition-all duration-200 shadow-lg shadow-red-200"
+                onClick={confirmModal.onConfirm}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  confirmModal.title.includes('删除')
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                }`}
               >
-                确认删除
+                确认
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* AI 文案生成对话框 */}
-      {currentAiProjectId && (
-        <AiCopywritingModal
-          projectId={currentAiProjectId}
-          projectName={currentAiProjectName}
-          visible={showAiModal}
-          onClose={() => setShowAiModal(false)}
-          onApply={handleApplyAiContent}
-        />
       )}
     </div>
   );

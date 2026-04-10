@@ -56,6 +56,7 @@ export interface ProjectDetail {
   coverImageId?: number;
   viewCount: number;
   status: number;
+  isFeatured?: number;
   images: ProjectImage[];
 }
 
@@ -128,9 +129,9 @@ export const deleteCategory = (id: number): Promise<void> => {
 /**
  * 获取项目列表
  */
-export const getProjects = (page: number = 1, size: number = 10, categoryId?: number, keyword?: string, isFeatured?: number): Promise<ProjectListResult> => {
+export const getProjects = (page: number = 1, size: number = 10, categoryId?: number, keyword?: string, isFeatured?: number, status?: number): Promise<ProjectListResult> => {
   return request.get('/admin/projects', {
-    params: { page, size, categoryId, keyword, isFeatured }
+    params: { page, size, categoryId, keyword, isFeatured, status }
   });
 };
 
@@ -215,6 +216,13 @@ export const setAsCover = (imageId: number): Promise<void> => {
 };
 
 /**
+ * 批量更新图片排序
+ */
+export const updateImageSortOrder = (projectId: number, sortList: { imageId: number; sortOrder: number }[]): Promise<void> => {
+  return request.put(`/admin/projects/${projectId}/images/sort`, sortList);
+};
+
+/**
  * 获取仪表盘统计数据
  */
 export const getDashboardStats = (): Promise<DashboardStats> => {
@@ -278,4 +286,27 @@ export const deleteMessage = (id: number): Promise<void> => {
  */
 export const clearAllMessages = (): Promise<void> => {
   return request.delete('/admin/messages');
+};
+
+// ========== 批量操作 ==========
+
+/**
+ * 批量更新项目状态
+ */
+export const batchUpdateProjectStatus = (ids: number[], status: number): Promise<void> => {
+  return request.put('/admin/projects/batch/status', { ids, value: status });
+};
+
+/**
+ * 批量设置/取消精品
+ */
+export const batchSetProjectFeatured = (ids: number[], isFeatured: number): Promise<void> => {
+  return request.put('/admin/projects/batch/featured', { ids, value: isFeatured });
+};
+
+/**
+ * 批量删除项目
+ */
+export const batchDeleteProjects = (ids: number[]): Promise<void> => {
+  return request.delete('/admin/projects/batch', { data: ids });
 };

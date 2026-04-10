@@ -37,16 +37,16 @@ public class Project {
     @TableField("sort_order")
     private Integer sortOrder;
 
-    private Integer status;
+    private Boolean status;
 
     @TableField("view_count")
     private Integer viewCount;
 
     /**
-     * 是否精选：0-普通 1-精选
+     * 是否精选：false-普通 true-精选
      */
     @TableField("is_featured")
-    private Integer isFeatured;
+    private Boolean isFeatured;
 
     /**
      * 是否有 AI 推文：0-否 1-是

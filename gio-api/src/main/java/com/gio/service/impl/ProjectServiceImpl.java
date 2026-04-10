@@ -34,7 +34,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private ImageService imageService;
 
     @Override
-    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured) {
+    public PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured, Integer status) {
         if (page == null || page <= 0) page = 1;
         if (size == null || size <= 0) size = 10;
 
@@ -51,6 +51,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         if (isFeatured != null) {
             queryWrapper.eq("is_featured", isFeatured);
+        }
+        if (status != null) {
+            queryWrapper.eq("status", status);
         }
         queryWrapper.orderByAsc("sort_order").orderByDesc("id");
 
@@ -192,15 +195,15 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     }
 
     @Override
-    public Result<Void> setProjectFeatured(Integer id, Integer isFeatured) {
+    public boolean setProjectFeatured(Integer id, Integer isFeatured) {
         Project project = this.getById(id);
         if (project == null) {
-            return Result.error(404, "项目不存在");
+            return false;
         }
 
-        project.setIsFeatured(isFeatured);
+        project.setIsFeatured(isFeatured != 0);
         this.updateById(project);
-        return Result.success();
+        return true;
     }
 
     @Override
@@ -208,6 +211,38 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return this.lambdaQuery()
                 .eq(Project::getIsFeatured, 1)
                 .count();
+    }
+
+    @Override
+    @Transactional
+    public void batchUpdateStatus(List<Integer> ids, Integer status) {
+        if (ids == null || ids.isEmpty()) return;
+        this.lambdaUpdate()
+                .in(Project::getId, ids)
+                .set(Project::getStatus, status)
+                .update();
+    }
+
+    @Override
+    @Transactional
+    public void batchSetFeatured(List<Integer> ids, Integer isFeatured) {
+        if (ids == null || ids.isEmpty()) return;
+        this.lambdaUpdate()
+                .in(Project::getId, ids)
+                .set(Project::getIsFeatured, isFeatured)
+                .update();
+    }
+
+    @Override
+    @Transactional
+    public void batchDelete(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        // 先批量删除所有项目的图片
+        for (Integer id : ids) {
+            imageService.deleteImagesByProject(id);
+        }
+        // 再批量删除项目
+        this.removeByIds(ids);
     }
 
     private ProjectListItemDTO convertToDTO(Project project) {

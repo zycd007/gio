@@ -46,10 +46,11 @@ const AdminCategories = () => {
   };
 
   const handleDelete = (id: number) => {
+    const category = categories.find(c => c.id === id);
     setConfirmConfig({
       show: true,
       title: '确认删除',
-      message: '确定要删除这个分类吗？',
+      message: `确定要删除分类"${category?.name}"吗？删除后，该分类下的项目将变为未分类状态。`,
       onConfirm: () => {
         deleteCategory(id).then(() => {
           loadCategories();
@@ -130,7 +131,7 @@ const AdminCategories = () => {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 flex-1 flex flex-col">
           <div className="overflow-auto flex-1">
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>

@@ -2,7 +2,6 @@ package com.gio.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.gio.common.Result;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
@@ -18,7 +17,7 @@ public interface ProjectService extends IService<Project> {
     /**
      * 分页获取项目列表
      */
-    PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured);
+PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Integer categoryId, String keyword, Integer isFeatured, Integer status);
 
     /**
      * 获取项目详情
@@ -54,12 +53,27 @@ public interface ProjectService extends IService<Project> {
      * 设置/取消精品项目
      * @param id 项目ID
      * @param isFeatured 1-设为精品 0-取消精品
-     * @return 结果
+     * @return 是否成功
      */
-    Result<Void> setProjectFeatured(Integer id, Integer isFeatured);
+    boolean setProjectFeatured(Integer id, Integer isFeatured);
 
     /**
      * 获取当前精品项目数量
      */
     long getFeaturedCount();
+
+    /**
+     * 批量更新项目状态
+     */
+    void batchUpdateStatus(List<Integer> ids, Integer status);
+
+    /**
+     * 批量设置/取消精品
+     */
+    void batchSetFeatured(List<Integer> ids, Integer isFeatured);
+
+    /**
+     * 批量删除项目
+     */
+    void batchDelete(List<Integer> ids);
 }

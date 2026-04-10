@@ -6,6 +6,7 @@ import java.util.Base64;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.gio.common.exception.BusinessException;
+import com.gio.dto.ImageSortDTO;
 import com.gio.entity.Attachment;
 import com.gio.entity.ProjectImage;
 import com.gio.mapper.AttachmentMapper;
@@ -370,6 +371,8 @@ public class ImageServiceImpl implements ImageService {
 
     /**
      * 生成缩略图
+     * 临时文件清理机制：使用 try-finally 确保临时文件在使用后被删除，
+     * 避免文件系统积累无用文件。临时文件在 finally 块中通过 Files.deleteIfExists() 清理。
      */
     private byte[] generateThumbnail(byte[] imageData) throws IOException {
         // 将 byte 数组转为临时文件
@@ -385,6 +388,7 @@ public class ImageServiceImpl implements ImageService {
                     .toOutputStream(baos);
             return baos.toByteArray();
         } finally {
+            // 临时文件清理：确保使用完毕后立即删除
             Files.deleteIfExists(tempFile);
         }
     }
@@ -401,5 +405,19 @@ public class ImageServiceImpl implements ImageService {
         }
         int newHeight = (int) ((double) originalHeight * targetWidth / originalWidth);
         return new int[]{targetWidth, newHeight};
+    }
+
+    @Override
+    public void updateImageSortOrder(List<ImageSortDTO> sortList) {
+        if (sortList == null || sortList.isEmpty()) {
+            return;
+        }
+        for (ImageSortDTO dto : sortList) {
+            ProjectImage image = projectImageMapper.selectById(dto.getImageId());
+            if (image != null) {
+                image.setSortOrder(dto.getSortOrder());
+                projectImageMapper.updateById(image);
+            }
+        }
     }
 }

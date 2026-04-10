@@ -42,7 +42,11 @@ public class PortalController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer categoryId) {
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, null, null);
+        // Add max limit check
+        if (size > 100) {
+            size = 100;
+        }
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, null, null, 1);
         return Result.success(result);
     }
 

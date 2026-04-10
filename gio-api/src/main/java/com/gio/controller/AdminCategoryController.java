@@ -2,7 +2,9 @@ package com.gio.controller;
 
 import com.gio.common.Result;
 import com.gio.entity.Category;
+import com.gio.entity.Project;
 import com.gio.service.CategoryService;
+import com.gio.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,9 @@ public class AdminCategoryController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private ProjectService projectService;
 
     /**
      * 获取所有分类
@@ -64,6 +69,11 @@ public class AdminCategoryController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> deleteCategory(@PathVariable Integer id) {
+        // 检查是否有项目关联该分类
+        List<Project> associatedProjects = projectService.list(null, null, id, null, null, null);
+        if (associatedProjects != null && !associatedProjects.isEmpty()) {
+            return Result.error(400, "该分类下有 " + associatedProjects.size() + " 个项目，无法删除");
+        }
         categoryService.removeById(id);
         return Result.success();
     }

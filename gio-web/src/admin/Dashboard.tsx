@@ -25,16 +25,17 @@ const AdminDashboard = () => {
   useEffect(() => {
     Promise.all([
       getDashboardStats(),
-      getMessages(1, 1, 0) // 获取未处理留言
+      getMessages(1, 1, 0), // 获取未处理留言 (status=0)
+      getMessages(1, 1) // 获取所有留言
     ])
-      .then(([dashboardData, messagesData]) => {
+      .then(([dashboardData, pendingData, allData]) => {
         setStats({
           totalProjects: dashboardData.totalProjects || 0,
           publishedProjects: dashboardData.publishedProjects || 0,
           totalCategories: dashboardData.totalCategories || 0,
           totalImages: dashboardData.totalImages || 0,
-          totalMessages: messagesData.total || 0,
-          pendingMessages: messagesData.total || 0,
+          totalMessages: allData.total || 0,
+          pendingMessages: pendingData.total || 0,
         });
       })
       .finally(() => {
@@ -102,12 +103,21 @@ const AdminDashboard = () => {
         {statCards.map((card, index) => (
           <div
             key={index}
-            className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-100 group"
+            className={`bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group relative ${
+              card.alert ? 'border-2 border-amber-400 ring-4 ring-amber-100' : 'border border-slate-100'
+            }`}
           >
+            {/* 警示脉冲动画 */}
+            {card.alert && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"></span>
+            )}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-slate-600 text-sm font-medium">{card.title}</p>
-                <p className="text-3xl font-bold text-slate-800 mt-2">
+                <p className="text-slate-600 text-sm font-medium">
+                  {card.title}
+                  {card.alert && <span className="ml-2 text-amber-600 font-semibold">!</span>}
+                </p>
+                <p className={`text-3xl font-bold mt-2 ${card.alert ? 'text-amber-600' : 'text-slate-800'}`}>
                   {loading ? '...' : card.value}
                 </p>
               </div>
@@ -116,7 +126,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             {/* 底部装饰条 */}
-            <div className={`h-1 mt-4 rounded-full bg-gradient-to-r ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+            <div className={`h-1 mt-4 rounded-full bg-gradient-to-r ${card.color} ${card.alert ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}></div>
           </div>
         ))}
       </div>

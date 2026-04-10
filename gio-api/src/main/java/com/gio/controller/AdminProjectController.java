@@ -1,6 +1,7 @@
 package com.gio.controller;
 
 import com.gio.common.Result;
+import com.gio.dto.BatchOperationDTO;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
@@ -31,8 +32,9 @@ public class AdminProjectController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer isFeatured) {
-        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, keyword, isFeatured);
+            @RequestParam(required = false) Integer isFeatured,
+            @RequestParam(required = false) Integer status) {
+        PageResult<ProjectListItemDTO> result = projectService.getProjectList(page, size, categoryId, keyword, isFeatured, status);
         return Result.success(result);
     }
 
@@ -106,5 +108,32 @@ public class AdminProjectController {
     @PutMapping("/{id}/featured")
     public Result<Void> setProjectFeatured(@PathVariable Integer id, @RequestParam Integer isFeatured) {
         return projectService.setProjectFeatured(id, isFeatured);
+    }
+
+    /**
+     * 批量更新项目状态
+     */
+    @PutMapping("/batch/status")
+    public Result<Void> batchUpdateStatus(@Valid @RequestBody BatchOperationDTO dto) {
+        projectService.batchUpdateStatus(dto.getIds(), dto.getValue());
+        return Result.success();
+    }
+
+    /**
+     * 批量设置/取消精品
+     */
+    @PutMapping("/batch/featured")
+    public Result<Void> batchSetFeatured(@Valid @RequestBody BatchOperationDTO dto) {
+        projectService.batchSetFeatured(dto.getIds(), dto.getValue());
+        return Result.success();
+    }
+
+    /**
+     * 批量删除项目
+     */
+    @DeleteMapping("/batch")
+    public Result<Void> batchDelete(@RequestBody List<Integer> ids) {
+        projectService.batchDelete(ids);
+        return Result.success();
     }
 }

@@ -32,13 +32,22 @@ const AdminCopywritings = () => {
     onConfirm: () => void;
   } | null>(null);
 
+  // 防抖搜索
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchKeyword);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchKeyword]);
+
   useEffect(() => {
     loadCopywritings();
-  }, [pagination.page, pagination.size, filterSourceType, filterStatus, searchKeyword]);
+  }, [pagination.page, pagination.size, filterSourceType, filterStatus, debouncedSearch]);
 
   const loadCopywritings = () => {
     setLoading(true);
-    getCopywritings(pagination.page, pagination.size, undefined, filterStatus, filterSourceType, searchKeyword || undefined)
+    getCopywritings(pagination.page, pagination.size, undefined, filterStatus, filterSourceType, debouncedSearch || undefined)
       .then((data) => {
         setCopywritings(data.list || []);
         setPagination(prev => ({ ...prev, total: data.total || 0 }));
@@ -187,7 +196,7 @@ const AdminCopywritings = () => {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 flex-1 flex flex-col">
           <div className="overflow-auto flex-1">
-            <table className="w-full">
+            <table className="w-full min-w-[900px]">
               <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
@@ -314,7 +323,14 @@ const AdminCopywritings = () => {
                     type="number"
                     min="1"
                     max={Math.ceil(pagination.total / pagination.size)}
-                    defaultValue={pagination.page}
+                    value={pagination.page}
+                    onChange={(e) => {
+                      const page = parseInt(e.target.value);
+                      const maxPage = Math.ceil(pagination.total / pagination.size);
+                      if (page >= 1 && page <= maxPage) {
+                        setPagination(prev => ({ ...prev, page }));
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const page = parseInt((e.target as HTMLInputElement).value);

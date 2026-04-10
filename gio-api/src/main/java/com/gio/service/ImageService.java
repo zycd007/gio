@@ -1,5 +1,6 @@
 package com.gio.service;
 
+import com.gio.dto.ImageSortDTO;
 import com.gio.entity.ProjectImage;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -69,4 +70,9 @@ public interface ImageService {
      * 删除项目的所有图片
      */
     void deleteImagesByProject(Integer projectId);
+
+    /**
+     * 批量更新图片排序
+     */
+    void updateImageSortOrder(List<ImageSortDTO> sortList);
 }

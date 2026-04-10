@@ -1,6 +1,7 @@
 package com.gio.controller;
 
 import com.gio.common.Result;
+import com.gio.dto.ImageSortDTO;
 import com.gio.entity.ProjectImage;
 import com.gio.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,17 @@ public class AdminImageController {
     @PutMapping("/images/{imageId}/cover")
     public Result<Void> setAsCover(@PathVariable Integer imageId) {
         imageService.setAsCover(imageId);
+        return Result.success();
+    }
+
+    /**
+     * 批量更新图片排序
+     */
+    @PutMapping("/projects/{projectId}/images/sort")
+    public Result<Void> updateImageSortOrder(
+            @PathVariable Integer projectId,
+            @RequestBody List<ImageSortDTO> sortList) {
+        imageService.updateImageSortOrder(sortList);
         return Result.success();
     }
 
