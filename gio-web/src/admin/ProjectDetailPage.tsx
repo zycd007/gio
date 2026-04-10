@@ -4,6 +4,8 @@ import {
   getProjectDetail,
   updateProject,
   uploadImages,
+  uploadTempImages,
+  associateImagesToProject,
   deleteImage,
   setAsCover,
   getCategories,
@@ -13,14 +15,14 @@ import {
   setProjectFeatured,
   createProject,
   ProjectDetail,
+  ProjectImage,
 } from '@/services/admin';
-import { getProjectCopywritings, Copywriting } from '@/services/copywriting';
 import { toast } from 'sonner';
-import CopywritingModal from './components/CopywritingModal';
-import CopywritingDetailModal from './components/CopywritingDetailModal';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import ImageViewer from './components/ImageViewer';
+import { compressImages } from '@/utils/imageCompress';
 
 interface Category {
   id: number;
@@ -28,16 +30,27 @@ interface Category {
 }
 
 // 可拖拽的图片项组件
-interface SortableImageItemProps {
-  id: number;
-  img: { id: number; attachmentId: number; imageName: string; isCover: number };
-  editMode: boolean;
-  onSetCover: (id: number) => void;
-  onDelete: (id: number) => void;
-}
-
-const SortableImageItem = ({ id, img, editMode, onSetCover, onDelete }: SortableImageItemProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+const SortableImageItem = ({
+  image,
+  onClick,
+  onSetCover,
+  onDelete,
+  isEditMode,
+}: {
+  image: ProjectImage;
+  onClick: () => void;
+  onSetCover: () => void;
+  onDelete: () => void;
+  isEditMode: boolean;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: image.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -50,48 +63,55 @@ const SortableImageItem = ({ id, img, editMode, onSetCover, onDelete }: Sortable
     <div
       ref={setNodeRef}
       style={style}
-      className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group"
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className={`relative aspect-square rounded-xl overflow-hidden ${isEditMode ? 'cursor-move' : 'cursor-pointer'} group border-2 border-transparent hover:border-emerald-400 transition-all ${isDragging ? 'border-emerald-500 shadow-lg' : ''}`}
     >
       <img
-        src={`/api/images/${img.id}?t=${Date.now()}`}
-        alt={img.imageName}
-        className="w-full h-full object-cover"
+        src={`/api/images/${image.id}?t=${Date.now()}`}
+        alt={image.imageName}
+        className="w-full h-full object-cover pointer-events-none"
       />
-      {img.isCover === 1 && (
-        <span className="absolute top-1 left-1 bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+      {image.isCover === 1 && (
+        <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium shadow-sm">
           封面
         </span>
       )}
-      {editMode && (
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-          {/* 拖拽手柄 */}
-          <div
-            {...attributes}
-            {...listeners}
-            className="p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors cursor-grab active:cursor-grabbing"
-            title="拖拽排序"
-          >
-            <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-            </svg>
-          </div>
-          {img.isCover !== 1 && (
-            <button
-              onClick={() => onSetCover(img.id)}
-              className="p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors"
-              title="设为封面"
-            >
-              <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </button>
-          )}
+      {/* 拖拽手柄提示 */}
+      {isEditMode && (
+        <div className="absolute top-2 right-2 bg-black/50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4h4v2h-4V4zm0 14h4v2h-4v-2zM4 10h2v4H4v-4zm14 0h2v4h-2v-4zM6.59 6.59L8 8l-1.41 1.41L5.17 8 6.59 6.59zm10.82 10.82L18.83 16l1.41 1.41L18.83 18.83l-1.42-1.42zM6.59 17.41L8 16l-1.41-1.41L5.17 16l1.42 1.41zm10.82-10.82L18.83 8l-1.41-1.41L18.83 5.17l1.42 1.42z"/>
+          </svg>
+        </div>
+      )}
+      {/* 悬浮层显示操作提示 */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+        <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+        </svg>
+      </div>
+      {/* 编辑模式下的操作按钮 */}
+      {isEditMode && (
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
-            onClick={() => onDelete(img.id)}
+            onClick={onSetCover}
+            className="p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors"
+            title="设为封面"
+          >
+            <svg className="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          <button
+            onClick={onDelete}
             className="p-1.5 bg-red-500/90 rounded-full hover:bg-red-500 transition-colors"
             title="删除"
           >
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -101,16 +121,27 @@ const SortableImageItem = ({ id, img, editMode, onSetCover, onDelete }: Sortable
   );
 };
 
+interface Category {
+  id: number;
+  name: string;
+}
+
+// 页面模式
+type PageMode = 'viewMode' | 'editMode' | 'createMode';
+
+
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNewProject = id === 'new';
   const projectId = isNewProject ? 0 : (id ? parseInt(id) : 0);
 
+  // 页面模式
+  const [pageMode, setPageMode] = useState<PageMode>(isNewProject ? 'createMode' : 'viewMode');
+
   // 页面状态
   const [loading, setLoading] = useState(!isNewProject);
   const [saving, setSaving] = useState(false);
-  const [editMode, setEditMode] = useState(isNewProject);
 
   // 项目数据
   const [project, setProject] = useState<ProjectDetail | null>(null);
@@ -123,19 +154,22 @@ const ProjectDetailPage = () => {
     year: '',
     categoryId: 1,
     description: '',
-    status: 0,
+    status: 0,  // 默认为草稿状态（未发布）
+    isFeatured: 0,
   });
+
+  // 新建项目时暂存的临时图片 ID 列表
+  const [pendingTempImageIds, setPendingTempImageIds] = useState<number[]>([]);
+  // 新建项目时暂存的图片文件（用于预览）
+  const [pendingImageFiles, setPendingImageFiles] = useState<{ id: number; file: File }[]>([]);
 
   // 图片相关
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // AI 推文相关
-  const [showCopywritingModal, setShowCopywritingModal] = useState(false);
-  const [copywritings, setCopywritings] = useState<Copywriting[]>([]);
-  const [loadingCopywritings, setLoadingCopywritings] = useState(false);
-  const [viewingCopywriting, setViewingCopywriting] = useState<Copywriting | null>(null);
-  const [showCopywritingDetailModal, setShowCopywritingDetailModal] = useState(false);
+  // 图片查看器状态
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerIndex, setImageViewerIndex] = useState(0);
 
   // 确认对话框
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -157,13 +191,6 @@ const ProjectDetailPage = () => {
     }
   }, [projectId, isNewProject]);
 
-  // 加载推文列表
-  useEffect(() => {
-    if (project?.id) {
-      loadCopywritings();
-    }
-  }, [project?.id]);
-
   const loadProject = async () => {
     setLoading(true);
     try {
@@ -175,7 +202,8 @@ const ProjectDetailPage = () => {
         year: data.year || '',
         categoryId: data.categoryId || 1,
         description: data.description || '',
-        status: data.status || 0,
+        status: data.status ?? 1,
+        isFeatured: data.isFeatured ?? 0,
       });
     } catch (err: any) {
       toast.error('加载项目失败：' + err.message);
@@ -197,24 +225,11 @@ const ProjectDetailPage = () => {
     }
   };
 
-  const loadCopywritings = async () => {
-    if (!project?.id) return;
-    setLoadingCopywritings(true);
-    try {
-      const data = await getProjectCopywritings(project.id);
-      setCopywritings(data || []);
-    } catch (err: any) {
-      toast.error('加载推文失败：' + err.message);
-    } finally {
-      setLoadingCopywritings(false);
-    }
-  };
-
   // 进入编辑模式
   const handleEnterEditMode = () => {
     if (!project) return;
     loadCategories();
-    setEditMode(true);
+    setPageMode('editMode');
   };
 
   // 退出编辑模式
@@ -227,10 +242,11 @@ const ProjectDetailPage = () => {
         year: project.year || '',
         categoryId: project.categoryId || 1,
         description: project.description || '',
-        status: project.status || 0,
+        status: project.status ?? 1,
+        isFeatured: project.isFeatured ?? 0,
       });
     }
-    setEditMode(false);
+    setPageMode('viewMode');
   };
 
   // 保存项目
@@ -250,14 +266,24 @@ const ProjectDetailPage = () => {
       if (isNewProject) {
         // 新建项目
         const newProject = await createProject(formData);
+
+        // 如果有暂存的临时图片，关联到新项目
+        if (pendingTempImageIds.length > 0) {
+          try {
+            await associateImagesToProject(newProject.id, pendingTempImageIds);
+          } catch (err: any) {
+            toast.error('图片关联失败：' + err.message);
+          }
+        }
+
+        // 返回项目列表页面
         toast.success('项目创建成功');
-        // 跳转到新项目的详情页
-        navigate(`/admin/projects/${newProject.id}`);
+        navigate('/admin/projects');
       } else if (project) {
         // 更新项目
         await updateProject(project.id, formData);
         toast.success('保存成功');
-        setEditMode(false);
+        setPageMode('viewMode');
         loadProject();
       }
     } catch (err: any) {
@@ -267,14 +293,39 @@ const ProjectDetailPage = () => {
     }
   };
 
-  // 图片上传
+  // 图片上传（现有项目）
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // 检查是否有有效的项目 ID
+    if (!projectId || projectId <= 0) {
+      toast.error('请先保存项目后再上传图片');
+      return;
+    }
+
     setUploading(true);
     try {
-      await uploadImages(projectId, Array.from(files));
+      // 前端压缩
+      const compressResults = await compressImages(Array.from(files), {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        maxSizeMB: 2,
+      });
+
+      // 显示压缩提示
+      const compressedCount = compressResults.filter(r => r.wasCompressed).length;
+      if (compressedCount > 0) {
+        const savedSize = compressResults.reduce((acc, r) =>
+          acc + (r.originalSize - r.compressedSize), 0);
+        const savedMB = (savedSize / 1024 / 1024).toFixed(1);
+        toast.info(`已压缩 ${compressedCount} 张图片，节省 ${savedMB}MB`);
+      }
+
+      // 上传压缩后的文件
+      const compressedFiles = compressResults.map(r => r.file);
+      await uploadImages(projectId, compressedFiles);
       toast.success('图片上传成功');
       loadProject();
     } catch (err: any) {
@@ -285,6 +336,62 @@ const ProjectDetailPage = () => {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  // 新建项目时上传临时图片
+  const handleUploadTempImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      // 前端压缩
+      const compressResults = await compressImages(Array.from(files), {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        maxSizeMB: 2,
+      });
+
+      // 显示压缩提示
+      const compressedCount = compressResults.filter(r => r.wasCompressed).length;
+      if (compressedCount > 0) {
+        const savedSize = compressResults.reduce((acc, r) =>
+          acc + (r.originalSize - r.compressedSize), 0);
+        const savedMB = (savedSize / 1024 / 1024).toFixed(1);
+        toast.info(`已压缩 ${compressedCount} 张图片，节省 ${savedMB}MB`);
+      }
+
+      // 上传压缩后的文件
+      const compressedFiles = compressResults.map(r => r.file);
+      const tempImageIds = await uploadTempImages(compressedFiles);
+
+      // 更新暂存的图片 ID 列表
+      setPendingTempImageIds(prev => [...prev, ...tempImageIds]);
+
+      // 使用原始文件用于预览
+      const newPreviewFiles = Array.from(files).map((file, index) => ({
+        id: tempImageIds[index],
+        file,
+      }));
+      setPendingImageFiles(prev => [...prev, ...newPreviewFiles]);
+
+      toast.success(`已上传 ${files.length} 张图片`);
+    } catch (err: any) {
+      toast.error('上传失败：' + err.message);
+    } finally {
+      setUploading(false);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 移除暂存的图片
+  const handleRemovePendingImage = (imageId: number) => {
+    setPendingTempImageIds(prev => prev.filter(id => id !== imageId));
+    setPendingImageFiles(prev => prev.filter(item => item.id !== imageId));
+    toast.success('已移除图片');
   };
 
   // 删除图片
@@ -363,12 +470,6 @@ const ProjectDetailPage = () => {
     }
   };
 
-  // 获取封面图
-  const getCoverImage = () => {
-    if (!project?.images?.length) return null;
-    return project.images.find((img) => img.isCover === 1) || project.images[0];
-  };
-
   // 复制项目描述
   const handleCopyDescription = async () => {
     if (!formData.description) {
@@ -381,6 +482,12 @@ const ProjectDetailPage = () => {
     } catch (err) {
       toast.error('复制失败');
     }
+  };
+
+  // 打开图片查看器
+  const openImageViewer = (index: number) => {
+    setImageViewerIndex(index);
+    setImageViewerVisible(true);
   };
 
   if (loading) {
@@ -410,14 +517,15 @@ const ProjectDetailPage = () => {
     );
   }
 
-  const coverImage = getCoverImage();
+  const images = project?.images || [];
+  const isEditMode = pageMode === 'editMode' || pageMode === 'createMode';
 
   return (
     <div className="min-h-full bg-slate-50/50">
       {/* 顶部导航栏 */}
       <div
         className={`sticky top-0 z-10 border-b ${
-          editMode ? 'bg-blue-50/80 border-blue-200' : 'bg-white/80 border-slate-200'
+          isEditMode ? 'bg-blue-50/80 border-blue-200' : 'bg-white/80 border-slate-200'
         } backdrop-blur-sm`}
       >
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -431,7 +539,7 @@ const ProjectDetailPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            {editMode ? (
+            {isEditMode ? (
               <input
                 type="text"
                 value={formData.name}
@@ -457,7 +565,7 @@ const ProjectDetailPage = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {editMode ? (
+            {isEditMode ? (
               <>
                 <button
                   onClick={() => isNewProject ? navigate('/admin/projects') : handleExitEditMode()}
@@ -526,14 +634,10 @@ const ProjectDetailPage = () => {
                 <button
                   onClick={() => {
                     const imageCount = project?.images?.length || 0;
-                    const copywritingCount = copywritings.length;
                     let message = `确定要删除项目"${project?.name}"吗？`;
-                    if (imageCount > 0 || copywritingCount > 0) {
+                    if (imageCount > 0) {
                       message += '\n\n';
-                      const items = [];
-                      if (imageCount > 0) items.push(`${imageCount} 张图片`);
-                      if (copywritingCount > 0) items.push(`${copywritingCount} 条推文`);
-                      message += `该项目关联了 ${items.join('、')}，删除后将一并移除。`;
+                      message += `该项目关联了 ${imageCount} 张图片，删除后将一并移除。`;
                     }
                     message += '\n\n此操作不可恢复。';
                     setConfirmConfig({
@@ -564,7 +668,7 @@ const ProjectDetailPage = () => {
 
       {/* 主体内容 */}
       <div className="max-w-7xl mx-auto p-6">
-        {isNewProject ? (
+        {pageMode === 'createMode' ? (
           /* 新建项目表单 */
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
@@ -624,46 +728,247 @@ const ProjectDetailPage = () => {
                     placeholder="请输入项目描述"
                   />
                 </div>
-                <div className="pt-4 border-t border-slate-200 text-sm text-slate-500">
-                  创建项目后可上传图片和设置封面
+
+                {/* 新建模式下的图片上传区域 */}
+                <div>
+                  <label className="block text-sm text-slate-600 mb-2">项目图片</label>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all"
+                  >
+                    <svg className="w-10 h-10 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-slate-600 font-medium mb-1">点击选择图片</p>
+                    <p className="text-slate-400 text-sm">支持多张图片，保存项目时会一起关联</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleUploadTempImages}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </div>
+
+                  {/* 暂存的图片列表 */}
+                  {pendingImageFiles.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-600">已上传 {pendingImageFiles.length} 张图片</span>
+                        <button
+                          onClick={() => {
+                            setPendingTempImageIds([]);
+                            setPendingImageFiles([]);
+                          }}
+                          className="text-xs text-red-500 hover:text-red-600"
+                        >
+                          清空
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {pendingImageFiles.map((item) => (
+                          <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                            <img
+                              src={URL.createObjectURL(item.file)}
+                              alt={item.file.name}
+                              className="w-full h-full object-cover"
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src.startsWith('blob:')) {
+                                  URL.revokeObjectURL(target.src);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => handleRemovePendingImage(item.id)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                              title="移除"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {uploading && (
+                    <div className="mt-3 flex items-center gap-2 text-emerald-600">
+                      <div className="animate-spin w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
+                      <span className="text-sm">上传中...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          /* 编辑现有项目 */
+          /* 查看/编辑现有项目 - 5:7 布局 */
           <div className="grid grid-cols-12 gap-6">
-            {/* 左侧：图片区 (5 列) */}
+            {/* 左侧：基本信息区 (5 列) */}
             <div className="col-span-12 lg:col-span-5 space-y-4">
-              {/* 封面大图 */}
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                <div className="aspect-video rounded-xl overflow-hidden bg-slate-100 relative">
-                  {coverImage ? (
-                    <img
-                      src={`/api/images/${coverImage.id}?t=${Date.now()}`}
-                      alt={coverImage.imageName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                      <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+              {/* 基本信息卡片 */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    基本信息
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  {/* 分类 */}
+                  <div>
+                    <label className="text-sm text-slate-500 mb-1 block">项目分类</label>
+                    {isEditMode ? (
+                      <select
+                        value={formData.categoryId}
+                        onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-slate-800 font-medium">{project?.categoryName}</div>
+                    )}
+                  </div>
+
+                  {/* 项目名称 */}
+                  <div>
+                    <label className="text-sm text-slate-500 mb-1 block">项目名称</label>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                        placeholder="请输入项目名称"
+                      />
+                    ) : (
+                      <div className="text-slate-800 font-medium">{project?.name}</div>
+                    )}
+                  </div>
+
+                  {/* 位置和年份 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-slate-500 mb-1 block">项目位置</label>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                          placeholder="例如：上海、北京"
+                        />
+                      ) : (
+                        <div className="text-slate-800 font-medium">{project?.location || '-'}</div>
+                      )}
                     </div>
-                  )}
+                    <div>
+                      <label className="text-sm text-slate-500 mb-1 block">设计年份</label>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={formData.year}
+                          onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                          placeholder="例如：2024"
+                        />
+                      ) : (
+                        <div className="text-slate-800 font-medium">{project?.year || '-'}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 状态和精品标签 */}
+                  <div>
+                    <label className="text-sm text-slate-500 mb-2 block">项目状态</label>
+                    <div className="flex gap-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          project?.status === 1
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {project?.status === 1 ? '已发布' : '未发布'}
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          project?.isFeatured === 1
+                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {project?.isFeatured === 1 ? '精品' : '普通'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 项目描述 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-sm text-slate-500">项目描述</label>
+                      {isEditMode && (
+                        <button
+                          onClick={handleCopyDescription}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          复制
+                        </button>
+                      )}
+                    </div>
+                    {isEditMode ? (
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none resize-none text-sm leading-relaxed"
+                        rows={5}
+                        placeholder="请输入项目描述..."
+                      />
+                    ) : (
+                      <div className="bg-slate-50 rounded-lg p-4 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                        {project?.description || '暂无描述'}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* 缩略图网格 */}
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-700">项目图片</h3>
-                  {editMode && (
-                    <label className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs cursor-pointer flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* 右侧：图片区 (7 列) - 紧凑网格布局 */}
+            <div className="col-span-12 lg:col-span-7">
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    项目图片
+                    {images.length > 0 && (
+                      <span className="text-xs text-slate-400 font-normal">({images.length}张)</span>
+                    )}
+                  </h3>
+                  {isEditMode && (
+                    <label className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs cursor-pointer flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      上传
+                      上传图片
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -677,10 +982,13 @@ const ProjectDetailPage = () => {
                   )}
                 </div>
 
-                {project?.images?.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm">
-                    暂无图片
-                    {editMode && <span className="ml-1">，点击上方上传图片</span>}
+                {images.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm">暂无图片</p>
+                    {isEditMode && <p className="text-xs mt-1">点击上方按钮上传图片</p>}
                   </div>
                 ) : (
                   <DndContext
@@ -689,25 +997,28 @@ const ProjectDetailPage = () => {
                     onDragEnd={handleDragEnd}
                   >
                     <SortableContext
-                      items={project?.images?.map((img) => img.id) || []}
+                      items={images.map((img) => img.id)}
                       strategy={rectSortingStrategy}
                     >
-                      <div className="grid grid-cols-3 gap-2">
-                        {project?.images?.map((img) => (
+                      <div className="grid grid-cols-4 gap-3">
+                        {images.map((img, index) => (
                           <SortableImageItem
                             key={img.id}
-                            id={img.id}
-                            img={img}
-                            editMode={editMode}
-                            onSetCover={handleSetCover}
-                            onDelete={handleDeleteImage}
+                            image={img}
+                            onClick={() => openImageViewer(index)}
+                            onSetCover={() => handleSetCover(img.id)}
+                            onDelete={() => handleDeleteImage(img.id)}
+                            isEditMode={isEditMode}
                           />
                         ))}
-                        {editMode && (
-                          <label className="aspect-square rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-emerald-400 transition-colors">
-                            <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
+                        {isEditMode && (
+                          <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors">
+                            <div className="text-center">
+                              <svg className="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                              <span className="text-xs text-slate-400">添加图片</span>
+                            </div>
                             <input
                               type="file"
                               accept="image/*"
@@ -724,252 +1035,18 @@ const ProjectDetailPage = () => {
                 )}
               </div>
             </div>
-
-            {/* 右侧：信息区 (7 列) */}
-            <div className="col-span-12 lg:col-span-7 space-y-4">
-            {/* 基本信息卡片 */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  基本信息
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                {/* 分类 */}
-                <div>
-                  <label className="text-sm text-slate-500 mb-1 block">项目分类</label>
-                  {editMode ? (
-                    <select
-                      value={formData.categoryId}
-                      onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="text-slate-800 font-medium">{project?.categoryName}</div>
-                  )}
-                </div>
-
-                {/* 位置和年份 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-slate-500 mb-1 block">项目位置</label>
-                    {editMode ? (
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                        placeholder="例如：上海、北京"
-                      />
-                    ) : (
-                      <div className="text-slate-800 font-medium">{project?.location || '-'}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-500 mb-1 block">设计年份</label>
-                    {editMode ? (
-                      <input
-                        type="text"
-                        value={formData.year}
-                        onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                        placeholder="例如：2024"
-                      />
-                    ) : (
-                      <div className="text-slate-800 font-medium">{project?.year || '-'}</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 状态 */}
-                <div>
-                  <label className="text-sm text-slate-500 mb-2 block">发布状态</label>
-                  {editMode ? (
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="status"
-                          checked={formData.status === 0}
-                          onChange={() => setFormData({ ...formData, status: 0 })}
-                          className="w-4 h-4 text-emerald-500"
-                        />
-                        <span className="text-sm text-slate-600">草稿</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="status"
-                          checked={formData.status === 1}
-                          onChange={() => setFormData({ ...formData, status: 1 })}
-                          className="w-4 h-4 text-emerald-500"
-                        />
-                        <span className="text-sm text-slate-600">已发布</span>
-                      </label>
-                    </div>
-                  ) : (
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        project?.status === 1
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}
-                    >
-                      {project?.status === 1 ? '已发布' : '草稿'}
-                    </span>
-                  )}
-                </div>
-
-                {/* 项目描述 */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm text-slate-500">项目描述</label>
-                    {editMode && (
-                      <button
-                        onClick={handleCopyDescription}
-                        className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        复制
-                      </button>
-                    )}
-                  </div>
-                  {editMode ? (
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none resize-none text-sm leading-relaxed"
-                      rows={5}
-                      placeholder="请输入项目描述..."
-                    />
-                  ) : (
-                    <div className="bg-slate-50 rounded-lg p-4 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-                      {project?.description || '暂无描述'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* AI 推文管理卡片 */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                  </svg>
-                  AI 推文
-                  <span className="text-xs text-slate-400 font-normal">({copywritings.length}条)</span>
-                </h3>
-                <button
-                  onClick={() => setShowCopywritingModal(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  生成推文
-                </button>
-              </div>
-
-              {loadingCopywritings ? (
-                <div className="text-center py-8 text-slate-400">加载中...</div>
-              ) : copywritings.length === 0 ? (
-                <div className="bg-slate-50 rounded-xl p-8 text-center">
-                  <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <p className="text-slate-500 text-sm">暂无关联推文</p>
-                  <p className="text-slate-400 text-xs mt-1">点击右上角"生成推文"创建第一条推文</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {copywritings.map((cw) => (
-                    <div
-                      key={cw.id}
-                      className="border border-slate-200 rounded-xl p-3 hover:border-purple-300 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-slate-800 truncate">{cw.title}</h4>
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                cw.status === 1
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              {cw.status === 1 ? '已发布' : '草稿'}
-                            </span>
-                          </div>
-                          <p className="text-slate-500 text-xs line-clamp-2">{cw.content}</p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => {
-                              setViewingCopywriting(cw);
-                              setShowCopywritingDetailModal(true);
-                            }}
-                            className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                            title="查看"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
 
-      {/* AI 文案生成弹窗 - 传入当前项目 ID，直接从该项目生成 */}
-      {!isNewProject && project && (
-        <CopywritingModal
-          copywriting={null}
-          visible={showCopywritingModal}
-          onClose={() => setShowCopywritingModal(false)}
-          onSaveSuccess={() => {
-            setShowCopywritingModal(false);
-            loadCopywritings();
-            toast.success('推文已保存');
-          }}
-          projectId={project.id}
-          projectName={project.name}
-        />
-      )}
-
-      {/* 推文详情弹窗 */}
-      {showCopywritingDetailModal && viewingCopywriting && (
-        <CopywritingDetailModal
-          copywriting={viewingCopywriting}
-          visible={showCopywritingDetailModal}
-          onClose={() => {
-            setShowCopywritingDetailModal(false);
-            setViewingCopywriting(null);
-          }}
-        />
-      )}
+      {/* 图片查看器弹窗 */}
+      <ImageViewer
+        images={images}
+        currentIndex={imageViewerIndex}
+        visible={imageViewerVisible}
+        onClose={() => setImageViewerVisible(false)}
+        onNavigate={(index) => setImageViewerIndex(index)}
+      />
 
       {/* 确认对话框 */}
       {confirmConfig?.show && (
@@ -984,7 +1061,7 @@ const ProjectDetailPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-slate-800 mb-2">{confirmConfig.title}</h3>
-            <p className="text-slate-600 mb-6">{confirmConfig.message}</p>
+            <p className="text-slate-600 mb-6 whitespace-pre-line">{confirmConfig.message}</p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmConfig(null)}
