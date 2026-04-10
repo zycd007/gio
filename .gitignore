@@ -28,6 +28,13 @@ pnpm-debug.log
 
 # Logs
 *.log
+logs/
+
+# OMC (oh-my-claudecode)
+.omc/
+
+# Playwright MCP
+.playwright-mcp/
 
 # OS
 .DS_Store

@@ -444,6 +444,24 @@
       "accessCount": 1,
       "lastAccessed": 1775795274037,
       "type": "file"
+    },
+    {
+      "path": "deploy\\scripts\\check-claude-env.py",
+      "accessCount": 1,
+      "lastAccessed": 1775795760867,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\skills\\deploy\\deploy.md",
+      "accessCount": 1,
+      "lastAccessed": 1775796199448,
+      "type": "file"
+    },
+    {
+      "path": "pom.xml",
+      "accessCount": 1,
+      "lastAccessed": 1775796335169,
+      "type": "file"
     }
   ],
   "userDirectives": []
