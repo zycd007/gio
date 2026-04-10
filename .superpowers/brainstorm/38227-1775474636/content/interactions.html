@@ -1,0 +1,117 @@
+<h2>卡片交互操作</h2>
+<p class="subtitle">已选择：状态指示型 + 响应式布局</p>
+
+<div class="cards">
+  <!-- 方案 A：底部操作栏 -->
+  <div class="card" data-choice="bottom-bar" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 20px;">
+        <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; max-width: 300px;">
+          <!-- 状态栏 -->
+          <div style="background: #10b981; padding: 6px 12px; color: white; font-size: 10px; display: flex; justify-content: space-between;">
+            <span>✓ 已发布</span>
+            <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 6px;">⭐ 精品</span>
+          </div>
+          <!-- 封面 -->
+          <div style="height: 140px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="color: #94a3b8; font-size: 40px;">🖼️</span>
+          </div>
+          <!-- 信息区 -->
+          <div style="padding: 12px;">
+            <div style="font-size: 14px; font-weight: 600; color: #1e293b;">成都私宅照明设计</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">私宅 · 成都 · 2024</div>
+          </div>
+          <!-- 底部操作栏 -->
+          <div style="padding: 8px 12px; background: #f8fafc; display: flex; gap: 6px; border-top: 1px solid #e2e8f0;">
+            <button style="flex: 1; padding: 6px; background: #f1f5f9; border-radius: 6px; font-size: 10px; color: #475569;">👁️ 查看</button>
+            <button style="flex: 1; padding: 6px; background: #ecfdf5; border-radius: 6px; font-size: 10px; color: #059669;">✏️ 编辑</button>
+            <button style="flex: 1; padding: 6px; background: #fef3c7; border-radius: 6px; font-size: 10px; color: #92400e;">📷 图片</button>
+            <button style="padding: 6px 8px; background: #f1f5f9; border-radius: 6px; font-size: 10px; color: #475569;">⋯</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 底部操作栏</h3>
+      <p>按钮在卡片底部固定显示</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>操作直观</li><li>无需 hover</li><li>一键直达</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>占用卡片空间</li><li>按钮较多</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 B：hover 显示操作 -->
+  <div class="card" data-choice="hover-actions" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 20px;">
+        <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; max-width: 300px; position: relative;">
+          <!-- 状态栏 -->
+          <div style="background: #10b981; padding: 6px 12px; color: white; font-size: 10px; display: flex; justify-content: space-between;">
+            <span>✓ 已发布</span>
+            <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 6px;">⭐ 精品</span>
+          </div>
+          <!-- 封面 + hover操作层 -->
+          <div style="height: 140px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+            <span style="color: #94a3b8; font-size: 40px;">🖼️</span>
+            <!-- hover 层模拟 -->
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <button style="padding: 8px 16px; background: white; border-radius: 8px; font-size: 11px; color: #1e293b;">👁️ 查看</button>
+              <button style="padding: 8px 16px; background: #10b981; border-radius: 8px; font-size: 11px; color: white;">✏️ 编辑</button>
+              <button style="padding: 8px 12px; background: white; border-radius: 8px; font-size: 11px; color: #1e293b;">⋯</button>
+            </div>
+          </div>
+          <!-- 信息区 -->
+          <div style="padding: 12px;">
+            <div style="font-size: 14px; font-weight: 600; color: #1e293b;">成都私宅照明设计</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">私宅 · 成都 · 2024</div>
+          </div>
+        </div>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 8px; text-align: center;">鼠标悬停封面时显示操作按钮</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Hover 显示（推荐）</h3>
+      <p>悬停封面区域显示快捷操作</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>卡片更简洁</li><li>封面更突出</li><li>操作不占用空间</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>需要 hover 操作</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 C：点击进入详情 -->
+  <div class="card" data-choice="click-detail" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 20px;">
+        <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; max-width: 300px; cursor: pointer;">
+          <!-- 状态栏 -->
+          <div style="background: #10b981; padding: 6px 12px; color: white; font-size: 10px; display: flex; justify-content: space-between;">
+            <span>✓ 已发布</span>
+            <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 6px;">⭐ 精品</span>
+          </div>
+          <!-- 封面 -->
+          <div style="height: 140px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="color: #94a3b8; font-size: 40px;">🖼️</span>
+          </div>
+          <!-- 信息区 -->
+          <div style="padding: 12px;">
+            <div style="font-size: 14px; font-weight: 600; color: #1e293b;">成都私宅照明设计</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">私宅 · 成都 · 2024</div>
+          </div>
+        </div>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 8px; text-align: center;">点击卡片进入详情页，详情页内操作</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 点击进入详情</h3>
+      <p>整个卡片可点击，进入详情页操作</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>卡片最简洁</li><li>符合用户习惯</li><li>详情页功能完整</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>编辑需进入详情页</li><li>快速操作少一步</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top: 16px; color: #64748b; font-size: 13px;">点击选择卡片交互方式</p>

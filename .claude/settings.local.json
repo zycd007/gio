@@ -31,7 +31,12 @@
       "Bash(pnpm build:*)",
       "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
       "Bash(wmic process:*)",
-      "Bash(D:/soft_install/Git/usr/bin/bash.exe *)"
+      "Bash(D:/soft_install/Git/usr/bin/bash.exe *)",
+      "Bash(ssh:*)",
+      "Bash(python deploy/scripts/check-claude-env.py)",
+      "Bash(python deploy/scripts/fix-claude-config.py)",
+      "Bash(where cc-connect:*)",
+      "Bash(powershell:*)"
     ]
   }
 }

@@ -70,7 +70,7 @@ public class AdminCategoryController {
     @DeleteMapping("/{id}")
     public Result<Void> deleteCategory(@PathVariable Integer id) {
         // 检查是否有项目关联该分类
-        List<Project> associatedProjects = projectService.list(null, null, id, null, null, null);
+        List<Project> associatedProjects = projectService.getProjectsByCategory(id);
         if (associatedProjects != null && !associatedProjects.isEmpty()) {
             return Result.error(400, "该分类下有 " + associatedProjects.size() + " 个项目，无法删除");
         }

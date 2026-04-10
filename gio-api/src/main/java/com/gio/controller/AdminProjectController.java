@@ -107,7 +107,8 @@ public class AdminProjectController {
      */
     @PutMapping("/{id}/featured")
     public Result<Void> setProjectFeatured(@PathVariable Integer id, @RequestParam Integer isFeatured) {
-        return projectService.setProjectFeatured(id, isFeatured);
+        projectService.setProjectFeatured(id, isFeatured);
+        return Result.success();
     }
 
     /**

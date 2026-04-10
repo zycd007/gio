@@ -1,0 +1,153 @@
+<h2>最终设计方案确认</h2>
+<p class="subtitle">项目管理页面卡片展示重构</p>
+
+<div class="mockup" style="background: #f8fafc; border-radius: 16px; overflow: hidden;">
+  <div class="mockup-header" style="background: white; padding: 16px 24px; border-bottom: 1px solid #e2e8f0;">
+    <span style="font-size: 14px; color: #64748b;">完整页面预览</span>
+  </div>
+
+  <div class="mockup-body" style="padding: 0;">
+    <!-- 顶部工具栏 - 两行布局 -->
+    <div style="background: white; padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+      <!-- 第一行：标题 + 统计 + 新建 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <span style="font-size: 20px; font-weight: 600; color: #1e293b;">项目管理</span>
+          <span style="background: #f1f5f9; padding: 6px 14px; border-radius: 10px; font-size: 13px; color: #64748b;">共 24 个项目</span>
+        </div>
+        <button style="padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); border-radius: 12px; color: white; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+          + 新建项目
+        </button>
+      </div>
+      <!-- 第二行：筛选工具 -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="position: relative; flex: 1; max-width: 320px;">
+          <input style="padding: 10px 16px 10px 40px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; font-size: 13px;" placeholder="搜索项目名称...">
+          <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
+        </div>
+        <select style="padding: 10px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 13px; color: #475569;">
+          <option>全部分类</option>
+          <option>私宅</option>
+          <option>餐饮</option>
+          <option>酒店</option>
+        </select>
+        <select style="padding: 10px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 13px; color: #475569;">
+          <option>全部状态</option>
+          <option>已发布</option>
+          <option>草稿</option>
+        </select>
+        <select style="padding: 10px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 13px; color: #475569;">
+          <option>全部</option>
+          <option>⭐ 精品</option>
+          <option>普通</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 卡片网格区域 -->
+    <div style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+      <!-- 卡片 1 - 已发布 + 精品 -->
+      <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: relative;">
+        <!-- 状态栏 -->
+        <div style="background: #10b981; padding: 8px 14px; color: white; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 500;">✓ 已发布</span>
+          <span style="background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 500;">⭐ 精品</span>
+        </div>
+        <!-- 封面 + Hover 操作层（模拟显示状态） -->
+        <div style="height: 160px; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); position: relative;">
+          <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <button style="padding: 10px 18px; background: white; border-radius: 10px; font-size: 12px; color: #1e293b; font-weight: 500;">👁️ 查看</button>
+            <button style="padding: 10px 18px; background: #10b981; border-radius: 10px; font-size: 12px; color: white; font-weight: 500;">✏️ 编辑</button>
+            <button style="padding: 10px 14px; background: white; border-radius: 10px; font-size: 12px; color: #1e293b;">⋯</button>
+          </div>
+        </div>
+        <!-- 信息区 -->
+        <div style="padding: 14px;">
+          <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">成都私宅照明设计</div>
+          <div style="font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 12px;">
+            <span>私宅</span>
+            <span>📍 成都</span>
+            <span>2024</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 2 - 草稿 -->
+      <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #f59e0b; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <!-- 状态栏 -->
+        <div style="background: #f59e0b; padding: 8px 14px; color: white; font-size: 12px;">
+          <span style="font-weight: 500;">📝 草稿</span>
+        </div>
+        <!-- 封面 -->
+        <div style="height: 160px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); display: flex; align-items: center; justify-content: center;">
+          <span style="color: #94a3b8; font-size: 48px;">🖼️</span>
+        </div>
+        <!-- 信息区 -->
+        <div style="padding: 14px;">
+          <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">北京酒店照明设计</div>
+          <div style="font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 12px;">
+            <span>酒店</span>
+            <span>📍 北京</span>
+            <span>2023</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3 - 已发布普通 -->
+      <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <div style="background: #10b981; padding: 8px 14px; color: white; font-size: 12px;">
+          <span style="font-weight: 500;">✓ 已发布</span>
+        </div>
+        <div style="height: 160px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center;">
+          <span style="color: white; font-size: 48px;">🍽️</span>
+        </div>
+        <div style="padding: 14px;">
+          <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">上海餐厅照明设计</div>
+          <div style="font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 12px;">
+            <span>餐饮</span>
+            <span>📍 上海</span>
+            <span>2024</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 4 -->
+      <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <div style="background: #10b981; padding: 8px 14px; color: white; font-size: 12px; display: flex; justify-content: space-between;">
+          <span style="font-weight: 500;">✓ 已发布</span>
+          <span style="background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 8px; font-size: 11px;">⭐ 精品</span>
+        </div>
+        <div style="height: 160px; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);"></div>
+        <div style="padding: 14px;">
+          <div style="font-size: 15px; font-weight: 600; color: #1e293b;">杭州会所照明</div>
+          <div style="font-size: 13px; color: #64748b;">会所 · 杭州 · 2024</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分页 -->
+    <div style="padding: 16px 24px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 13px; color: #64748b;">显示 1-12 / 共 24 项</span>
+      <div style="display: flex; gap: 8px;">
+        <button style="padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #94a3b8;">上一页</button>
+        <button style="padding: 8px 14px; background: #10b981; border-radius: 8px; font-size: 12px; color: white;">1</button>
+        <button style="padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #475569;">2</button>
+        <button style="padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #475569;">下一页</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 24px;">设计要点总结</h3>
+<div style="background: #f8fafc; padding: 16px; border-radius: 12px; margin-top: 12px;">
+  <ul style="color: #475569; font-size: 14px; line-height: 1.8;">
+    <li><strong>卡片风格</strong>：状态指示型 — 顶部状态栏（已发布/草稿），边框颜色区分状态</li>
+    <li><strong>布局方式</strong>：响应式自适应 — 卡片宽度280px，自动填充行</li>
+    <li><strong>交互操作</strong>：Hover显示 — 鼠标悬停封面时显示快捷操作按钮</li>
+    <li><strong>工具栏</strong>：两行布局 — 标题统计 + 新建按钮（上），筛选搜索（下）</li>
+    <li><strong>状态区分</strong>：绿色边框=已发布，橙色边框=草稿，金色标签=精品</li>
+    <li><strong>快捷操作</strong>：查看、编辑、更多（包含图片管理、AI文案、状态切换、删除等）</li>
+  </ul>
+</div>
+
+<p style="margin-top: 20px; color: #10b981; font-size: 14px; font-weight: 500;">✅ 确认这个设计方案？如有调整请告诉我。</p>

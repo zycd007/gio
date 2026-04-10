@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"export JAVA_HOME=\\\"C:/Users/Administrator/.jdks/ms-17.0.17\\\" && export PATH=\\\"$JAVA_HOME/bin:$PATH\\\" && cd gio && mvn clean package -DskipTests 2>&1 | tail -30\",\"timeout\":300000,\"descripti...",
+  "error": "Exit code 1\n/usr/bin/bash: line 1: cd: gio: No such file or directory",
+  "timestamp": "2026-04-10T04:31:44.945Z",
+  "retry_count": 1
+}

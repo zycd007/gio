@@ -155,7 +155,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (project == null) {
             return false;
         }
-        project.setStatus(status);
+        project.setStatus(status == 1);
         return this.updateById(project);
     }
 
@@ -258,8 +258,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         dto.setLocation(project.getLocation());
         dto.setYear(project.getYear());
         dto.setViewCount(project.getViewCount());
-        dto.setStatus(project.getStatus());
-        dto.setIsFeatured(project.getIsFeatured());
+        dto.setStatus(project.getStatus() != null && project.getStatus() ? 1 : 0);
+        dto.setIsFeatured(project.getIsFeatured() != null && project.getIsFeatured() ? 1 : 0);
 
         // 获取分类名称
         if (categoryMap != null && categoryMap.containsKey(project.getCategoryId())) {

@@ -1,0 +1,98 @@
+<h2>项目管理卡片设计方案</h2>
+<p class="subtitle">选择你喜欢的卡片视觉风格</p>
+
+<div class="cards">
+  <!-- 方案 A：简约现代风格 -->
+  <div class="card" data-choice="modern" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 16px;">
+        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <!-- 卡片封面 -->
+          <div style="height: 140px; background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-size: 24px;">🏠</span>
+          </div>
+          <!-- 卡片内容 -->
+          <div style="padding: 12px;">
+            <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 4px;">成都私宅照明设计</div>
+            <div style="color: #64748b; font-size: 12px; display: flex; justify-content: space-between;">
+              <span>私宅 · 2024</span>
+              <span style="background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 12px; font-size: 10px;">已发布</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 简约现代</h3>
+      <p>白色卡片 + 渐变封面，清爽专业</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>视觉简洁</li><li>信息清晰</li><li>适合大量数据</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 B：深色质感风格 -->
+  <div class="card" data-choice="dark" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #0a0a0a; padding: 16px;">
+        <div style="background: #1a1a1a; border-radius: 12px; overflow: hidden;">
+          <!-- 卡片封面 -->
+          <div style="height: 140px; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+            <span style="color: #d4a853; font-size: 24px;">🏠</span>
+            <span style="position: absolute; top: 8px; left: 8px; background: #d4a853; color: #0a0a0a; padding: 2px 8px; border-radius: 4px; font-size: 10px;">精品</span>
+          </div>
+          <!-- 卡片内容 -->
+          <div style="padding: 12px;">
+            <div style="font-weight: 300; color: white; font-size: 14px; letter-spacing: 0.05em; margin-bottom: 4px;">成都私宅照明设计</div>
+            <div style="color: #666; font-size: 12px; display: flex; justify-content: space-between;">
+              <span>📍 成都</span>
+              <span>2024</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 深色质感</h3>
+      <p>延续官网设计语言，高端质感</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>品牌一致性</li><li>视觉高级</li><li>突出精品标识</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>与后台浅色风格差异大</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 C：卡片 + 状态指示 -->
+  <div class="card" data-choice="status" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 16px;">
+        <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 2px solid #10b981;">
+          <!-- 状态标签栏 -->
+          <div style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: white; font-size: 10px; font-weight: 600;">✓ 已发布</span>
+            <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 8px; font-size: 10px;">⭐ 精品</span>
+          </div>
+          <!-- 卡片封面 -->
+          <div style="height: 120px; background: #e2e8f0; display: flex; align-items: center; justify-content: center;">
+            <span style="color: #94a3b8; font-size: 32px;">🖼️</span>
+          </div>
+          <!-- 卡片内容 -->
+          <div style="padding: 12px;">
+            <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 6px;">成都私宅照明设计</div>
+            <div style="color: #64748b; font-size: 12px;">私宅 · 成都 · 2024</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 状态指示型</h3>
+      <p>顶部状态栏，一眼识别项目状态</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>状态一目了然</li><li>操作效率高</li><li>适合管理场景</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>信息密度较高</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top: 16px; color: #64748b; font-size: 13px;">点击选择你喜欢的方案，或告诉我你的想法</p>

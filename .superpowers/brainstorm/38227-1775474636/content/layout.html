@@ -1,0 +1,157 @@
+<h2>卡片布局方式</h2>
+<p class="subtitle">已选择：状态指示型卡片风格</p>
+
+<div class="cards">
+  <!-- 布局 A：3列网格 -->
+  <div class="card" data-choice="grid-3" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 4px 8px; color: white; font-size: 8px;">✓ 已发布</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #f59e0b;">
+            <div style="background: #f59e0b; padding: 4px 8px; color: white; font-size: 8px;">📝 草稿</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 4px 8px; color: white; font-size: 8px;">✓ 已发布</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 4px 8px; color: white; font-size: 8px;">✓ 已发布</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #f59e0b;">
+            <div style="background: #f59e0b; padding: 4px 8px; color: white; font-size: 8px;">📝 草稿</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 12px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 4px 8px; color: white; font-size: 8px;">✓ 已发布</div>
+            <div style="height: 60px; background: #e2e8f0;"></div>
+            <div style="padding: 8px;"><div style="font-size: 10px; font-weight: 600;">项目名称</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 3列网格</h3>
+      <p>紧凑布局，一屏展示更多项目</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>信息密度高</li><li>适合项目较多时</li><li>快速浏览</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>卡片较小</li><li>封面细节有限</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 布局 B：4列网格 -->
+  <div class="card" data-choice="grid-4" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #f59e0b;">
+            <div style="background: #f59e0b; padding: 3px 6px; color: white; font-size: 7px;">📝 草稿</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #f59e0b;">
+            <div style="background: #f59e0b; padding: 3px 6px; color: white; font-size: 7px;">📝 草稿</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+          <div style="background: white; border-radius: 10px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 3px 6px; color: white; font-size: 7px;">✓ 已发布</div>
+            <div style="height: 50px; background: #e2e8f0;"></div>
+            <div style="padding: 6px;"><div style="font-size: 9px; font-weight: 600;">项目名称</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 4列网格</h3>
+      <p>超紧凑布局，适合项目数量大</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>展示数量最多</li><li>滚动更少</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>卡片很小</li><li>图片展示受限</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 布局 C：响应式自适应 -->
+  <div class="card" data-choice="responsive" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background: #f8fafc; padding: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 6px 12px; color: white; font-size: 10px; display: flex; justify-content: space-between;">
+              <span>✓ 已发布</span>
+              <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 6px;">⭐ 精品</span>
+            </div>
+            <div style="height: 100px; background: #e2e8f0;"></div>
+            <div style="padding: 12px;">
+              <div style="font-size: 12px; font-weight: 600;">成都私宅照明设计</div>
+              <div style="font-size: 10px; color: #64748b;">私宅 · 成都 · 2024</div>
+            </div>
+          </div>
+          <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #f59e0b;">
+            <div style="background: #f59e0b; padding: 6px 12px; color: white; font-size: 10px;">📝 草稿</div>
+            <div style="height: 100px; background: #e2e8f0;"></div>
+            <div style="padding: 12px;">
+              <div style="font-size: 12px; font-weight: 600;">北京酒店照明</div>
+              <div style="font-size: 10px; color: #64748b;">酒店 · 北京 · 2023</div>
+            </div>
+          </div>
+          <div style="background: white; border-radius: 16px; overflow: hidden; border: 2px solid #10b981;">
+            <div style="background: #10b981; padding: 6px 12px; color: white; font-size: 10px;">✓ 已发布</div>
+            <div style="height: 100px; background: #e2e8f0;"></div>
+            <div style="padding: 12px;">
+              <div style="font-size: 12px; font-weight: 600;">上海餐厅照明</div>
+              <div style="font-size: 10px; color: #64748b;">餐饮 · 上海 · 2024</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 8px; text-align: center;">自动适应屏幕宽度，卡片尺寸固定</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 响应式自适应（推荐）</h3>
+      <p>卡片固定宽度，自动填充行</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros"><h4>优点</h4><ul><li>平衡美观与效率</li><li>卡片尺寸适中</li><li>不同屏幕适配好</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top: 16px; color: #64748b; font-size: 13px;">点击选择布局方式</p>
