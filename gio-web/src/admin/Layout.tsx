@@ -8,7 +8,7 @@ const breadcrumbMap: Record<string, string> = {
   '/admin/messages': '客户留言',
   '/admin/projects': '项目管理',
   '/admin/categories': '分类管理',
-  '/admin/copywritings': '推文管理',
+  '/admin/social-posts': '推文管理',
 };
 
 const AdminLayout = () => {
@@ -103,7 +103,7 @@ const AdminLayout = () => {
           <NavLink to="/admin/categories" icon="tags" collapsed={sidebarCollapsed} active={location.pathname === '/admin/categories'}>
             分类管理
           </NavLink>
-          <NavLink to="/admin/copywritings" icon="edit" collapsed={sidebarCollapsed} active={location.pathname === '/admin/copywritings'}>
+          <NavLink to="/admin/social-posts" icon="edit" collapsed={sidebarCollapsed} active={location.pathname.startsWith('/admin/social-posts')}>
             推文管理
           </NavLink>
         </nav>

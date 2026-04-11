@@ -12,7 +12,8 @@ import AdminDashboard from './admin/Dashboard';
 import AdminProjects from './admin/Projects';
 import AdminCategories from './admin/Categories';
 import AdminMessages from './admin/Messages';
-import AdminCopywritings from './admin/Copywriting';
+import AdminSocialPosts from './admin/SocialPosts';
+import SocialPostDetail from './admin/SocialPostDetail';
 import ProjectDetailPage from './admin/ProjectDetailPage';
 import Projects from './pages/Projects';
 
@@ -85,7 +86,8 @@ function App() {
             <Route path="projects/:id" element={<ProjectDetailPage />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="messages" element={<AdminMessages />} />
-            <Route path="copywritings" element={<AdminCopywritings />} />
+            <Route path="social-posts" element={<AdminSocialPosts />} />
+            <Route path="social-posts/:id" element={<SocialPostDetail />} />
           </Route>
         </Routes>
       </AppContext.Provider>
