@@ -28,7 +28,7 @@ import ssl
 # ==================== 配置区域 ====================
 SERVER = "140.143.87.54"
 USER = "ubuntu"
-PASSWORD = "@yuku007@"
+PASSWORD = "@yuku007@"  # 服务器 SSH 密码（小写 y）
 REMOTE_DIR = "/home/ubuntu/gio"
 LOCAL_PROJECT = Path("E:/my_projects/gio")
 

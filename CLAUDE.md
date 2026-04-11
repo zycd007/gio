@@ -38,7 +38,7 @@ gio/
 
 ### 必需环境
 ```
-- JDK 17 (必须使用 ms-17.0.17，路径: C:/Users/Administrator/.jdks/ms-17.0.17)
+- JDK 17 (必须使用 ms-17.0.17，路径：C:/Users/Administrator/.jdks/ms-17.0.17)
 - Maven 3.6+
 - MySQL 8.0+
 ```
@@ -62,7 +62,7 @@ mvn spring-boot:run
 ```
 
 ### 配置说明
-- **数据库**: 阿里云 MySQL (8.137.63.159:3306/gio_design)
+- **数据库**: 腾讯云 MySQL (140.143.87.54:3306/gio_design)
 - **上传路径**: `./uploads/`
 
 ## 开发规范
@@ -112,8 +112,10 @@ curl -X POST http://localhost:8081/api/admin/login \
 
 > **服务器信息：腾讯云**
 > - IP: 140.143.87.54
-> - 用户名: ubuntu
-> - 密码: @yuku007@
+> - 服务器用户名：ubuntu
+> - 服务器密码：@yuku007@
+> - 数据库用户名：root
+> - 数据库密码：@Yuku007@
 
 #### 第一步：本地构建
 
@@ -214,8 +216,8 @@ tail -f ~/gio/logs/api.log
 # 导出数据
 mysqldump -h localhost -u root -p gio_design > backup.sql
 
-# 导入到阿里云
-mysql -h 8.137.63.159 -u root -p gio_design < backup.sql
+# 导入到腾讯云
+mysql -h 140.143.87.54 -u root -p gio_design < backup.sql
 ```
 
 ## 常见问题

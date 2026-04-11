@@ -7,9 +7,17 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.137.63.159:3306/gio_design?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://140.143.87.54:3306/gio_design?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: "@Yuku007@"
+    hikari:
+      maximum-pool-size: 30          # 最大连接数（支持更多并发请求）
+      minimum-idle: 10               # 最小空闲连接
+      idle-timeout: 600000           # 空闲连接超时 10 分钟
+      max-lifetime: 1800000          # 连接最大生命周期 30 分钟
+      connection-timeout: 30000      # 连接获取超时 30 秒
+      validation-timeout: 5000       # 连接验证超时 5 秒
+      leak-detection-threshold: 60000 # 连接泄露检测阈值
 
   # 静态文件配置
   web:

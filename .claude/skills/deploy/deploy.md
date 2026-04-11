@@ -56,8 +56,10 @@ python .claude/skills/deploy/scripts/deploy.py
 | 配置项 | 值 |
 |--------|-----|
 | 服务器 IP | 140.143.87.54 |
-| 用户名 | ubuntu |
-| 密码 | @yuku007@ |
+| 服务器用户名 | ubuntu |
+| 服务器密码 | @yuku007@ |
+| 数据库用户名 | root |
+| 数据库密码 | @Yuku007@ |
 | 部署路径 | /home/ubuntu/gio |
 | API 端口 | 8081 |
 | 前端端口 | 80 |
