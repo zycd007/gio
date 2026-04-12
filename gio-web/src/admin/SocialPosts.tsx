@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getPostList, deletePost, updatePublishStatus } from '@/services/socialPost';
-import { SocialPostListItem } from '@/types/socialPost';
+import { SocialPostListItem, SocialPost } from '@/types/socialPost';
 import { toast } from 'sonner';
+import GeneratePostModal from './components/GeneratePostModal';
 
 interface Stats {
   total: number;
@@ -39,9 +40,8 @@ const AdminSocialPosts = () => {
     onConfirm: () => void;
   } | null>(null);
 
-  // 生成推文弹窗（简化版 - 待集成 GeneratePostModal）
+  // 生成推文弹窗
   const [generateModalVisible, setGenerateModalVisible] = useState(false);
-  const [generating, setGenerating] = useState(false);
 
   // 搜索防抖
   useEffect(() => {
@@ -133,16 +133,10 @@ const AdminSocialPosts = () => {
     });
   };
 
-  // 生成新推文（简化版）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleGeneratePost = async (_type: 'project' | 'custom') => {
-    setGenerating(true);
-    setGenerateModalVisible(false);
-
-    // TODO: 集成 GeneratePostModal
-    toast.info('生成推文功能待集成 GeneratePostModal');
-
-    setGenerating(false);
+  // 生成成功后刷新列表
+  const handleGenerateSuccess = (post: SocialPost) => {
+    toast.success('推文生成成功');
+    loadPosts();
   };
 
   return (
@@ -156,8 +150,7 @@ const AdminSocialPosts = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setGenerateModalVisible(true)}
-            disabled={generating}
-            className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -459,58 +452,12 @@ const AdminSocialPosts = () => {
         </div>
       )}
 
-      {/* 生成推文弹窗（简化版） */}
-      {generateModalVisible && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setGenerateModalVisible(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">生成新推文</h2>
-            <p className="text-sm text-slate-600 mb-6">选择推文类型</p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handleGeneratePost('project')}
-                className="w-full p-4 border border-slate-200 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-slate-800">从项目生成</div>
-                    <div className="text-sm text-slate-500">选择已有项目生成推文</div>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => handleGeneratePost('custom')}
-                className="w-full p-4 border border-slate-200 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-slate-800">自定义内容</div>
-                    <div className="text-sm text-slate-500">手动输入内容生成推文</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setGenerateModalVisible(false)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 生成推文弹窗 */}
+      <GeneratePostModal
+        visible={generateModalVisible}
+        onClose={() => setGenerateModalVisible(false)}
+        onSuccess={handleGenerateSuccess}
+      />
     </div>
   );
 };

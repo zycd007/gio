@@ -42,7 +42,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         // 只查询列表需要的字段，减少数据传输
         var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Project>();
-        queryWrapper.select("id", "category_id", "name", "location", "year", "cover_image_id", "view_count", "status", "is_featured", "sort_order");
+        queryWrapper.select("id", "category_id", "name", "location", "year", "cover_image_id", "view_count", "status", "is_featured", "sort_order")
+            .eq("deleted", 0); // 明确添加未删除条件
         if (categoryId != null) {
             queryWrapper.eq("category_id", categoryId);
         }
@@ -102,6 +103,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         dto.setCoverImageId(project.getCoverImageId());
         dto.setSortOrder(project.getSortOrder());
         dto.setViewCount(project.getViewCount());
+        dto.setStatus(project.getStatus() != null ? project.getStatus() : 1);
+        dto.setIsFeatured(project.getIsFeatured() != null ? project.getIsFeatured() : 0);
 
         // 获取分类信息
         Category category = categoryService.getById(project.getCategoryId());
@@ -155,7 +158,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (project == null) {
             return false;
         }
-        project.setStatus(status == 1);
+        project.setStatus(status);
         return this.updateById(project);
     }
 
@@ -173,7 +176,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         List<Project> projects = this.lambdaQuery()
                 .eq(Project::getIsFeatured, 1)
                 .eq(Project::getStatus, 1)
-                .select(Project.class, info -> !"description".equals(info.getColumn())) // 不查询 description
+                .select(Project.class, info -> !"description".equals(info.getColumn()))
                 .orderByAsc(Project::getSortOrder)
                 .list();
 
@@ -201,7 +204,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             return false;
         }
 
-        project.setIsFeatured(isFeatured != 0);
+        project.setIsFeatured(isFeatured);
         this.updateById(project);
         return true;
     }
@@ -258,8 +261,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         dto.setLocation(project.getLocation());
         dto.setYear(project.getYear());
         dto.setViewCount(project.getViewCount());
-        dto.setStatus(project.getStatus() != null && project.getStatus() ? 1 : 0);
-        dto.setIsFeatured(project.getIsFeatured() != null && project.getIsFeatured() ? 1 : 0);
+        dto.setStatus(project.getStatus() != null ? project.getStatus() : 1);
+        dto.setIsFeatured(project.getIsFeatured() != null ? project.getIsFeatured() : 0);
 
         // 获取分类名称
         if (categoryMap != null && categoryMap.containsKey(project.getCategoryId())) {

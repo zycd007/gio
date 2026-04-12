@@ -420,4 +420,124 @@ public class ImageServiceImpl implements ImageService {
             }
         }
     }
+
+    @Override
+    public List<Integer> uploadTempImages(List<MultipartFile> files) {
+        List<Integer> tempImageIds = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                Integer tempImageId = uploadTempImage(file);
+                tempImageIds.add(tempImageId);
+            }
+        }
+        return tempImageIds;
+    }
+
+    /**
+     * 临时上传图片（project_id 为 null）
+     */
+    private Integer uploadTempImage(MultipartFile file) {
+        try {
+            // 生成唯一文件名
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".jpg";
+            String fileName = IdUtil.fastSimpleUUID() + extension;
+
+            // 确保上传目录存在
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+
+            // 保存文件
+            Path filePath = Paths.get(uploadPath, fileName);
+            Files.write(filePath, file.getBytes());
+
+            // 压缩图片并获取尺寸
+            byte[] compressedData = compressImage(filePath);
+            int[] dimensions = getImageDimensions(filePath);
+
+            // 保存到 project_image 表，project_id 为 null
+            ProjectImage projectImage = new ProjectImage();
+            projectImage.setProjectId(null); // 临时图片，不关联项目
+            projectImage.setImageName(originalFilename);
+            projectImage.setAttachmentId(null);
+            projectImage.setImageType(extension.replace(".", ""));
+            projectImage.setFileSize((int) file.getSize());
+            projectImage.setWidth(dimensions[0]);
+            projectImage.setHeight(dimensions[1]);
+            projectImage.setIsCover(0);
+            projectImage.setSortOrder(0);
+            projectImage.setStatus(1);
+
+            projectImageMapper.insert(projectImage);
+
+            // 生成缩略图
+            byte[] thumbnailData = generateThumbnail(file.getBytes());
+            int[] thumbnailDims = estimateThumbnailDimensions(dimensions[0], dimensions[1], 400);
+
+            // 保存到 attachment 表
+            Attachment attachment = new Attachment();
+            attachment.setBusinessType("temp_image");
+            attachment.setBusinessId(projectImage.getId());
+            attachment.setFileName(originalFilename);
+            attachment.setFileType(extension.replace(".", ""));
+            attachment.setFileSize((int) file.getSize());
+            attachment.setBase64Data(Base64.getEncoder().encodeToString(file.getBytes()));
+            attachment.setWidth(dimensions[0]);
+            attachment.setHeight(dimensions[1]);
+            attachment.setThumbnailData(Base64.getEncoder().encodeToString(thumbnailData));
+            attachment.setThumbnailWidth(thumbnailDims[0]);
+            attachment.setThumbnailHeight(thumbnailDims[1]);
+            attachmentMapper.insert(attachment);
+
+            // 更新 project_image 的 attachment_id
+            projectImage.setAttachmentId(attachment.getId());
+            projectImageMapper.updateById(projectImage);
+
+            return projectImage.getId();
+        } catch (IOException e) {
+            throw new BusinessException("图片上传失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void associateImagesToProject(Integer projectId, List<Integer> imageIds) {
+        if (imageIds == null || imageIds.isEmpty()) {
+            return;
+        }
+        boolean isFirst = true;
+        for (Integer imageId : imageIds) {
+            ProjectImage image = projectImageMapper.selectById(imageId);
+            if (image != null && image.getProjectId() == null) {
+                image.setProjectId(projectId);
+                // 设置排序，追加到项目现有图片之后
+                var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<ProjectImage>();
+                queryWrapper.eq("project_id", projectId).orderByDesc("sort_order").last("limit 1");
+                ProjectImage lastImage = projectImageMapper.selectOne(queryWrapper);
+                image.setSortOrder(lastImage != null ? lastImage.getSortOrder() + 1 : 0);
+
+                // 第一张图片设为封面
+                if (isFirst) {
+                    // 先取消项目其他图片的封面
+                    var updateWrapper = new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<ProjectImage>();
+                    updateWrapper.eq("project_id", projectId).set("is_cover", 0);
+                    projectImageMapper.update(null, updateWrapper);
+
+                    image.setIsCover(1);
+
+                    // 更新项目的封面 ID
+                    var projectUpdateWrapper = new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<com.gio.entity.Project>();
+                    projectUpdateWrapper.eq("id", projectId).set("cover_image_id", imageId);
+                    projectMapper.update(null, projectUpdateWrapper);
+
+                    isFirst = false;
+                }
+
+                projectImageMapper.updateById(image);
+            }
+        }
+    }
 }

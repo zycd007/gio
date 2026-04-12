@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -24,7 +26,7 @@ public class AdminImageController {
     private ImageService imageService;
 
     /**
-     * 上传项目图片
+     * 上传项目图片（支持临时上传，projectId 为空时返回临时图片 ID 列表）
      */
     @PostMapping("/projects/{projectId}/images")
     public Result<List<ProjectImage>> uploadImages(
@@ -32,6 +34,31 @@ public class AdminImageController {
             @RequestParam("files") List<MultipartFile> files) {
         List<ProjectImage> images = imageService.uploadImages(projectId, files);
         return Result.success(images);
+    }
+
+    /**
+     * 临时上传图片（用于新建项目前）
+     * 返回临时图片 ID 列表，创建项目时传入这些 ID 进行关联
+     */
+    @PostMapping("/images/temp")
+    public Result<List<Integer>> uploadTempImages(
+            @RequestParam("files") List<MultipartFile> files) {
+        List<Integer> tempImageIds = imageService.uploadTempImages(files);
+        return Result.success(tempImageIds);
+    }
+
+    /**
+     * 将临时图片关联到项目
+     */
+    @PostMapping("/projects/{projectId}/images/associate")
+    public Result<Void> associateImages(
+            @PathVariable Integer projectId,
+            @RequestBody java.util.Map<String, java.util.List<Integer>> request) {
+        java.util.List<Integer> imageIds = request.get("imageIds");
+        if (imageIds != null && !imageIds.isEmpty()) {
+            imageService.associateImagesToProject(projectId, imageIds);
+        }
+        return Result.success();
     }
 
     /**
@@ -91,7 +118,8 @@ public class AdminImageController {
         String contentType = getContentType(image.getImageType());
         headers.setContentType(MediaType.parseMediaType(contentType));
         headers.setContentLength(imageData.length);
-        headers.setContentDispositionFormData("attachment", image.getImageName());
+        String encodedFilename = URLEncoder.encode(image.getImageName(), StandardCharsets.UTF_8).replace("+", "%20");
+        headers.setContentDispositionFormData("attachment", encodedFilename);
 
         return ResponseEntity.ok().headers(headers).body(imageData);
     }

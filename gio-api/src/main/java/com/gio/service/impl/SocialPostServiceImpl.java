@@ -10,10 +10,13 @@ import com.gio.dto.SocialPostDTO;
 import com.gio.dto.SocialPostGenerateRequest;
 import com.gio.dto.SocialPostListItemDTO;
 import com.gio.entity.Project;
+import com.gio.entity.ProjectImage;
 import com.gio.entity.SocialPost;
 import com.gio.mapper.ProjectMapper;
+import com.gio.mapper.ProjectImageMapper;
 import com.gio.mapper.SocialPostMapper;
 import com.gio.service.SocialPostService;
+import com.gio.util.AiServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +36,8 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
 
     private final SocialPostMapper socialPostMapper;
     private final ProjectMapper projectMapper;
+    private final ProjectImageMapper projectImageMapper;
+    private final AiServiceUtil aiServiceUtil;
 
     @Value("${ai.dashscope.api-key}")
     private String apiKey;
@@ -58,11 +63,16 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
             }
         }
 
-        // 生成推文内容（这里使用模拟数据，实际应调用 AI API）
-        String generatedTitle = "Generated Title";
-        String generatedContent = "这是一篇自动生成的小红书推文内容。\n\n更多内容...";
+        // 构建AI提示词并生成内容
+        String prompt = buildPrompt(request);
+        String aiResponse = aiServiceUtil.generateContent(prompt);
 
-        // TODO: 调用通义千问 AI 生成推文内容
+        // 解析AI响应，提取标题、正文和标签
+        String generatedTitle = extractTitle(aiResponse);
+        String generatedContent = extractContent(aiResponse);
+        String generatedTags = extractTags(aiResponse);
+
+        log.info("AI生成完成 - 标题: {}, 内容长度: {}, 标签: {}", generatedTitle, generatedContent.length(), generatedTags);
 
         // 保存推文
         SocialPost post = new SocialPost();
@@ -70,8 +80,8 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
         post.setProjectId(request.getProjectId());
         post.setTitle(generatedTitle);
         post.setContent(generatedContent);
+        post.setTags(generatedTags);
         post.setStatus(0); // 草稿状态
-        post.setTags("");
         if (request.getSelectedImageIds() != null) {
             post.setSelectedImages(String.join(",", request.getSelectedImageIds().stream().map(String::valueOf).collect(Collectors.toList())));
         }
@@ -242,5 +252,160 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
         dto.setStatus(post.getStatus());
         dto.setCreatedAt(post.getCreatedAt());
         return dto;
+    }
+
+    // ========== AI 生成相关方法 ==========
+
+    /**
+     * 构建 AI 提示词
+     */
+    private String buildPrompt(SocialPostGenerateRequest request) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("你是一名专业的小红书内容创作者，为一家照明设计公司（光里光外）撰写推广文案。\n");
+        prompt.append("公司专注于空间智能照明设计，理念是\"光里有故事，光外有生活\"。\n\n");
+
+        if ("project".equals(request.getType())) {
+            // 项目类型：基于项目信息生成
+            Project project = projectMapper.selectById(request.getProjectId());
+            if (project != null) {
+                prompt.append("项目信息：\n");
+                prompt.append("- 项目名称：").append(project.getName()).append("\n");
+                if (project.getLocation() != null && !project.getLocation().isEmpty()) {
+                    prompt.append("- 项目位置：").append(project.getLocation()).append("\n");
+                }
+                if (project.getYear() != null && !project.getYear().isEmpty()) {
+                    prompt.append("- 完成年份：").append(project.getYear()).append("\n");
+                }
+                if (project.getDescription() != null && !project.getDescription().isEmpty()) {
+                    prompt.append("- 项目描述：").append(project.getDescription()).append("\n");
+                }
+            }
+
+            // 获取选中的图片信息
+            if (request.getSelectedImageIds() != null && !request.getSelectedImageIds().isEmpty()) {
+                prompt.append("\n已选中 ").append(request.getSelectedImageIds().size()).append(" 张项目图片用于配图。\n");
+            }
+        } else {
+            // 自定义类型：基于用户输入生成
+            if (request.getCustomContent() != null && !request.getCustomContent().isEmpty()) {
+                prompt.append("用户需求描述：\n").append(request.getCustomContent()).append("\n");
+            }
+        }
+
+        prompt.append("\n请生成一篇小红书推文，要求：\n");
+        prompt.append("1. 标题吸引眼球，使用热门小红书标题风格\n");
+        prompt.append("2. 正文内容生动有趣，突出照明设计的专业性和美感\n");
+        prompt.append("3. 适当使用小红书常用语气和表达方式\n");
+        prompt.append("4. 正文长度在200-400字左右\n");
+        prompt.append("5. 添加3-5个相关标签，用#开头\n\n");
+        prompt.append("请按以下格式输出（严格遵守）：\n");
+        prompt.append("【标题】你的标题内容\n");
+        prompt.append("【正文】你的正文内容\n");
+        prompt.append("【标签】#标签1 #标签2 #标签3\n");
+
+        return prompt.toString();
+    }
+
+    /**
+     * 从 AI 响应中提取标题
+     */
+    private String extractTitle(String aiResponse) {
+        if (aiResponse == null || aiResponse.isEmpty()) {
+            return "AI生成推文";
+        }
+
+        // 查找【标题】标记
+        int titleStart = aiResponse.indexOf("【标题】");
+        if (titleStart >= 0) {
+            titleStart += 4; // 跳过标记
+            int titleEnd = aiResponse.indexOf("\n", titleStart);
+            if (titleEnd < 0) {
+                titleEnd = aiResponse.indexOf("【正文】", titleStart);
+            }
+            if (titleEnd > titleStart) {
+                String title = aiResponse.substring(titleStart, titleEnd).trim();
+                // 限制标题长度不超过 20 字
+                return limitTitleLength(title);
+            }
+        }
+
+        // 如果没有找到标记，取第一行作为标题
+        int firstLineEnd = aiResponse.indexOf("\n");
+        if (firstLineEnd > 0 && firstLineEnd < 50) {
+            String title = aiResponse.substring(0, firstLineEnd).trim();
+            // 限制标题长度不超过 20 字
+            return limitTitleLength(title);
+        }
+
+        // 默认标题
+        return limitTitleLength("照明设计分享");
+    }
+
+    /**
+     * 限制标题长度不超过 20 字
+     */
+    private String limitTitleLength(String title) {
+        if (title == null || title.length() <= 20) {
+            return title;
+        }
+        // 超过 20 字，截断并添加省略号
+        return title.substring(0, 17) + "...";
+    }
+
+    /**
+     * 从 AI 响应中提取正文（限制 20 字以内）
+     */
+    private String extractContent(String aiResponse) {
+        if (aiResponse == null || aiResponse.isEmpty()) {
+            return "这是一篇AI生成的推文内容。";
+        }
+
+        // 查找【正文】标记
+        int contentStart = aiResponse.indexOf("【正文】");
+        if (contentStart >= 0) {
+            contentStart += 4; // 跳过标记
+            int contentEnd = aiResponse.indexOf("【标签】", contentStart);
+            if (contentEnd > contentStart) {
+                return aiResponse.substring(contentStart, contentEnd).trim();
+            }
+            // 如果没有标签标记，取剩余内容
+            return aiResponse.substring(contentStart).trim();
+        }
+
+        // 如果没有找到标记，返回原文（去除可能的标题行）
+        int firstLineEnd = aiResponse.indexOf("\n");
+        if (firstLineEnd > 0) {
+            return aiResponse.substring(firstLineEnd + 1).trim();
+        }
+
+        return aiResponse;
+    }
+
+    /**
+     * 从 AI 响应中提取标签
+     */
+    private String extractTags(String aiResponse) {
+        if (aiResponse == null || aiResponse.isEmpty()) {
+            return "#照明设计 #光影艺术";
+        }
+
+        // 查找【标签】标记
+        int tagsStart = aiResponse.indexOf("【标签】");
+        if (tagsStart >= 0) {
+            tagsStart += 4; // 跳过标记
+            int tagsEnd = aiResponse.length();
+            // 查找下一个换行或结束
+            int nextLine = aiResponse.indexOf("\n", tagsStart);
+            if (nextLine > tagsStart) {
+                tagsEnd = nextLine;
+            }
+            String tags = aiResponse.substring(tagsStart, tagsEnd).trim();
+            if (!tags.isEmpty()) {
+                return tags;
+            }
+        }
+
+        // 默认标签
+        return "#照明设计 #空间设计 #光影艺术";
     }
 }

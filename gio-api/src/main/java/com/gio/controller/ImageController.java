@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 /**
  * C 端 - 图片接口
  */
@@ -50,7 +53,8 @@ public class ImageController {
         String contentType = getContentType(image.getImageType());
         headers.setContentType(MediaType.parseMediaType(contentType));
         headers.setContentLength(imageData.length);
-        headers.setContentDispositionFormData("attachment", image.getImageName());
+        String encodedFilename = URLEncoder.encode(image.getImageName(), StandardCharsets.UTF_8).replace("+", "%20");
+        headers.setContentDispositionFormData("attachment", encodedFilename);
 
         return ResponseEntity.ok().headers(headers).body(imageData);
     }

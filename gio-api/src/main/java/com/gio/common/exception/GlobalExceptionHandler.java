@@ -1,6 +1,7 @@
 package com.gio.common.exception;
 
 import com.gio.common.Result;
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,16 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * 处理客户端断开连接异常（图片传输时客户端取消请求）
+     * 这不是服务器错误，只记录日志不返回响应
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbortException(ClientAbortException e) {
+        logger.warn("客户端断开连接: {}", e.getMessage());
+        // 不返回任何响应，客户端已断开
+    }
 
     /**
      * 处理业务异常 - 返回具体的业务错误信息

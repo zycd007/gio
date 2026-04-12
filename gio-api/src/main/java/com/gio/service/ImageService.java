@@ -75,4 +75,15 @@ public interface ImageService {
      * 批量更新图片排序
      */
     void updateImageSortOrder(List<ImageSortDTO> sortList);
+
+    /**
+     * 临时上传图片（用于新建项目前）
+     * 返回临时图片 ID 列表，创建项目时传入这些 ID 进行关联
+     */
+    List<Integer> uploadTempImages(List<MultipartFile> files);
+
+    /**
+     * 将临时图片关联到项目
+     */
+    void associateImagesToProject(Integer projectId, List<Integer> imageIds);
 }

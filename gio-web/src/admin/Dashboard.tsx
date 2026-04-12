@@ -43,7 +43,7 @@ const AdminDashboard = () => {
       });
   }, []);
 
-  // 统计数据卡片配置
+  // 统计卡片配置
   const statCards = [
     {
       title: '项目总数',
@@ -56,6 +56,7 @@ const AdminDashboard = () => {
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-500',
+      link: '/admin/projects',
     },
     {
       title: '已发布项目',
@@ -68,6 +69,7 @@ const AdminDashboard = () => {
       color: 'from-emerald-500 to-emerald-600',
       bgColor: 'bg-emerald-50',
       iconColor: 'text-emerald-500',
+      link: '/admin/projects?status=1',
     },
     {
       title: '分类数量',
@@ -80,6 +82,7 @@ const AdminDashboard = () => {
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       iconColor: 'text-purple-500',
+      link: '/admin/categories',
     },
     {
       title: '待处理留言',
@@ -93,6 +96,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-amber-50',
       iconColor: 'text-amber-500',
       alert: stats.pendingMessages > 0,
+      link: '/admin/messages?status=0',
     },
   ];
 
@@ -101,9 +105,10 @@ const AdminDashboard = () => {
       {/* 统计卡片 - 2x2 网格 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, index) => (
-          <div
+          <Link
             key={index}
-            className={`bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group relative ${
+            to={card.link}
+            className={`bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group relative cursor-pointer ${
               card.alert ? 'border-2 border-amber-400 ring-4 ring-amber-100' : 'border border-slate-100'
             }`}
           >
@@ -127,77 +132,8 @@ const AdminDashboard = () => {
             </div>
             {/* 底部装饰条 */}
             <div className={`h-1 mt-4 rounded-full bg-gradient-to-r ${card.color} ${card.alert ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}></div>
-          </div>
+          </Link>
         ))}
-      </div>
-
-      {/* 快捷操作区域 */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-full"></div>
-          <h2 className="text-lg font-semibold text-slate-800">快捷操作</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/admin/projects"
-            className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-100 hover:border-emerald-200 transition-all duration-200 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200 group-hover:shadow-emerald-300 transition-shadow">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-slate-800">新建项目</p>
-              <p className="text-sm text-slate-600">添加新项目</p>
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/projects"
-            className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 transition-all duration-200 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-200 group-hover:shadow-blue-300 transition-shadow">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-slate-800">管理项目</p>
-              <p className="text-sm text-slate-600">查看/编辑项目</p>
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/categories"
-            className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-100 hover:border-purple-200 transition-all duration-200 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-200 group-hover:shadow-purple-300 transition-shadow">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-slate-800">管理分类</p>
-              <p className="text-sm text-slate-600">分类设置</p>
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/messages"
-            className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-100 hover:border-amber-200 transition-all duration-200 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200 group-hover:shadow-amber-300 transition-shadow">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-slate-800">客户留言</p>
-              <p className="text-sm text-slate-600">查看处理留言</p>
-            </div>
-          </Link>
-        </div>
       </div>
     </div>
   );

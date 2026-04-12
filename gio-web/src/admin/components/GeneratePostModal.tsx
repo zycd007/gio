@@ -90,16 +90,27 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
 
   // 开始生成
   const handleGenerate = async () => {
+    // 验证必填项
+    if (mode === 'project') {
+      if (!selectedProjectId) {
+        alert('请选择项目');
+        return;
+      }
+      if (selectedImages.length === 0) {
+        alert('请选择至少一张图片');
+        return;
+      }
+    } else {
+      if (!customContent.trim()) {
+        alert('请输入描述内容');
+        return;
+      }
+    }
+
     setStep(3);
     setLoading(true);
 
     try {
-      if (mode === 'project' && !selectedProjectId) {
-        alert('请选择项目');
-        setLoading(false);
-        return;
-      }
-
       const requestData = mode === 'project'
         ? {
             type: 'project' as const,
@@ -145,20 +156,8 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
     handleClose();
   };
 
-  // 进入下一步
+  // 进入下一步（步骤1→步骤2，不需要验证）
   const goToStep2 = () => {
-    if (mode === 'project' && !selectedProjectId) {
-      alert('请选择项目');
-      return;
-    }
-    if (mode === 'project' && selectedImages.length === 0) {
-      alert('请选择至少一张图片');
-      return;
-    }
-    if (mode === 'custom' && !customContent.trim()) {
-      alert('请输入描述内容');
-      return;
-    }
     setStep(2);
   };
 
@@ -292,11 +291,11 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
                           setSelectedProjectId(e.target.value ? Number(e.target.value) : null);
                           setSelectedImages([]);
                         }}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none text-slate-800 bg-white"
                       >
-                        <option value="">请选择项目</option>
+                        <option value="" className="text-slate-500">请选择项目</option>
                         {projects.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
+                          <option key={p.id} value={p.id} className="text-slate-800">{p.name}</option>
                         ))}
                       </select>
                     )}

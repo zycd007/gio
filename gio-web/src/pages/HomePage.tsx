@@ -7,7 +7,6 @@ import AnimatedSection from '@/components/AnimatedSection';
 import CategoryCard from '@/components/CategoryCard';
 import ProjectCard from '@/components/ProjectCard';
 import ContactInfo from '@/components/ContactInfo';
-import ContactForm from '@/components/ContactForm';
 import TestimonialCard from '@/components/TestimonialCard';
 import { ProjectCardSkeleton } from '@/components/Skeleton';
 import { TESTIMONIALS } from '@/constants/contact';
@@ -255,12 +254,8 @@ const HomePage = () => {
             <h2 className="section-title text-2xl md:text-3xl lg:text-4xl mt-3">联系我们</h2>
           </AnimatedSection>
 
-          <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-5xl mx-auto">
+          <div className="max-w-xl mx-auto">
             <ContactInfo />
-            <AnimatedSection className="delay-400">
-              <h2 className="text-xl md:text-2xl font-light text-white mb-6 md:mb-10 tracking-wide">在线留言</h2>
-              <ContactForm />
-            </AnimatedSection>
           </div>
         </div>
       </section>

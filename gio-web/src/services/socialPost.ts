@@ -2,10 +2,12 @@ import request from './api';
 import { SocialPost, SocialPostGenerateRequest, SocialPostListResult } from '../types/socialPost';
 
 /**
- * 生成推文（AI）
+ * 生成推文（AI）- 超时时间60秒
  */
 export const generatePost = (data: SocialPostGenerateRequest): Promise<SocialPost> => {
-  return request.post('/admin/social-posts/generate', data);
+  return request.post('/admin/social-posts/generate', data, {
+    timeout: 60000  // AI生成需要较长时间
+  });
 };
 
 /**

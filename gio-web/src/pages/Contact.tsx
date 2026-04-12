@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContactInfo from '@/components/ContactInfo';
-import ContactForm from '@/components/ContactForm';
 
 const Contact = () => {
   // 页面首次加载时滚动到顶部
@@ -34,12 +33,8 @@ const Contact = () => {
       {/* 联系方式 */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#141414' }}>
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-5xl mx-auto">
+          <div className="max-w-xl mx-auto">
             <ContactInfo delayClassName="delay-200" />
-            <AnimatedSection className="delay-400">
-              <h2 className="text-xl md:text-2xl font-light text-white mb-6 md:mb-10 tracking-wide">在线留言</h2>
-              <ContactForm rows={4} />
-            </AnimatedSection>
           </div>
         </div>
       </section>

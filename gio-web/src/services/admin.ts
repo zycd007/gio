@@ -56,7 +56,7 @@ export interface ProjectDetail {
   coverImageId?: number;
   viewCount: number;
   status: number;
-  isFeatured?: number;
+  isFeatured: number;
   images: ProjectImage[];
 }
 
@@ -192,6 +192,26 @@ export const uploadImages = (projectId: number, files: File[]): Promise<ProjectI
       'Content-Type': 'multipart/form-data'
     }
   });
+};
+
+/**
+ * 临时上传图片（用于新建项目前）
+ */
+export const uploadTempImages = (files: File[]): Promise<number[]> => {
+  const formData = new FormData();
+  files.forEach(file => formData.append('files', file));
+  return request.post('/admin/images/temp', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+/**
+ * 将临时图片关联到项目
+ */
+export const associateImagesToProject = (projectId: number, imageIds: number[]): Promise<void> => {
+  return request.post(`/admin/projects/${projectId}/images/associate`, { imageIds });
 };
 
 /**

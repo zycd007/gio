@@ -30,6 +30,10 @@ public class ProjectDetailDTO {
 
     private Integer viewCount;
 
+    private Integer status;
+
+    private Integer isFeatured;
+
     private java.util.List<ImageInfo> images;
 
     @Data

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getProjects, getCategories, batchUpdateProjectStatus, batchSetProjectFeatured, batchDeleteProjects } from '@/services/admin';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import PlaceholderImage from '@/components/PlaceholderImage';
 import CreateProjectModal from './components/CreateProjectModal';
@@ -101,6 +101,7 @@ const ProjectCard = ({
 
 const AdminProjects = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,6 +128,14 @@ const AdminProjects = () => {
 
   // 新建项目弹窗
   const [createModalVisible, setCreateModalVisible] = useState(false);
+
+  // 从 URL 参数读取初始筛选状态
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam !== null) {
+      setFilterStatus(Number(statusParam));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     getCategories().then((data) => {

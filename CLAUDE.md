@@ -1,19 +1,19 @@
 # GIO 项目开发规范
 
 ## 项目概述
-- **项目名称**: GIO 设计事务所
+- **项目名称**: 光里光外-专注空间智能照明设计
 - **技术栈**: Spring Boot 3.2.0 + MyBatis Plus 3.5.5 + MySQL
 - **Java 版本**: 17
-- **架构**: 单体架构（后端合并为 gio-api）
 
 ### 服务列表
 | 服务名 | 端口 | 说明 | 访问范围 |
 |--------|------|------|----------|
+| gio-web | 5173 | 前端开发服务器 | 本地开发 |
 | gio-api | 8081 | 后端 API 服务 | 公开 |
 
 ### 访问地址
-- **C 端官网**: http://localhost:8081
-- **后台管理**: http://localhost:8081/admin/
+- **C 端官网**: http://localhost:5173
+- **后台管理**: http://localhost:5173/admin/
 
 ### 项目结构
 ```
@@ -63,7 +63,6 @@ mvn spring-boot:run
 
 ### 配置说明
 - **数据库**: 腾讯云 MySQL (140.143.87.54:3306/gio_design)
-- **上传路径**: `./uploads/`
 
 ## 开发规范
 
@@ -106,94 +105,13 @@ curl -X POST http://localhost:8081/api/admin/login \
   -d '{"username":"admin","password":"admin123"}'
 ```
 
-## 部署
-
-### 部署方式：本地打包 + 上传服务器（推荐）
-
+## 服务器信息
 > **服务器信息：腾讯云**
 > - IP: 140.143.87.54
 > - 服务器用户名：ubuntu
 > - 服务器密码：@yuku007@
 > - 数据库用户名：root
 > - 数据库密码：@Yuku007@
-
-#### 第一步：本地构建
-
-```bash
-# 1. 设置 Java 环境
-export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17"
-export PATH="$JAVA_HOME/bin:$PATH"
-
-# 2. 构建后端
-cd E:/my_projects/gio
-mvn clean package -DskipTests
-
-# 3. 构建前端
-cd gio-web
-pnpm install
-pnpm build
-```
-
-#### 第二步：上传到服务器
-
-```bash
-# 上传后端 jar 包
-scp gio-api/target/gio-api-1.0.0.jar ubuntu@140.143.87.54:/tmp/
-
-# 上传前端构建文件
-scp -r gio-web/dist ubuntu@140.143.87.54:/tmp/
-```
-
-#### 第三步：服务器部署
-
-```bash
-# 使用 Python + paramiko 远程部署（推荐）
-python -c "
-import paramiko
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('140.143.87.54', username='ubuntu', password='@yuku007@')
-
-# 1. 创建目录并移动文件
-stdin, stdout, stderr = client.exec_command(
-    'mkdir -p ~/gio/logs ~/gio/uploads ~/gio/static && ' +
-    'rm -rf ~/gio/static/* && ' +
-    'mv /tmp/gio-api-1.0.0.jar ~/gio/ && ' +
-    'mv /tmp/dist/* ~/gio/static/')
-
-# 2. 停止旧服务
-stdin, stdout, stderr = client.exec_command(
-    'pkill -f \"gio-.*\.jar\" 2>/dev/null || true')
-
-# 3. 启动后端服务
-stdin, stdout, stderr = client.exec_command(
-    'cd ~/gio && nohup java -jar gio-api-1.0.0.jar --server.port=8081 > ~/gio/logs/api.log 2>&1 &')
-
-# 4. 配置 Nginx 反向代理
-nginx_config = '''server {
-    listen 80;
-    server_name _;
-    location / {
-        root /home/ubuntu/gio/static;
-        index index.html;
-        try_files \$uri \$uri/ /index.html;
-    }
-    location /api/ {
-        proxy_pass http://127.0.0.1:8081/api/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
-}'''
-stdin.channel.send(nginx_config.encode())
-stdin.channel.send(b'\n')
-stdin.channel.shutdown_write()
-stdin, stdout, stderr = client.exec_command('sudo tee /etc/nginx/sites-available/gio')
-stdin, stdout, stderr = client.exec_command('sudo nginx -t && sudo nginx -s reload')
-
-client.close()
-print('部署完成')
-"
-```
 
 **访问地址：**
 - 前端页面：http://140.143.87.54
@@ -204,59 +122,3 @@ print('部署完成')
 ssh ubuntu@140.143.87.54
 tail -f ~/gio/logs/api.log
 ```
-
-### 本地部署（开发测试）
-1. 确保 MySQL 服务运行
-2. 运行 `mvn clean install -DskipTests` 构建所有模块
-3. 启动 gio-api 服务
-4. 上传目录确保有写权限
-
-### 数据库迁移
-```bash
-# 导出数据
-mysqldump -h localhost -u root -p gio_design > backup.sql
-
-# 导入到腾讯云
-mysql -h 140.143.87.54 -u root -p gio_design < backup.sql
-```
-
-## 常见问题
-
-### Lombok 编译错误
-确保使用 Java 17 编译，并配置了 maven-compiler-plugin：
-```xml
-<annotationProcessorPaths>
-    <path>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <version>1.18.30</version>
-    </path>
-</annotationProcessorPaths>
-```
-
-### Spring Boot 启动失败
-- 检查端口是否被占用（8081）
-- 检查数据库连接配置
-- 确保 MyBatis Plus 版本与 Spring Boot 兼容
-
-### 文件上传失败
-- 检查 `uploads/` 目录是否存在
-- 确保有写权限
-- 检查 `application.yml` 中的文件大小限制
-
-## Git 提交规范
-- 新功能：`feat: add xxx feature`
-- Bug 修复：`fix: resolve xxx issue`
-- 配置修改：`chore: update xxx config`
-- 重构：`refactor: improve xxx structure`
-
-## 代码清理规范
-- 每次重构后，删除旧的不再使用的代码文件
-- 清理无用的 import 和依赖
-- 使用 `git status` 检查是否有残留文件
-
-## 安全注意事项
-- 生产环境需修改 `jwt.secret`
-- 数据库密码建议使用环境变量
-- 开启 HTTPS
-- 定期备份数据库
