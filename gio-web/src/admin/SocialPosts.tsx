@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getPostList, deletePost, updatePublishStatus } from '@/services/socialPost';
-import { SocialPostListItem, SocialPost } from '@/types/socialPost';
+import { SocialPostListItem } from '@/types/socialPost';
 import { toast } from 'sonner';
 import GeneratePostModal from './components/GeneratePostModal';
 
@@ -134,7 +134,7 @@ const AdminSocialPosts = () => {
   };
 
   // 生成成功后刷新列表
-  const handleGenerateSuccess = (post: SocialPost) => {
+  const handleGenerateSuccess = () => {
     toast.success('推文生成成功');
     loadPosts();
   };
