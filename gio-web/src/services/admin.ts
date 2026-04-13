@@ -469,8 +469,8 @@ export const uploadSingleTempImage = async (
     signal,
   });
 
-  // 返回第一个 imageId
-  return response.data[0] as number;
+  // 返回第一个 imageId（response 已被拦截器提取为 data）
+  return (response as unknown as number[])[0];
 };
 
 /**
@@ -499,7 +499,7 @@ export const uploadSingleProjectImage = async (
     signal,
   });
 
-  // 返回第一个 imageId
-  const data = response.data as any[];
+  // 返回第一个 imageId（response 已被拦截器提取为 data）
+  const data = response as unknown as any[];
   return data[0]?.id || data[0];
 };
