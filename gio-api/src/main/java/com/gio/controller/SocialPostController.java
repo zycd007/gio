@@ -1,6 +1,8 @@
 package com.gio.controller;
 
 import com.gio.common.Result;
+import com.gio.dto.AiImageGenerateRequest;
+import com.gio.dto.AiImageGenerateResponse;
 import com.gio.dto.PageResult;
 import com.gio.dto.SocialPostDTO;
 import com.gio.dto.SocialPostGenerateRequest;
@@ -81,6 +83,28 @@ public class SocialPostController {
             @RequestParam(required = false) String platform,
             @RequestParam(required = false) String url) {
         socialPostService.updatePublishStatus(id, status, platform, url);
+        return Result.success();
+    }
+
+    /**
+     * 为推文生成AI配图
+     */
+    @PostMapping("/{id}/ai-images")
+    public Result<AiImageGenerateResponse> generateAiImages(
+            @PathVariable Integer id,
+            @RequestBody AiImageGenerateRequest request) {
+        AiImageGenerateResponse response = socialPostService.generateAiImages(id, request);
+        return Result.success(response);
+    }
+
+    /**
+     * 删除单张AI配图
+     */
+    @DeleteMapping("/{id}/ai-images/{attachmentId}")
+    public Result<Void> deleteAiImage(
+            @PathVariable Integer id,
+            @PathVariable Integer attachmentId) {
+        socialPostService.deleteAiImage(id, attachmentId);
         return Result.success();
     }
 }

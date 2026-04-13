@@ -19,9 +19,9 @@ public class DashboardStatsDTO {
     private Long publishedProjects;
 
     /**
-     * 分类总数
+     * 推文总数
      */
-    private Long totalCategories;
+    private Long totalSocialPosts;
 
     /**
      * 图片总数

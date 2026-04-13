@@ -23,6 +23,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   onNavigate,
 }) => {
   const [thumbnailsVisible, setThumbnailsVisible] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // 图片切换时重置 loading 状态
+  useEffect(() => {
+    if (visible) {
+      setImageLoading(true);
+    }
+  }, [currentIndex, visible]);
 
   // 键盘导航
   useEffect(() => {
@@ -109,10 +117,18 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
         {/* 当前图片 */}
         <div className="relative w-full h-full flex items-center justify-center">
+          {imageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full"></div>
+            </div>
+          )}
           <img
             src={`/api/images/${currentImage.id}?t=${Date.now()}`}
             alt={currentImage.imageName}
-            className="max-w-full max-h-full object-contain rounded-lg"
+            className={`max-w-full max-h-full object-contain rounded-lg transition-opacity duration-300 ${
+              imageLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            onLoad={() => setImageLoading(false)}
             style={{
               maxWidth: '100%',
               maxHeight: '100%',

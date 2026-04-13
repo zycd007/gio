@@ -1,6 +1,8 @@
 package com.gio.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.gio.dto.AiImageGenerateRequest;
+import com.gio.dto.AiImageGenerateResponse;
 import com.gio.dto.PageResult;
 import com.gio.dto.SocialPostDTO;
 import com.gio.dto.SocialPostGenerateRequest;
@@ -41,4 +43,14 @@ public interface SocialPostService extends IService<SocialPost> {
      * 更新发布状态
      */
     boolean updatePublishStatus(Integer id, Integer status, String platform, String url);
+
+    /**
+     * 为推文生成AI配图
+     */
+    AiImageGenerateResponse generateAiImages(Integer postId, AiImageGenerateRequest request);
+
+    /**
+     * 删除单张AI配图
+     */
+    boolean deleteAiImage(Integer postId, Integer attachmentId);
 }

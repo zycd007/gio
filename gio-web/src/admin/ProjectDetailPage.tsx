@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getProjectDetail,
@@ -42,13 +42,11 @@ const SortableImageItem = ({
   onClick,
   onSetCover,
   onDelete,
-  isEditMode,
 }: {
   image: ProjectImage;
   onClick: () => void;
   onSetCover: () => void;
   onDelete: () => void;
-  isEditMode: boolean;
 }) => {
   const {
     attributes,
@@ -73,7 +71,7 @@ const SortableImageItem = ({
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`relative aspect-square rounded-xl overflow-hidden ${isEditMode ? 'cursor-move' : 'cursor-pointer'} group border-2 border-transparent hover:border-emerald-400 transition-all ${isDragging ? 'border-emerald-500 shadow-lg' : ''}`}
+      className={`relative aspect-square rounded-xl overflow-hidden cursor-move group border-2 border-transparent hover:border-emerald-400 transition-all ${isDragging ? 'border-emerald-500 shadow-lg' : ''}`}
     >
       <img
         src={`/api/images/${image.id}?t=${Date.now()}`}
@@ -86,44 +84,38 @@ const SortableImageItem = ({
         </span>
       )}
       {/* 拖拽手柄提示 */}
-      {isEditMode && (
-        <div className="absolute top-2 right-2 bg-black/50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4h4v2h-4V4zm0 14h4v2h-4v-2zM4 10h2v4H4v-4zm14 0h2v4h-2v-4zM6.59 6.59L8 8l-1.41 1.41L5.17 8 6.59 6.59zm10.82 10.82L18.83 16l1.41 1.41L18.83 18.83l-1.42-1.42zM6.59 17.41L8 16l-1.41-1.41L5.17 16l1.42 1.41zm10.82-10.82L18.83 8l-1.41-1.41L18.83 5.17l1.42 1.42z"/>
-          </svg>
-        </div>
-      )}
+      <div className="absolute top-2 right-2 bg-black/50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M10 4h4v2h-4V4zm0 14h4v2h-4v-2zM4 10h2v4H4v-4zm14 0h2v4h-2v-4zM6.59 6.59L8 8l-1.41 1.41L5.17 8 6.59 6.59zm10.82 10.82L18.83 16l1.41 1.41L18.83 18.83l-1.42-1.42zM6.59 17.41L8 16l-1.41-1.41L5.17 16l1.42 1.41zm10.82-10.82L18.83 8l-1.41-1.41L18.83 5.17l1.42 1.42z"/>
+        </svg>
+      </div>
       {/* 悬浮层显示操作提示 */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
         <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
         </svg>
       </div>
-      {/* 编辑模式下的操作按钮 */}
-      {isEditMode && (
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
-          onClick={(e) => e.stopPropagation()}
+      {/* 操作按钮始终显示 */}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onSetCover(); }}
+          className="p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors"
+          title="设为封面"
         >
-          <button
-            onClick={onSetCover}
-            className="p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors"
-            title="设为封面"
-          >
-            <svg className="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1.5 bg-red-500/90 rounded-full hover:bg-red-500 transition-colors"
-            title="删除"
-          >
-            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
+          <svg className="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-1.5 bg-red-500/90 rounded-full hover:bg-red-500 transition-colors"
+          title="删除"
+        >
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 };
@@ -133,8 +125,6 @@ interface Category {
   name: string;
 }
 
-// 页面模式
-type PageMode = 'viewMode' | 'editMode' | 'createMode';
 
 
 const ProjectDetailPage = () => {
@@ -143,9 +133,7 @@ const ProjectDetailPage = () => {
   const isNewProject = id === 'new';
   const projectId = isNewProject ? 0 : (id ? parseInt(id) : 0);
 
-  // 页面模式
-  const [pageMode, setPageMode] = useState<PageMode>(isNewProject ? 'createMode' : 'viewMode');
-
+  
   // 页面状态
   const [loading, setLoading] = useState(!isNewProject);
   const [saving, setSaving] = useState(false);
@@ -187,6 +175,12 @@ const ProjectDetailPage = () => {
     onConfirm: () => void;
   } | null>(null);
 
+  // 自动保存状态
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedData, setLastSavedData] = useState<typeof formData | null>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false);
+
   // 加载分类（新建和编辑都需要）
   useEffect(() => {
     loadCategories();
@@ -204,7 +198,7 @@ const ProjectDetailPage = () => {
     try {
       const data = await getProjectDetail(projectId);
       setProject(data);
-      setFormData({
+      const initialFormData = {
         name: data.name,
         location: data.location || '',
         year: data.year || '',
@@ -212,7 +206,10 @@ const ProjectDetailPage = () => {
         description: data.description || '',
         status: data.status ?? 1,
         isFeatured: data.isFeatured ?? 0,
-      });
+      };
+      setFormData(initialFormData);
+      // 初始化 lastSavedData 用于自动保存比较
+      setLastSavedData(initialFormData);
     } catch (err: any) {
       toast.error('加载项目失败：' + err.message);
     } finally {
@@ -233,30 +230,69 @@ const ProjectDetailPage = () => {
     }
   };
 
-  // 进入编辑模式
-  const handleEnterEditMode = () => {
-    if (!project) return;
-    loadCategories();
-    setPageMode('editMode');
-  };
+  // 自动保存函数（2秒防抖）
+  const triggerAutoSave = useCallback((newFormData: typeof formData) => {
+    // 仅对已存在的项目启用自动保存
+    if (isNewProject || !project) return;
 
-  // 退出编辑模式
-  const handleExitEditMode = () => {
-    if (project) {
-      // 恢复原始数据
-      setFormData({
-        name: project.name,
-        location: project.location || '',
-        year: project.year || '',
-        categoryId: project.categoryId || 1,
-        description: project.description || '',
-        status: project.status ?? 1,
-        isFeatured: project.isFeatured ?? 0,
-      });
+    // 清除之前的定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
     }
-    setPageMode('viewMode');
+
+    // 比较数据是否有变化
+    if (JSON.stringify(newFormData) === JSON.stringify(lastSavedData)) {
+      return;
+    }
+
+    // 2秒后触发保存
+    autoSaveTimerRef.current = setTimeout(async () => {
+      if (isSavingRef.current) return;
+      isSavingRef.current = true;
+      setSaveStatus('saving');
+
+      try {
+        await updateProject(project.id, newFormData);
+        setSaveStatus('saved');
+        setLastSavedData(newFormData);
+        // 2秒后重置状态
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (err: any) {
+        setSaveStatus('error');
+        toast.error('自动保存失败：' + err.message);
+      } finally {
+        isSavingRef.current = false;
+      }
+    }, 2000);
+  }, [project, isNewProject, lastSavedData]);
+
+  // 统一的表单变更处理函数
+  const handleFormChange = (updates: Partial<typeof formData>) => {
+    const newFormData = { ...formData, ...updates };
+    setFormData(newFormData);
+    triggerAutoSave(newFormData);
   };
 
+  // 检测是否有未保存更改
+  const hasUnsavedChanges = useCallback(() => {
+    if (!lastSavedData) return false;
+    return JSON.stringify(formData) !== JSON.stringify(lastSavedData);
+  }, [formData, lastSavedData]);
+
+  // 浏览器关闭/刷新处理
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '您有未保存的更改';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  
   // 保存项目
   const handleSave = async () => {
     // 校验
@@ -291,8 +327,6 @@ const ProjectDetailPage = () => {
         // 更新项目
         await updateProject(project.id, formData);
         toast.success('保存成功');
-        setPageMode('viewMode');
-        loadProject();
       }
     } catch (err: any) {
       toast.error('保存失败：' + err.message);
@@ -392,7 +426,7 @@ const ProjectDetailPage = () => {
 
     setIsBatchUploading(true);
 
-    const isTemp = pageMode === 'createMode' || !projectId;
+    const isTemp = isNewProject || !projectId;
     const projId = isTemp ? undefined : projectId;
 
     const updatedItem = await retryUploadItem(item, isTemp, projId, {
@@ -550,20 +584,31 @@ const ProjectDetailPage = () => {
   }
 
   const images = project?.images || [];
-  const isEditMode = pageMode === 'editMode' || pageMode === 'createMode';
 
   return (
     <div className="min-h-full bg-slate-50/50">
       {/* 顶部导航栏 */}
       <div
-        className={`sticky top-0 z-10 border-b ${
-          isEditMode ? 'bg-blue-50/80 border-blue-200' : 'bg-white/80 border-slate-200'
-        } backdrop-blur-sm`}
+        className="sticky top-0 z-10 border-b bg-blue-50/80 border-blue-200 backdrop-blur-sm"
       >
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/admin/projects')}
+              onClick={() => {
+                if (hasUnsavedChanges()) {
+                  setConfirmConfig({
+                    show: true,
+                    title: '有未保存的更改',
+                    message: '您有未保存的更改，确定要离开吗？',
+                    onConfirm: () => {
+                      setConfirmConfig(null);
+                      navigate('/admin/projects');
+                    },
+                  });
+                } else {
+                  navigate('/admin/projects');
+                }
+              }}
               className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
               aria-label="返回项目列表"
             >
@@ -571,78 +616,86 @@ const ProjectDetailPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            {isEditMode ? (
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={isNewProject ? '请输入项目名称' : undefined}
-                className="text-lg font-semibold text-slate-800 bg-transparent border-b-2 border-transparent focus:border-emerald-500 outline-none px-1"
-              />
-            ) : (
-              <div>
-                <h1 className="text-lg font-semibold text-slate-800">{project?.name}</h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                    project?.status === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {project?.status === 1 ? '已发布' : '草稿'}
-                  </span>
-                  {project?.isFeatured === 1 && (
-                    <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">精品</span>
-                  )}
-                </div>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleFormChange({ name: e.target.value })}
+              placeholder={isNewProject ? '请输入项目名称' : undefined}
+              className="text-lg font-semibold text-slate-800 bg-transparent border-b-2 border-transparent focus:border-emerald-500 outline-none px-1"
+            />
+            {!isNewProject && project && (
+              <div className="flex items-center gap-2">
+                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                  project.status === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {project.status === 1 ? '已发布' : '草稿'}
+                </span>
+                {project.isFeatured === 1 && (
+                  <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">精品</span>
+                )}
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            {isEditMode ? (
+            {/* 保存状态指示器 */}
+            {!isNewProject && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 text-xs min-w-[60px]">
+                {saveStatus === 'saving' && (
+                  <span className="text-blue-600">保存中...</span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="text-emerald-600">已保存</span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="text-red-600">保存失败</span>
+                )}
+                {saveStatus === 'idle' && (
+                  <span className="text-slate-400 text-xs">自动保存</span>
+                )}
+              </div>
+            )}
+
+            {/* 新建项目时显示创建按钮 */}
+            {isNewProject && (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-1.5 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50 text-sm flex items-center gap-1"
+              >
+                {saving && (
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                )}
+                创建项目
+              </button>
+            )}
+
+            {/* 现有项目的快捷操作按钮 */}
+            {!isNewProject && project && (
               <>
-                <button
-                  onClick={() => isNewProject ? navigate('/admin/projects') : handleExitEditMode()}
-                  disabled={saving}
-                  className="px-4 py-1.5 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50 text-sm"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-4 py-1.5 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50 text-sm flex items-center gap-1"
-                >
-                  {saving && (
-                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  )}
-                  {isNewProject ? '创建' : '保存'}
-                </button>
-              </>
-            ) : (
-              <>
-                {/* 快捷操作按钮 */}
                 <button
                   onClick={() => {
-                    const newStatus = project?.status === 1 ? 0 : 1;
-                    updateProjectStatus(project!.id, newStatus).then(() => {
+                    const newStatus = project.status === 1 ? 0 : 1;
+                    updateProjectStatus(project.id, newStatus).then(() => {
                       loadProject();
                       toast.success(newStatus === 1 ? '已发布' : '已下架');
                     });
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    project?.status === 1
+                    project.status === 1
                       ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                       : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                   }`}
                 >
-                  {project?.status === 1 ? '下架' : '发布'}
+                  {project.status === 1 ? '下架' : '发布'}
                 </button>
                 <button
                   onClick={() => {
-                    const newFeatured = (project?.isFeatured || 0) === 1 ? 0 : 1;
-                    setProjectFeatured(project!.id, newFeatured).then(() => {
+                    const newFeatured = (project.isFeatured || 0) === 1 ? 0 : 1;
+                    setProjectFeatured(project.id, newFeatured).then(() => {
                       loadProject();
                       toast.success(newFeatured === 1 ? '已设为精品' : '已取消精品');
                     }).catch((err: any) => {
@@ -650,23 +703,17 @@ const ProjectDetailPage = () => {
                     });
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    (project?.isFeatured || 0) === 1
+                    (project.isFeatured || 0) === 1
                       ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  {(project?.isFeatured || 0) === 1 ? '取消精品' : '设为精品'}
-                </button>
-                <button
-                  onClick={() => handleEnterEditMode()}
-                  className="px-3 py-1.5 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all text-sm"
-                >
-                  编辑
+                  {(project.isFeatured || 0) === 1 ? '取消精品' : '设为精品'}
                 </button>
                 <button
                   onClick={() => {
-                    const imageCount = project?.images?.length || 0;
-                    let message = `确定要删除项目"${project?.name}"吗？`;
+                    const imageCount = project.images?.length || 0;
+                    let message = `确定要删除项目"${project.name}"吗？`;
                     if (imageCount > 0) {
                       message += '\n\n';
                       message += `该项目关联了 ${imageCount} 张图片，删除后将一并移除。`;
@@ -678,7 +725,7 @@ const ProjectDetailPage = () => {
                       message,
                       onConfirm: async () => {
                         try {
-                          await deleteProject(project!.id);
+                          await deleteProject(project.id);
                           toast.success('项目已删除');
                           navigate('/admin/projects');
                         } catch (err: any) {
@@ -700,7 +747,7 @@ const ProjectDetailPage = () => {
 
       {/* 主体内容 */}
       <div className="max-w-7xl mx-auto p-6">
-        {pageMode === 'createMode' ? (
+        {isNewProject ? (
           /* 新建项目表单 */
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
@@ -710,7 +757,7 @@ const ProjectDetailPage = () => {
                   <label className="block text-sm text-slate-600 mb-1">项目分类</label>
                   <select
                     value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
+                    onChange={(e) => handleFormChange({ categoryId: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
                   >
                     {categories.map((cat) => (
@@ -723,7 +770,7 @@ const ProjectDetailPage = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => handleFormChange({ name: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
                     placeholder="请输入项目名称"
                   />
@@ -734,7 +781,7 @@ const ProjectDetailPage = () => {
                     <input
                       type="text"
                       value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      onChange={(e) => handleFormChange({ location: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
                       placeholder="例如：上海"
                     />
@@ -744,7 +791,7 @@ const ProjectDetailPage = () => {
                     <input
                       type="text"
                       value={formData.year}
-                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                      onChange={(e) => handleFormChange({ year: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
                       placeholder="例如：2024"
                     />
@@ -754,7 +801,7 @@ const ProjectDetailPage = () => {
                   <label className="block text-sm text-slate-600 mb-1">项目描述</label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => handleFormChange({ description: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 outline-none resize-none"
                     rows={4}
                     placeholder="请输入项目描述"
@@ -859,68 +906,52 @@ const ProjectDetailPage = () => {
                   {/* 分类 */}
                   <div>
                     <label className="text-sm text-slate-500 mb-1 block">项目分类</label>
-                    {isEditMode ? (
-                      <select
-                        value={formData.categoryId}
-                        onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="text-slate-800 font-medium">{project?.categoryName}</div>
-                    )}
+                    <select
+                      value={formData.categoryId}
+                      onChange={(e) => handleFormChange({ categoryId: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* 项目名称 */}
                   <div>
                     <label className="text-sm text-slate-500 mb-1 block">项目名称</label>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                        placeholder="请输入项目名称"
-                      />
-                    ) : (
-                      <div className="text-slate-800 font-medium">{project?.name}</div>
-                    )}
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleFormChange({ name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                      placeholder="请输入项目名称"
+                    />
                   </div>
 
                   {/* 位置和年份 */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm text-slate-500 mb-1 block">项目位置</label>
-                      {isEditMode ? (
-                        <input
-                          type="text"
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                          placeholder="例如：上海、北京"
-                        />
-                      ) : (
-                        <div className="text-slate-800 font-medium">{project?.location || '-'}</div>
-                      )}
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => handleFormChange({ location: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                        placeholder="例如：上海、北京"
+                      />
                     </div>
                     <div>
                       <label className="text-sm text-slate-500 mb-1 block">设计年份</label>
-                      {isEditMode ? (
-                        <input
-                          type="text"
-                          value={formData.year}
-                          onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
-                          placeholder="例如：2024"
-                        />
-                      ) : (
-                        <div className="text-slate-800 font-medium">{project?.year || '-'}</div>
-                      )}
+                      <input
+                        type="text"
+                        value={formData.year}
+                        onChange={(e) => handleFormChange({ year: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none"
+                        placeholder="例如：2024"
+                      />
                     </div>
                   </div>
 
@@ -953,31 +984,23 @@ const ProjectDetailPage = () => {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-sm text-slate-500">项目描述</label>
-                      {isEditMode && (
-                        <button
-                          onClick={handleCopyDescription}
-                          className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          复制
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCopyDescription}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        复制
+                      </button>
                     </div>
-                    {isEditMode ? (
-                      <textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none resize-none text-sm leading-relaxed"
-                        rows={5}
-                        placeholder="请输入项目描述..."
-                      />
-                    ) : (
-                      <div className="bg-slate-50 rounded-lg p-4 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-                        {project?.description || '暂无描述'}
-                      </div>
-                    )}
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => handleFormChange({ description: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none resize-none text-sm leading-relaxed"
+                      rows={5}
+                      placeholder="请输入项目描述..."
+                    />
                   </div>
                 </div>
               </div>
@@ -996,23 +1019,21 @@ const ProjectDetailPage = () => {
                       <span className="text-xs text-slate-400 font-normal">({images.length}张)</span>
                     )}
                   </h3>
-                  {isEditMode && (
-                    <label className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs cursor-pointer flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      上传图片
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isBatchUploading}
-                      />
-                    </label>
-                  )}
+                  <label className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors font-medium text-xs cursor-pointer flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    上传图片
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={isBatchUploading}
+                    />
+                  </label>
                 </div>
 
                 {/* 上传队列卡片 */}
@@ -1033,7 +1054,7 @@ const ProjectDetailPage = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <p className="text-sm">暂无图片</p>
-                    {isEditMode && <p className="text-xs mt-1">点击上方按钮上传图片</p>}
+                    <p className="text-xs mt-1">点击上方按钮上传图片</p>
                   </div>
                 ) : (
                   <DndContext
@@ -1053,11 +1074,9 @@ const ProjectDetailPage = () => {
                             onClick={() => openImageViewer(index)}
                             onSetCover={() => handleSetCover(img.id)}
                             onDelete={() => handleDeleteImage(img.id)}
-                            isEditMode={isEditMode}
                           />
                         ))}
-                        {isEditMode && (
-                          <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors">
+                        <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors">
                             <div className="text-center">
                               <svg className="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1073,8 +1092,7 @@ const ProjectDetailPage = () => {
                               disabled={isBatchUploading}
                             />
                           </label>
-                        )}
-                      </div>
+                        </div>
                     </SortableContext>
                   </DndContext>
                 )}

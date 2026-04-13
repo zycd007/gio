@@ -10,8 +10,11 @@ import ContactInfo from '@/components/ContactInfo';
 import TestimonialCard from '@/components/TestimonialCard';
 import { ProjectCardSkeleton } from '@/components/Skeleton';
 import { TESTIMONIALS } from '@/constants/contact';
+import { usePageTrack } from '@/hooks/usePageTrack';
 
 const HomePage = () => {
+  // 埋点 - 首页
+  usePageTrack();
   const [categories, setCategories] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);

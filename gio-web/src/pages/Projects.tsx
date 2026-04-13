@@ -6,6 +6,7 @@ import { useAppContext } from '@/App';
 import AnimatedSection from '@/components/AnimatedSection';
 import { ProjectCardSkeleton } from '@/components/Skeleton';
 import PLACEHOLDER_IMAGE from '@/constants/placeholder';
+import { usePageTrack } from '@/hooks/usePageTrack';
 
 interface Category {
   id: number;
@@ -27,6 +28,8 @@ interface Project {
 }
 
 const Projects = () => {
+  // 埋点 - 项目列表页
+  usePageTrack();
   const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);

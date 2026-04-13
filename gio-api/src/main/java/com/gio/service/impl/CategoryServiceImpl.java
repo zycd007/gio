@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gio.dto.DashboardStatsDTO;
 import com.gio.entity.Category;
 import com.gio.entity.Project;
+import com.gio.entity.SocialPost;
 import com.gio.mapper.CategoryMapper;
+import com.gio.mapper.SocialPostMapper;
 import com.gio.service.CategoryService;
 import com.gio.service.ImageService;
 import com.gio.service.ProjectService;
@@ -28,6 +30,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     @Autowired
     private ImageService imageService;
 
+    @Autowired
+    private SocialPostMapper socialPostMapper;
+
     @Override
     public List<Category> getEnabledCategories() {
         var queryWrapper = new QueryWrapper<Category>();
@@ -46,7 +51,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public DashboardStatsDTO getDashboardStats() {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
-        // 项目总数 - 需要通过 projectService 获取
+        // 项目总数
         QueryWrapper<Project> projectWrapper = new QueryWrapper<>();
         stats.setTotalProjects(projectService.count(projectWrapper));
 
@@ -55,11 +60,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         publishedWrapper.eq("status", 1);
         stats.setPublishedProjects(projectService.count(publishedWrapper));
 
-        // 分类总数
-        QueryWrapper<Category> categoryWrapper = new QueryWrapper<>();
-        stats.setTotalCategories(this.count(categoryWrapper));
+        // 推文总数（未删除的）
+        QueryWrapper<SocialPost> postWrapper = new QueryWrapper<>();
+        postWrapper.eq("deleted", 0);
+        stats.setTotalSocialPosts(socialPostMapper.selectCount(postWrapper));
 
-        // 图片总数 - 从 ImageService 获取
+        // 图片总数
         stats.setTotalImages(imageService.getTotalImageCount());
 
         return stats;

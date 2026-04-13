@@ -1,5 +1,5 @@
 import request from './api';
-import { SocialPost, SocialPostGenerateRequest, SocialPostListResult } from '../types/socialPost';
+import { SocialPost, SocialPostGenerateRequest, SocialPostListResult, AiImageGenerateRequest, AiImageGenerateResponse } from '../types/socialPost';
 
 /**
  * 生成推文（AI）- 超时时间60秒
@@ -58,4 +58,20 @@ export const updatePublishStatus = (
   return request.put(`/admin/social-posts/${id}/publish`, null, {
     params: { status, platform, url }
   });
+};
+
+/**
+ * 生成AI配图
+ */
+export const generateAiImages = (postId: number, data: AiImageGenerateRequest): Promise<AiImageGenerateResponse> => {
+  return request.post(`/admin/social-posts/${postId}/ai-images`, data, {
+    timeout: 120000  // AI图片生成需要更长时间
+  });
+};
+
+/**
+ * 删除单张AI配图
+ */
+export const deleteAiImage = (postId: number, attachmentId: number): Promise<void> => {
+  return request.delete(`/admin/social-posts/${postId}/ai-images/${attachmentId}`);
 };

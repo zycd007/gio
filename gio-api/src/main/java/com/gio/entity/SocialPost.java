@@ -50,6 +50,26 @@ public class SocialPost {
     private String customImages;
 
     /**
+     * AI生成的配图信息（JSON数组）
+     */
+    private String aiImages;
+
+    /**
+     * AI配图生成提示词
+     */
+    private String aiImagePrompt;
+
+    /**
+     * AI配图数量
+     */
+    private Integer aiImageCount;
+
+    /**
+     * AI配图状态: 0-未生成 1-生成中 2-已生成 3-生成失败
+     */
+    private Integer aiImageStatus;
+
+    /**
      * 状态: 0-草稿 1-已发布
      */
     private Integer status;
@@ -73,5 +93,6 @@ public class SocialPost {
     /**
      * 逻辑删除: 0-未删除 1-已删除
      */
+    @TableLogic
     private Integer deleted;
 }

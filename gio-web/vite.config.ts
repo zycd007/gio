@@ -18,7 +18,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-    server: {
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'recharts'],
+    force: true,
+  },
+  server: {
+    host: '0.0.0.0',
     port: 5173,
     proxy: {
       // 统一后端 API 代理

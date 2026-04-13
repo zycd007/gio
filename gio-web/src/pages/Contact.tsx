@@ -2,8 +2,12 @@ import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContactInfo from '@/components/ContactInfo';
+import { usePageTrack } from '@/hooks/usePageTrack';
 
 const Contact = () => {
+  // 埋点 - 联系我们
+  usePageTrack();
+
   // 页面首次加载时滚动到顶部
   useEffect(() => {
     window.scrollTo(0, 0);

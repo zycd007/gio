@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getPostDetail, updatePost, deletePost, updatePublishStatus } from '@/services/socialPost';
-import { SocialPost } from '@/types/socialPost';
+import { getPostDetail, updatePost, deletePost, updatePublishStatus, generateAiImages, deleteAiImage } from '@/services/socialPost';
+import { SocialPost, AiImageInfo } from '@/types/socialPost';
 import { toast } from 'sonner';
 
 const SocialPostDetail = () => {
@@ -28,6 +28,14 @@ const SocialPostDetail = () => {
 
   // 图片预览模态框
   const [previewImage, setPreviewImage] = useState<number | null>(null);
+
+  // AI配图相关
+  const [aiImageGenerating, setAiImageGenerating] = useState(false);
+  const [aiImageModal, setAiImageModal] = useState<{
+    show: boolean;
+    count: number;
+    style: string;
+  } | null>(null);
 
   // 确认对话框
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -150,6 +158,60 @@ const SocialPostDetail = () => {
     });
   };
 
+  // 打开AI配图生成弹窗
+  const handleOpenAiImageModal = () => {
+    setAiImageModal({
+      show: true,
+      count: 3,
+      style: '',
+    });
+  };
+
+  // 生成AI配图
+  const handleGenerateAiImages = async () => {
+    if (!aiImageModal || !postId) return;
+
+    setAiImageGenerating(true);
+    setAiImageModal(null);
+
+    try {
+      const response = await generateAiImages(postId, {
+        imageCount: aiImageModal.count,
+        stylePrompt: aiImageModal.style || undefined,
+      });
+
+      if (response.status === 2) {
+        toast.success(`成功生成 ${response.images?.length || 0} 张AI配图`);
+        loadPost(); // 重新加载推文数据
+      } else if (response.status === 3) {
+        toast.error('AI配图生成失败：' + response.message);
+      }
+    } catch (err: any) {
+      toast.error('AI配图生成失败：' + err.message);
+    } finally {
+      setAiImageGenerating(false);
+    }
+  };
+
+  // 删除单张AI配图
+  const handleDeleteAiImage = (attachmentId: number) => {
+    setConfirmConfig({
+      show: true,
+      title: '删除AI配图',
+      message: '确定要删除这张AI配图吗？',
+      onConfirm: async () => {
+        try {
+          await deleteAiImage(postId, attachmentId);
+          toast.success('AI配图已删除');
+          loadPost();
+        } catch (err: any) {
+          toast.error('删除失败：' + err.message);
+        }
+        setConfirmConfig(null);
+      },
+    });
+  };
+
   // 加载状态
   if (loading) {
     return (
@@ -178,6 +240,11 @@ const SocialPostDetail = () => {
       </div>
     );
   }
+
+  // 计算 AI 配图数量
+  const aiImageCount = post.aiImages?.length || 0;
+  const projectImageCount = post.selectedImages?.length || 0;
+  const totalImageCount = aiImageCount + projectImageCount;
 
   return (
     <div className="h-full flex flex-col bg-slate-50/50">
@@ -374,28 +441,105 @@ const SocialPostDetail = () => {
                 )}
               </div>
 
-              {/* 配图展示 */}
-              {!isEditMode && post.selectedImages && post.selectedImages.length > 0 && (
+              {/* 配图展示 - 混合显示项目图和AI图 */}
+              {!isEditMode && totalImageCount > 0 && (
                 <div>
-                  <label className="text-sm text-slate-500 mb-2 block">
-                    配图（{post.selectedImages.length} 张）
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm text-slate-500">
+                      配图（共 {totalImageCount} 张）
+                    </label>
+                    <div className="flex gap-2">
+                      {projectImageCount > 0 && (
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          项目图 {projectImageCount} 张
+                        </span>
+                      )}
+                      {aiImageCount > 0 && (
+                        <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                          AI图 {aiImageCount} 张
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-4 gap-3">
-                    {post.selectedImages.map((imageId: number) => (
+                    {/* 项目图片 */}
+                    {post.selectedImages?.map((imageId: number) => (
                       <div
-                        key={imageId}
-                        className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50"
+                        key={`project-${imageId}`}
+                        className="relative rounded-lg overflow-hidden border border-blue-200 bg-slate-50"
                       >
                         <img
                           src={`/api/images/${imageId}`}
-                          alt={`配图 ${imageId}`}
+                          alt={`项目配图 ${imageId}`}
                           className="w-full h-32 object-cover hover:scale-105 transition-transform cursor-pointer"
                           onClick={() => setPreviewImage(imageId)}
                         />
+                        <span className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                          项目图
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* AI配图 */}
+                    {post.aiImages?.map((img: AiImageInfo) => (
+                      <div
+                        key={`ai-${img.attachmentId}`}
+                        className="relative rounded-lg overflow-hidden border border-purple-200 bg-slate-50"
+                      >
+                        <img
+                          src={img.url || `/api/images/${img.attachmentId}`}
+                          alt={`AI配图 ${img.order}`}
+                          className="w-full h-32 object-cover hover:scale-105 transition-transform cursor-pointer"
+                          onClick={() => setPreviewImage(img.attachmentId)}
+                        />
+                        <span className="absolute bottom-1 left-1 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                          AI图
+                        </span>
+                        <button
+                          onClick={() => handleDeleteAiImage(img.attachmentId)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
+                        >
+                          ×
+                        </button>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-400 mt-2">点击图片可查看大图</p>
+                  <p className="text-xs text-slate-400 mt-2">点击图片可查看大图，AI图可单独删除</p>
+                </div>
+              )}
+
+              {/* 生成更多AI配图按钮 */}
+              {!isEditMode && !aiImageGenerating && aiImageCount < 9 && (
+                <div>
+                  <button
+                    onClick={handleOpenAiImageModal}
+                    className="w-full py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    {aiImageCount === 0 ? '生成AI配图' : '生成更多AI配图'}
+                  </button>
+                </div>
+              )}
+
+              {/* AI配图生成中提示 */}
+              {aiImageGenerating && (
+                <div className="p-4 bg-purple-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full" />
+                    <span className="text-sm font-medium text-purple-700">AI正在生成配图...</span>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-2">每张图片约需10-15秒，请耐心等待</p>
+                </div>
+              )}
+
+              {/* 无配图提示 */}
+              {!isEditMode && totalImageCount === 0 && !aiImageGenerating && (
+                <div className="text-center py-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500">暂无配图</p>
+                  <p className="text-xs text-slate-400 mt-1">点击下方按钮生成AI配图</p>
                 </div>
               )}
 
@@ -467,6 +611,72 @@ const SocialPostDetail = () => {
                 className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-rose-600 transition-all"
               >
                 确认
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI配图生成弹窗 */}
+      {aiImageModal?.show && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAiImageModal(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">生成AI配图</h3>
+
+            {/* 配图数量 */}
+            <div className="mb-4">
+              <label className="text-sm text-slate-600 mb-2 block">配图数量</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.min(9 - aiImageCount, 4)}
+                  value={aiImageModal.count}
+                  onChange={(e) => setAiImageModal({ ...aiImageModal, count: Number(e.target.value) })}
+                  className="flex-1 h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <span className="w-8 text-center text-sm font-medium text-purple-600 bg-purple-100 rounded px-2 py-1">
+                  {aiImageModal.count}
+                </span>
+              </div>
+            </div>
+
+            {/* 风格选择 */}
+            <div className="mb-6">
+              <label className="text-sm text-slate-600 mb-2 block">风格偏好（可选）</label>
+              <select
+                value={aiImageModal.style}
+                onChange={(e) => setAiImageModal({ ...aiImageModal, style: e.target.value })}
+                className="w-full px-3 py-2 border border-purple-200 rounded-lg text-sm bg-white focus:border-purple-400 focus:outline-none"
+              >
+                <option value="">自动匹配文案风格</option>
+                <option value="modern minimalist">现代简约</option>
+                <option value="warm atmosphere">温馨氛围</option>
+                <option value="professional commercial">专业商业</option>
+                <option value="artistic creative">艺术创意</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setAiImageModal(null)}
+                className="px-5 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleGenerateAiImages}
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all"
+              >
+                开始生成
               </button>
             </div>
           </div>

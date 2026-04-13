@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import CompanyIntro from '@/components/CompanyIntro';
 import PhilosophyCard from '@/components/PhilosophyCard';
+import { usePageTrack } from '@/hooks/usePageTrack';
 
 // 公司介绍文字
 const COMPANY_DESCRIPTIONS = [
@@ -27,6 +28,9 @@ const SERVICE_PROCESS = [
 ];
 
 const About = () => {
+  // 埋点 - 关于我们
+  usePageTrack();
+
   // 页面首次加载时滚动到顶部
   useEffect(() => {
     window.scrollTo(0, 0);

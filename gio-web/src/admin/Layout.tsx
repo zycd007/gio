@@ -49,11 +49,7 @@ const AdminLayout = () => {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    navigate('/admin/login');
-  };
-
+  
   // 登录页单独渲染
   if (location.pathname === '/admin/login') {
     return <Outlet />;
@@ -94,23 +90,22 @@ const AdminLayout = () => {
           <NavLink to="/admin" icon="dashboard" collapsed={sidebarCollapsed} active={location.pathname === '/admin'}>
             仪表盘
           </NavLink>
-          <NavLink to="/admin/messages" icon="inbox" collapsed={sidebarCollapsed} active={location.pathname === '/admin/messages'}>
-            客户留言
-          </NavLink>
           <NavLink to="/admin/projects" icon="projects" collapsed={sidebarCollapsed} active={location.pathname === '/admin/projects'}>
             项目管理
-          </NavLink>
-          <NavLink to="/admin/categories" icon="tags" collapsed={sidebarCollapsed} active={location.pathname === '/admin/categories'}>
-            分类管理
           </NavLink>
           <NavLink to="/admin/social-posts" icon="edit" collapsed={sidebarCollapsed} active={location.pathname.startsWith('/admin/social-posts')}>
             推文管理
           </NavLink>
+          <NavLink to="/admin/messages" icon="inbox" collapsed={sidebarCollapsed} active={location.pathname === '/admin/messages'}>
+            客户留言
+          </NavLink>
+          <NavLink to="/admin/categories" icon="tags" collapsed={sidebarCollapsed} active={location.pathname === '/admin/categories'}>
+            分类管理
+          </NavLink>
         </nav>
 
-        {/* 底部 - 折叠按钮 + 退出 */}
-        <div className="p-2 border-t border-slate-800 space-y-1">
-          {/* 折叠按钮 */}
+        {/* 底部 - 折叠按钮 */}
+        <div className="p-2 border-t border-slate-800">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
@@ -121,18 +116,6 @@ const AdminLayout = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
             {!sidebarCollapsed && <span className="text-sm">收起菜单</span>}
-          </button>
-
-          {/* 退出登录 */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-            aria-label="退出登录"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            {!sidebarCollapsed && <span className="text-sm">退出登录</span>}
           </button>
         </div>
       </aside>

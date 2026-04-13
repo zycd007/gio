@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getProjects, getProjectImages, ProjectImage } from '@/services/admin';
-import { generatePost } from '@/services/socialPost';
-import { SocialPost } from '@/types/socialPost';
+import { generatePost, generateAiImages, deleteAiImage } from '@/services/socialPost';
+import { SocialPost, AiImageInfo } from '@/types/socialPost';
 
 interface GeneratePostModalProps {
   visible: boolean;
@@ -28,6 +28,14 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
 
   // 自定义模式数据
   const [customContent, setCustomContent] = useState('');
+
+  // AI配图相关状态
+  const [enableAiImage, setEnableAiImage] = useState(false);
+  const [aiImageCount, setAiImageCount] = useState(3);
+  const [aiImageStyle, setAiImageStyle] = useState('');
+  const [aiImageGenerating, setAiImageGenerating] = useState(false);
+  const [aiImages, setAiImages] = useState<AiImageInfo[]>([]);
+  const [aiImageProgress, setAiImageProgress] = useState({ completed: 0, total: 0 });
 
   // 生成结果
   const [generatedPost, setGeneratedPost] = useState<SocialPost | null>(null);
@@ -71,6 +79,12 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
     setProjectImages([]);
     setSelectedImages([]);
     setCustomContent('');
+    setEnableAiImage(false);
+    setAiImageCount(3);
+    setAiImageStyle('');
+    setAiImageGenerating(false);
+    setAiImages([]);
+    setAiImageProgress({ completed: 0, total: 0 });
     setGeneratedPost(null);
   };
 
@@ -88,7 +102,7 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
     );
   };
 
-  // 开始生成
+  // 开始生成文案
   const handleGenerate = async () => {
     // 验证必填项
     if (mode === 'project') {
@@ -96,8 +110,8 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
         alert('请选择项目');
         return;
       }
-      if (selectedImages.length === 0) {
-        alert('请选择至少一张图片');
+      if (selectedImages.length === 0 && !enableAiImage) {
+        alert('请选择至少一张图片或启用AI配图');
         return;
       }
     } else {
@@ -125,12 +139,55 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
       const result = await generatePost(requestData);
       setGeneratedPost(result);
       setStep(4);
+
+      // 如果启用了AI配图，自动开始生成
+      if (enableAiImage && result.id) {
+        handleGenerateAiImages(result.id, result.title, result.content);
+      }
     } catch (error) {
       console.error('生成推文失败:', error);
       alert('生成推文失败，请重试');
       setStep(2);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 生成AI配图
+  const handleGenerateAiImages = async (postId: number, _title: string, _content: string) => {
+    if (!postId) return;
+
+    setAiImageGenerating(true);
+    setAiImageProgress({ completed: 0, total: aiImageCount });
+
+    try {
+      const response = await generateAiImages(postId, {
+        imageCount: aiImageCount,
+        stylePrompt: aiImageStyle || undefined
+      });
+
+      if (response.images) {
+        setAiImages(response.images);
+        setAiImageProgress({ completed: response.completedCount, total: response.totalCount });
+      }
+    } catch (error) {
+      console.error('AI配图生成失败:', error);
+      alert('AI配图生成失败，请重试');
+    } finally {
+      setAiImageGenerating(false);
+    }
+  };
+
+  // 删除单张AI配图
+  const handleDeleteAiImage = async (attachmentId: number) => {
+    if (!generatedPost?.id) return;
+
+    try {
+      await deleteAiImage(generatedPost.id, attachmentId);
+      setAiImages(prev => prev.filter(img => img.attachmentId !== attachmentId));
+    } catch (error) {
+      console.error('删除AI配图失败:', error);
+      alert('删除失败，请重试');
     }
   };
 
@@ -151,12 +208,17 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
   // 保存并关闭
   const handleSave = () => {
     if (generatedPost && onSuccess) {
-      onSuccess(generatedPost);
+      // 将 AI 配图信息附加到 post
+      const postWithAiImages = {
+        ...generatedPost,
+        aiImages: aiImages
+      };
+      onSuccess(postWithAiImages);
     }
     handleClose();
   };
 
-  // 进入下一步（步骤1→步骤2，不需要验证）
+  // 进入下一步
   const goToStep2 = () => {
     setStep(2);
   };
@@ -179,7 +241,7 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
             <h2 className="text-2xl font-bold text-slate-800">生成推文</h2>
             <p className="text-sm text-slate-500 mt-1">
               {step === 1 && '选择来源类型'}
-              {step === 2 && (mode === 'project' ? '选择项目图片' : '输入内容描述')}
+              {step === 2 && (mode === 'project' ? '选择项目图片和配图选项' : '输入内容描述和配图选项')}
               {step === 3 && 'AI 正在生成中'}
               {step === 4 && '生成完成'}
             </p>
@@ -354,11 +416,71 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
                       value={customContent}
                       onChange={(e) => setCustomContent(e.target.value)}
                       placeholder="请描述您想生成的推文内容，例如：介绍一款新灯具产品，强调其简约设计和节能特点..."
-                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none resize-none h-40"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none resize-none h-40 text-slate-700 bg-white placeholder:text-slate-400"
                     />
                   </div>
                 </>
               )}
+
+              {/* AI配图选项区域 */}
+              <div className="mt-6 p-4 border border-slate-200 rounded-xl bg-purple-50/30">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <label className="text-sm font-medium text-slate-700">AI生成配图</label>
+                  </div>
+                  <button
+                    onClick={() => setEnableAiImage(!enableAiImage)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      enableAiImage ? 'bg-purple-500' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow ${
+                      enableAiImage ? 'left-7' : 'left-1'
+                    }`} />
+                  </button>
+                </div>
+
+                {enableAiImage && (
+                  <div className="space-y-3 pl-7">
+                    {/* 配图数量滑块 */}
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">配图数量</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min={1}
+                          max={9}
+                          value={aiImageCount}
+                          onChange={(e) => setAiImageCount(Number(e.target.value))}
+                          className="flex-1 h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                        />
+                        <span className="w-8 text-center text-sm font-medium text-purple-600 bg-purple-100 rounded px-2 py-1">
+                          {aiImageCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 风格选择 */}
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">风格偏好（可选）</label>
+                      <select
+                        value={aiImageStyle}
+                        onChange={(e) => setAiImageStyle(e.target.value)}
+                        className="w-full px-3 py-2 border border-purple-200 rounded-lg text-sm bg-white focus:border-purple-400 focus:outline-none"
+                      >
+                        <option value="">自动匹配文案风格</option>
+                        <option value="modern minimalist">现代简约</option>
+                        <option value="warm atmosphere">温馨氛围</option>
+                        <option value="professional commercial">专业商业</option>
+                        <option value="artistic creative">艺术创意</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -370,6 +492,9 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
               </div>
               <h3 className="text-lg font-semibold text-slate-800 mb-2">AI 正在生成推文</h3>
               <p className="text-slate-500">请稍候，通常需要几秒钟...</p>
+              {enableAiImage && (
+                <p className="text-sm text-purple-500 mt-2">随后将自动生成 {aiImageCount} 张AI配图</p>
+              )}
             </div>
           )}
 
@@ -399,6 +524,101 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
                   {generatedPost.tags}
                 </div>
               </div>
+
+              {/* 配图区域 */}
+              <div className="border-t border-slate-200 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-slate-700">配图</label>
+                  <div className="flex gap-2">
+                    {selectedImages.length > 0 && (
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        项目图 {selectedImages.length} 张
+                      </span>
+                    )}
+                    {aiImages.length > 0 && (
+                      <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                        AI图 {aiImages.length} 张
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 图片网格 - 混合显示 */}
+                {(selectedImages.length > 0 || aiImages.length > 0) && (
+                  <div className="grid grid-cols-4 gap-3 mb-3">
+                    {/* 项目图片 */}
+                    {selectedImages.map(imageId => (
+                      <div key={`project-${imageId}`} className="relative rounded-lg overflow-hidden border-2 border-blue-400">
+                        <img
+                          src={`/api/images/${imageId}`}
+                          alt="项目图片"
+                          className="w-full h-24 object-cover"
+                        />
+                        <span className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded">
+                          项目图
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* AI配图 */}
+                    {aiImages.map((img) => (
+                      <div key={`ai-${img.attachmentId}`} className="relative rounded-lg overflow-hidden border-2 border-purple-400">
+                        <img
+                          src={img.url || `/api/images/${img.attachmentId}`}
+                          alt="AI配图"
+                          className="w-full h-24 object-cover"
+                        />
+                        <span className="absolute top-1 left-1 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded">
+                          AI图
+                        </span>
+                        <button
+                          onClick={() => handleDeleteAiImage(img.attachmentId)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* AI配图生成进度 */}
+                {aiImageGenerating && (
+                  <div className="mb-3 p-4 bg-purple-50 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-purple-700">AI正在生成配图...</span>
+                      <span className="text-xs text-purple-500">{aiImageProgress.completed}/{aiImageProgress.total}</span>
+                    </div>
+                    <div className="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                        style={{ width: `${(aiImageProgress.completed / aiImageProgress.total) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-purple-600 mt-2">每张图片约需10-15秒，请耐心等待...</p>
+                  </div>
+                )}
+
+                {/* 生成/追加AI配图按钮 */}
+                {!aiImageGenerating && (aiImages.length === 0 || aiImages.length < 9) && generatedPost.id && (
+                  <button
+                    onClick={() => handleGenerateAiImages(generatedPost.id!, generatedPost.title, generatedPost.content)}
+                    className="w-full py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    {aiImages.length === 0 ? '生成AI配图' : '追加生成'}
+                  </button>
+                )}
+
+                {/* 无配图提示 */}
+                {selectedImages.length === 0 && aiImages.length === 0 && !aiImageGenerating && (
+                  <div className="text-center py-4 text-slate-500 text-sm">
+                    暂无配图，点击上方按钮生成AI配图
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -421,7 +641,10 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
           )}
           {step === 4 && (
             <button
-              onClick={() => setStep(2)}
+              onClick={() => {
+                setStep(2);
+                setAiImages([]);
+              }}
               className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
             >
               重新生成
@@ -456,7 +679,8 @@ const GeneratePostModal: React.FC<GeneratePostModalProps> = ({
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg shadow-emerald-200"
+                  disabled={aiImageGenerating}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50"
                 >
                   保存并关闭
                 </button>

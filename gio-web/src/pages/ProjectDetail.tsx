@@ -3,6 +3,7 @@ import { useNavigate, Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { getProjectDetail } from '@/services/project';
 import AnimatedSection from '@/components/AnimatedSection';
+import { usePageTrack } from '@/hooks/usePageTrack';
 
 interface ImageInfo {
   id: number;
@@ -42,6 +43,9 @@ const ProjectDetail = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewerImageIndex, setViewerImageIndex] = useState<number>(0);
   const [isImageLoading, setIsImageLoading] = useState(false);
+
+  // 埋点
+  usePageTrack(id ? parseInt(id, 10) : undefined);
 
   // 触摸滑动相关
   const touchStartX = useRef(0);

@@ -5,13 +5,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gio.common.exception.BusinessException;
+import com.gio.dto.AiImageGenerateRequest;
+import com.gio.dto.AiImageGenerateResponse;
 import com.gio.dto.PageResult;
 import com.gio.dto.SocialPostDTO;
 import com.gio.dto.SocialPostGenerateRequest;
 import com.gio.dto.SocialPostListItemDTO;
+import com.gio.entity.Attachment;
 import com.gio.entity.Project;
 import com.gio.entity.ProjectImage;
 import com.gio.entity.SocialPost;
+import com.gio.mapper.AttachmentMapper;
 import com.gio.mapper.ProjectMapper;
 import com.gio.mapper.ProjectImageMapper;
 import com.gio.mapper.SocialPostMapper;
@@ -23,6 +27,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +44,7 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
     private final SocialPostMapper socialPostMapper;
     private final ProjectMapper projectMapper;
     private final ProjectImageMapper projectImageMapper;
+    private final AttachmentMapper attachmentMapper;
     private final AiServiceUtil aiServiceUtil;
 
     @Value("${ai.dashscope.api-key}")
@@ -226,6 +234,15 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
             );
         }
 
+        // 解析 aiImages
+        if (post.getAiImages() != null && !post.getAiImages().isEmpty()) {
+            dto.setAiImages(parseAiImagesJson(post.getAiImages()));
+        }
+
+        dto.setAiImagePrompt(post.getAiImagePrompt());
+        dto.setAiImageCount(post.getAiImageCount());
+        dto.setAiImageStatus(post.getAiImageStatus());
+
         dto.setStatus(post.getStatus());
         dto.setPublishPlatform(post.getPublishPlatform());
         dto.setPublishUrl(post.getPublishUrl());
@@ -407,5 +424,198 @@ public class SocialPostServiceImpl extends ServiceImpl<SocialPostMapper, SocialP
 
         // 默认标签
         return "#照明设计 #空间设计 #光影艺术";
+    }
+
+    // ========== AI 配图生成方法 ==========
+
+    @Override
+    @Transactional
+    public AiImageGenerateResponse generateAiImages(Integer postId, AiImageGenerateRequest request) {
+        SocialPost post = socialPostMapper.selectById(postId);
+        if (post == null || post.getDeleted() == 1) {
+            throw new BusinessException("推文不存在");
+        }
+
+        int imageCount = request.getImageCount() != null ? request.getImageCount() : 3;
+        if (imageCount < 1 || imageCount > 9) {
+            throw new BusinessException("配图数量必须在 1-9 张之间");
+        }
+
+        // 更新状态为生成中
+        post.setAiImageStatus(1);
+        post.setAiImageCount(imageCount);
+        socialPostMapper.updateById(post);
+
+        try {
+            // 1. 生成图像提示词
+            String imagePrompt = aiServiceUtil.generateImagePrompt(
+                    post.getTitle(),
+                    post.getContent(),
+                    request.getStylePrompt()
+            );
+            post.setAiImagePrompt(imagePrompt);
+
+            // 2. 分批生成图片
+            List<AiImageGenerateResponse.AiImageInfo> generatedImages = new ArrayList<>();
+            int remaining = imageCount;
+            int order = getExistingAiImageCount(post);
+
+            while (remaining > 0) {
+                int batchCount = Math.min(remaining, 4);
+                List<String> batchImages = aiServiceUtil.generateImages(imagePrompt, batchCount);
+
+                for (String base64Image : batchImages) {
+                    // 保存图片到 Attachment 表
+                    Attachment attachment = saveAiImageAttachment(base64Image);
+
+                    AiImageGenerateResponse.AiImageInfo info = new AiImageGenerateResponse.AiImageInfo();
+                    info.setAttachmentId(attachment.getId());
+                    info.setUrl("/api/images/" + attachment.getId());
+                    info.setPrompt(imagePrompt);
+                    info.setOrder(++order);
+                    generatedImages.add(info);
+                }
+
+                remaining -= batchCount;
+            }
+
+            // 3. 更新 aiImages JSON 字段
+            updateAiImagesJson(post, generatedImages);
+
+            // 4. 更新状态为已完成
+            post.setAiImageStatus(2);
+            socialPostMapper.updateById(post);
+
+            AiImageGenerateResponse response = new AiImageGenerateResponse();
+            response.setStatus(2);
+            response.setTotalCount(imageCount);
+            response.setCompletedCount(generatedImages.size());
+            response.setMessage("AI配图生成成功");
+            response.setImages(generatedImages);
+            return response;
+
+        } catch (Exception e) {
+            log.error("AI配图生成失败: {}", e.getMessage(), e);
+            post.setAiImageStatus(3);
+            socialPostMapper.updateById(post);
+            throw new BusinessException("AI配图生成失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteAiImage(Integer postId, Integer attachmentId) {
+        SocialPost post = socialPostMapper.selectById(postId);
+        if (post == null || post.getDeleted() == 1) {
+            throw new BusinessException("推文不存在");
+        }
+
+        // 从 aiImages JSON 中移除
+        String aiImagesJson = post.getAiImages();
+        if (aiImagesJson != null && !aiImagesJson.isEmpty()) {
+            try {
+                List<SocialPostDTO.AiImageInfo> aiImages = parseAiImagesJson(aiImagesJson);
+                aiImages.removeIf(img -> img.getAttachmentId().equals(attachmentId));
+
+                // 更新 JSON
+                String updatedJson = buildAiImagesJson(aiImages);
+                post.setAiImages(updatedJson);
+                post.setAiImageCount(aiImages.size());
+
+                // 删除 Attachment 记录
+                attachmentMapper.deleteById(attachmentId);
+
+                socialPostMapper.updateById(post);
+                return true;
+            } catch (Exception e) {
+                log.error("删除AI配图失败: {}", e.getMessage(), e);
+                throw new BusinessException("删除AI配图失败");
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取现有AI配图数量
+     */
+    private int getExistingAiImageCount(SocialPost post) {
+        String aiImagesJson = post.getAiImages();
+        if (aiImagesJson == null || aiImagesJson.isEmpty()) {
+            return 0;
+        }
+        try {
+            List<SocialPostDTO.AiImageInfo> aiImages = parseAiImagesJson(aiImagesJson);
+            return aiImages.size();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 保存AI生成的图片到Attachment表
+     */
+    private Attachment saveAiImageAttachment(String base64Image) {
+        Attachment attachment = new Attachment();
+        attachment.setFileName("ai_image_" + System.currentTimeMillis() + ".png");
+        attachment.setFileType("image/png");
+        attachment.setBusinessType("ai_image");
+        attachment.setBase64Data(base64Image);
+        attachment.setCreatedAt(LocalDateTime.now());
+
+        attachmentMapper.insert(attachment);
+        return attachment;
+    }
+
+    /**
+     * 更新 aiImages JSON 字段
+     */
+    private void updateAiImagesJson(SocialPost post, List<AiImageGenerateResponse.AiImageInfo> newImages) {
+        String existingJson = post.getAiImages();
+        List<SocialPostDTO.AiImageInfo> allImages = new ArrayList<>();
+
+        if (existingJson != null && !existingJson.isEmpty()) {
+            allImages.addAll(parseAiImagesJson(existingJson));
+        }
+
+        for (AiImageGenerateResponse.AiImageInfo info : newImages) {
+            SocialPostDTO.AiImageInfo aiImageInfo = new SocialPostDTO.AiImageInfo();
+            aiImageInfo.setAttachmentId(info.getAttachmentId());
+            aiImageInfo.setUrl(info.getUrl());
+            aiImageInfo.setPrompt(info.getPrompt());
+            aiImageInfo.setGeneratedAt(LocalDateTime.now().toString());
+            aiImageInfo.setSource("ai");
+            aiImageInfo.setOrder(info.getOrder());
+            allImages.add(aiImageInfo);
+        }
+
+        post.setAiImages(buildAiImagesJson(allImages));
+    }
+
+    /**
+     * 解析 aiImages JSON
+     */
+    private List<SocialPostDTO.AiImageInfo> parseAiImagesJson(String json) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.core.type.TypeReference<List<SocialPostDTO.AiImageInfo>> typeRef =
+                    new com.fasterxml.jackson.core.type.TypeReference<>() {};
+            return mapper.readValue(json, typeRef);
+        } catch (Exception e) {
+            log.error("解析 aiImages JSON 失败: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 构建 aiImages JSON
+     */
+    private String buildAiImagesJson(List<SocialPostDTO.AiImageInfo> images) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.writeValueAsString(images);
+        } catch (Exception e) {
+            log.error("构建 aiImages JSON 失败: {}", e.getMessage());
+            return "";
+        }
     }
 }
