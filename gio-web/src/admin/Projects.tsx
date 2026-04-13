@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getProjects, getCategories, batchUpdateProjectStatus, batchSetProjectFeatured, batchDeleteProjects } from '@/services/admin';
+import { getProjects, getCategories, batchUpdateProjectStatus, batchSetProjectFeatured, batchDeleteProjects, updateProjectSortOrder } from '@/services/admin';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import PlaceholderImage from '@/components/PlaceholderImage';
 import CreateProjectModal from './components/CreateProjectModal';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Project {
   id: number;
@@ -22,13 +25,66 @@ interface Category {
   name: string;
 }
 
-// 简洁的项目卡片 - 只展示信息，点击进入详情
+// 简洁的项目卡片 - 正常模式下使用，点击进入详情
 const ProjectCard = ({
+  project,
+  onClick,
+}: {
+  project: Project;
+  onClick: () => void;
+}) => {
+  const isPublished = project.status === 1;
+  const isFeatured = project.isFeatured === 1;
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl overflow-hidden border shadow-sm hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-emerald-300"
+    >
+      {/* 封面 */}
+      <div className="relative h-36 bg-slate-100 overflow-hidden">
+        {project.coverImageId ? (
+          <img
+            src={`/api/images/${project.coverImageId}/thumbnail`}
+            alt={project.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <PlaceholderImage className="w-full h-full" />
+        )}
+        {/* 状态标签 */}
+        <div className="absolute top-2 left-2 flex gap-1.5">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${isPublished ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-white'}`}>
+            {isPublished ? '已发布' : '草稿'}
+          </span>
+          {isFeatured && (
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+              精品
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 信息 */}
+      <div className="p-3">
+        <h3 className="text-sm font-semibold text-slate-800 truncate">{project.name}</h3>
+        <p className="text-xs text-slate-500 mt-1 truncate">
+          {project.categoryName}
+          {project.location && ` · ${project.location}`}
+          {project.year && ` · ${project.year}`}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// 可拖拽的项目卡片组件 - 批量操作模式下使用
+const SortableProjectCard = ({
   project,
   onClick,
   selectable,
   selected,
-  onSelect
+  onSelect,
 }: {
   project: Project;
   onClick: () => void;
@@ -36,15 +92,35 @@ const ProjectCard = ({
   selected?: boolean;
   onSelect?: () => void;
 }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
   const isPublished = project.status === 1;
   const isFeatured = project.isFeatured === 1;
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       onClick={selectable ? onSelect : onClick}
-      className={`bg-white rounded-xl overflow-hidden border shadow-sm hover:shadow-md transition-all cursor-pointer group ${
+      className={`bg-white rounded-xl overflow-hidden border shadow-sm hover:shadow-md transition-all cursor-move group ${
         selected ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-emerald-300'
-      }`}
+      } ${isDragging ? 'border-emerald-500 shadow-lg ring-2 ring-emerald-500/30' : ''}`}
     >
       {/* 封面 */}
       <div className="relative h-36 bg-slate-100 overflow-hidden">
@@ -84,6 +160,12 @@ const ProjectCard = ({
             </div>
           </div>
         )}
+        {/* 拖拽手柄提示 */}
+        <div className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4h4v2h-4V4zm0 14h4v2h-4v-2zM4 10h2v4H4v-4zm14 0h2v4h-2v-4z"/>
+          </svg>
+        </div>
       </div>
 
       {/* 信息 */}
@@ -134,6 +216,47 @@ const AdminProjects = () => {
 
   // 新建项目弹窗
   const [createModalVisible, setCreateModalVisible] = useState(false);
+
+  // 拖拽排序配置
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  // 拖拽结束处理
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = projects.findIndex((p) => p.id === active.id);
+    const newIndex = projects.findIndex((p) => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // 重新排序项目列表
+    const newProjects = [...projects];
+    const [movedProject] = newProjects.splice(oldIndex, 1);
+    newProjects.splice(newIndex, 0, movedProject);
+
+    // 更新本地状态
+    setProjects(newProjects);
+
+    // 调用 API 保存排序
+    try {
+      const sortList = newProjects.map((p, index) => ({
+        projectId: p.id,
+        sortOrder: index,
+      }));
+      await updateProjectSortOrder(sortList);
+      toast.success('排序已保存');
+    } catch (err: any) {
+      toast.error('保存排序失败：' + err.message);
+    }
+  };
 
   // 从 URL 参数读取初始筛选状态
   useEffect(() => {
@@ -564,18 +687,41 @@ const AdminProjects = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => navigate(`/admin/projects/${project.id}`)}
-                  selectable={selectMode}
-                  selected={selectedIds.has(project.id)}
-                  onSelect={() => toggleSelect(project.id)}
-                />
-              ))}
-            </div>
+            {selectMode ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={projects.map((p) => p.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {projects.map((project) => (
+                      <SortableProjectCard
+                        key={project.id}
+                        project={project}
+                        onClick={() => navigate(`/admin/projects/${project.id}`)}
+                        selectable={selectMode}
+                        selected={selectedIds.has(project.id)}
+                        onSelect={() => toggleSelect(project.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {projects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => navigate(`/admin/projects/${project.id}`)}
+                  />
+                ))}
+              </div>
+            )}
             {/* 无限滚动哨兵 */}
             <div ref={observerRef} className="py-4 flex items-center justify-center">
               {loadingMore && (
@@ -626,10 +772,11 @@ const AdminProjects = () => {
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
         onSuccess={() => {
-          // 重置并重新加载
+          // 重置状态并重新加载
           setPage(1);
           setProjects([]);
           setHasMore(true);
+          loadProjects(1, false);
         }}
       />
     </div>

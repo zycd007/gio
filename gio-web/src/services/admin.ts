@@ -331,6 +331,13 @@ export const batchDeleteProjects = (ids: number[]): Promise<void> => {
   return request.delete('/admin/projects/batch', { data: ids });
 };
 
+/**
+ * 批量更新项目排序
+ */
+export const updateProjectSortOrder = (sortList: { projectId: number; sortOrder: number }[]): Promise<void> => {
+  return request.put('/admin/projects/sort', sortList);
+};
+
 // ========== 数据分析 ==========
 
 interface TimeRangeInfo {

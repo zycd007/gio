@@ -5,6 +5,7 @@ import com.gio.dto.BatchOperationDTO;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
+import com.gio.dto.ProjectSortDTO;
 import com.gio.entity.Project;
 import com.gio.service.ProjectService;
 import jakarta.validation.Valid;
@@ -135,6 +136,15 @@ public class AdminProjectController {
     @DeleteMapping("/batch")
     public Result<Void> batchDelete(@RequestBody List<Integer> ids) {
         projectService.batchDelete(ids);
+        return Result.success();
+    }
+
+    /**
+     * 批量更新项目排序
+     */
+    @PutMapping("/sort")
+    public Result<Void> updateSortOrder(@RequestBody List<ProjectSortDTO> sortList) {
+        projectService.updateSortOrder(sortList);
         return Result.success();
     }
 }

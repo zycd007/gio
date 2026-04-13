@@ -6,6 +6,7 @@ import com.gio.common.Result;
 import com.gio.dto.PageResult;
 import com.gio.dto.ProjectDetailDTO;
 import com.gio.dto.ProjectListItemDTO;
+import com.gio.dto.ProjectSortDTO;
 import com.gio.entity.Category;
 import com.gio.entity.Project;
 import com.gio.entity.ProjectImage;
@@ -246,6 +247,19 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         // 再批量删除项目
         this.removeByIds(ids);
+    }
+
+    @Override
+    @Transactional
+    public void updateSortOrder(List<ProjectSortDTO> sortList) {
+        if (sortList == null || sortList.isEmpty()) return;
+        // 批量更新排序
+        for (ProjectSortDTO dto : sortList) {
+            this.lambdaUpdate()
+                    .eq(Project::getId, dto.getProjectId())
+                    .set(Project::getSortOrder, dto.getSortOrder())
+                    .update();
+        }
     }
 
     private ProjectListItemDTO convertToDTO(Project project) {

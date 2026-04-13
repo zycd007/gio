@@ -76,4 +76,10 @@ PageResult<ProjectListItemDTO> getProjectList(Integer page, Integer size, Intege
      * 批量删除项目
      */
     void batchDelete(List<Integer> ids);
+
+    /**
+     * 批量更新项目排序
+     * @param sortList 排序列表，包含项目ID和排序序号
+     */
+    void updateSortOrder(List<com.gio.dto.ProjectSortDTO> sortList);
 }
