@@ -2,11 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   createProject,
-  uploadTempImages,
   associateImagesToProject,
   getCategories,
 } from '@/services/admin';
-import { compressImages } from '@/utils/imageCompress';
+import UploadQueueCard from '@/components/UploadQueueCard';
+import {
+  createQueueItem,
+  uploadTempImagesSerial,
+  cancelUpload,
+  retryUploadItem,
+  cleanupPreviewUrls,
+} from '@/services/uploadService';
+import { UploadQueueItem } from '@/types/upload';
 
 interface Category {
   id: number;
@@ -21,7 +28,6 @@ interface CreateProjectModalProps {
 
 const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalProps) => {
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,9 +40,10 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
     status: 0,  // 默认为草稿状态（未发布）
   });
 
-  // 暂存的临时图片
-  const [pendingTempImageIds, setPendingTempImageIds] = useState<number[]>([]);
-  const [pendingImageFiles, setPendingImageFiles] = useState<{ id: number; file: File }[]>([]);
+  // 上传队列
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedImageIds, setUploadedImageIds] = useState<number[]>([]);
 
   // 加载分类
   useEffect(() => {
@@ -60,59 +67,76 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
       description: '',
       status: 0,  // 保持草稿状态
     });
-    setPendingTempImageIds([]);
-    setPendingImageFiles([]);
+    cleanupPreviewUrls(uploadQueue);
+    setUploadQueue([]);
+    setUploadedImageIds([]);
+    setIsUploading(false);
   };
 
-  // 上传临时图片
-  const handleUploadTempImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 选择文件并开始上传
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    try {
-      // 前端压缩
-      const compressResults = await compressImages(Array.from(files), {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.85,
-        maxSizeMB: 2,
-      });
+    const newItems = Array.from(files).map(file => createQueueItem(file));
+    setUploadQueue(prev => [...prev, ...newItems]);
+    setIsUploading(true);
 
-      // 显示压缩提示
-      const compressedCount = compressResults.filter(r => r.wasCompressed).length;
-      if (compressedCount > 0) {
-        const savedSize = compressResults.reduce((acc, r) =>
-          acc + (r.originalSize - r.compressedSize), 0);
-        const savedMB = (savedSize / 1024 / 1024).toFixed(1);
-        toast.info(`已压缩 ${compressedCount} 张图片，节省 ${savedMB}MB`);
-      }
+    const updatedQueue = await uploadTempImagesSerial([...uploadQueue, ...newItems], {
+      onProgress: (id, progress) => {
+        setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, progress } : item));
+      },
+      onSuccess: (_id, imageId) => {
+        setUploadedImageIds(prev => [...prev, imageId]);
+      },
+      onFailed: (_id, error) => {
+        toast.error(`上传失败: ${error}`);
+      },
+      onComplete: () => {
+        setIsUploading(false);
+        toast.success('所有图片上传完成');
+      },
+    });
 
-      // 上传压缩后的文件
-      const compressedFiles = compressResults.map(r => r.file);
-      const tempImageIds = await uploadTempImages(compressedFiles);
-      setPendingTempImageIds(prev => [...prev, ...tempImageIds]);
-
-      // 使用原始文件用于预览
-      const newPreviewFiles = Array.from(files).map((file, index) => ({
-        id: tempImageIds[index],
-        file,
-      }));
-      setPendingImageFiles(prev => [...prev, ...newPreviewFiles]);
-    } catch (err: any) {
-      toast.error('上传失败：' + err.message);
-    } finally {
-      setUploading(false);
-    }
+    setUploadQueue(updatedQueue);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // 移除暂存的图片
-  const handleRemovePendingImage = (imageId: number) => {
-    setPendingTempImageIds(prev => prev.filter(id => id !== imageId));
-    setPendingImageFiles(prev => prev.filter(item => item.id !== imageId));
+  // 取消上传
+  const handleCancelUpload = (id: string) => {
+    cancelUpload(id);
+    setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, status: 'pending', progress: 0 } : item));
+  };
+
+  // 重试上传
+  const handleRetryUpload = async (id: string) => {
+    const item = uploadQueue.find(i => i.id === id);
+    if (!item || item.status !== 'failed') return;
+
+    setIsUploading(true);
+    const updatedItem = await retryUploadItem(item, true, undefined, {
+      onProgress: (progressId, progress) => {
+        setUploadQueue(prev => prev.map(i => i.id === progressId ? { ...i, progress } : i));
+      },
+      onSuccess: (_successId, imageId) => {
+        setUploadedImageIds(prev => [...prev, imageId]);
+      },
+      onFailed: (_failedId, error) => {
+        toast.error(`重试失败: ${error}`);
+      },
+    });
+
+    setUploadQueue(prev => prev.map(i => i.id === id ? updatedItem : i));
+    setIsUploading(false);
+  };
+
+  // 清空队列
+  const handleClearQueue = () => {
+    cleanupPreviewUrls(uploadQueue);
+    setUploadQueue([]);
+    setUploadedImageIds([]);
   };
 
   // 保存项目
@@ -130,10 +154,15 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
     try {
       const newProject = await createProject(formData);
 
-      // 关联图片
-      if (pendingTempImageIds.length > 0) {
+      const successfulIds = uploadQueue
+        .filter(item => item.status === 'success' && item.resultId)
+        .map(item => item.resultId!);
+
+      const allImageIds = [...new Set([...uploadedImageIds, ...successfulIds])];
+
+      if (allImageIds.length > 0) {
         try {
-          await associateImagesToProject(newProject.id, pendingTempImageIds);
+          await associateImagesToProject(newProject.id, allImageIds);
         } catch (err: any) {
           toast.error('图片关联失败：' + err.message);
         }
@@ -221,21 +250,17 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
             </div>
           </div>
 
-          {/* 项目图片 - 3排网格布局 */}
+          {/* 项目图片 */}
           <div>
             <label className="block text-sm text-slate-600 mb-1">项目图片</label>
-            <div
-              className="relative border border-slate-200 rounded-lg p-3 bg-slate-50 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
-              style={{ maxHeight: '264px', overflowY: 'auto' }}
-            >
-              <div className="grid grid-cols-5 gap-2">
-                {/* 上传按钮 */}
+            <div className="relative border border-slate-200 rounded-lg p-3 bg-slate-50">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="aspect-square border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50/30 transition-all"
+                  disabled={isUploading}
+                  className="w-16 h-16 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50/30 transition-all flex-shrink-0"
                 >
-                  {uploading ? (
+                  {isUploading ? (
                     <div className="animate-spin w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
                   ) : (
                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,47 +273,33 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={handleUploadTempImages}
+                  onChange={handleFileSelect}
                   className="hidden"
-                  disabled={uploading}
+                  disabled={isUploading}
                 />
 
-                {/* 已上传的图片列表 */}
-                {pendingImageFiles.map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group"
-                  >
-                    <img
-                      src={URL.createObjectURL(item.file)}
-                      alt={item.file.name}
-                      className="w-full h-full object-cover"
-                      onLoad={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (target.src.startsWith('blob:')) {
-                          URL.revokeObjectURL(target.src);
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => handleRemovePendingImage(item.id)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                      title="移除"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                {uploadQueue.filter(item => item.status === 'success').length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto">
+                    {uploadQueue.filter(item => item.status === 'success').slice(0, 8).map((item) => (
+                      <div key={item.id} className="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                        <img src={item.previewUrl} alt={item.file.name} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {uploadQueue.filter(item => item.status === 'success').length > 8 && (
+                      <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-500 flex-shrink-0">
+                        +{uploadQueue.filter(item => item.status === 'success').length - 8}
+                      </div>
+                    )}
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* 图片数量提示 */}
-              {pendingImageFiles.length > 0 && (
-                <div className="mt-2 text-xs text-slate-500 text-center">
-                  已上传 {pendingImageFiles.length} 张图片
-                </div>
-              )}
+              <UploadQueueCard
+                queue={uploadQueue}
+                onCancel={handleCancelUpload}
+                onRetry={handleRetryUpload}
+                onClear={handleClearQueue}
+              />
             </div>
           </div>
 
@@ -319,7 +330,7 @@ const CreateProjectModal = ({ visible, onClose, onSuccess }: CreateProjectModalP
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || isUploading}
             className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center gap-2"
           >
             {saving && (
