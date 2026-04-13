@@ -43,5 +43,5 @@ export const DEFAULT_COMPRESS_CONFIG: CompressConfig = {
   maxWidth: 1920,
   maxHeight: 1080,
   quality: 0.85,
-  maxSizeMB: 2,
+  maxSizeMB: 1,  // 超过 1MB 的图片才压缩
 };

@@ -7,8 +7,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB        # 单文件最大 10MB
-      max-request-size: 100MB    # 单请求最大 100MB
+      max-file-size: 20MB        # 单文件最大 20MB
+      max-request-size: 200MB    # 单请求最大 200MB
       file-size-threshold: 0     # 不使用临时文件缓存
 
   datasource:
