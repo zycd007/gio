@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getProjects, getCategories, batchUpdateProjectStatus, batchSetProjectFeatured, batchDeleteProjects } from '@/services/admin';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -104,10 +104,16 @@ const AdminProjects = () => {
   const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // 分页状态
-  const [pagination, setPagination] = useState({ page: 1, size: 20, total: 0 });
+  // 滚动分页状态
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const size = 20;
+  const observerRef = useRef<HTMLDivElement>(null);
+  const isFirstLoad = useRef(true);
 
   // 搜索筛选
   const [searchInput, setSearchInput] = useState('');
@@ -147,29 +153,76 @@ const AdminProjects = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchKeyword(searchInput);
-      setPagination(prev => ({ ...prev, page: 1 })); // 搜索时重置页码
+      setPage(1); // 搜索时重置页码
+      setProjects([]);
+      setHasMore(true);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // 筛选变化时重置
   useEffect(() => {
-    loadProjects();
-  }, [filterCategory, filterFeatured, filterStatus, searchKeyword, pagination.page, pagination.size]);
+    setPage(1);
+    setProjects([]);
+    setHasMore(true);
+  }, [filterCategory, filterFeatured, filterStatus]);
 
-  const loadProjects = (clearSelection = true) => {
-    setLoading(true);
-    getProjects(pagination.page, pagination.size, filterCategory, searchKeyword || undefined, filterFeatured, filterStatus)
-      .then((data) => {
-        setProjects(data.list || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
-        if (clearSelection) {
-          setSelectedIds(new Set());
+  // 加载项目数据
+  const loadProjects = useCallback(async (pageNum: number, append = false) => {
+    if (loading || loadingMore) return;
+
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const data = await getProjects(pageNum, size, filterCategory, searchKeyword || undefined, filterFeatured, filterStatus);
+      const list = data.list || [];
+
+      if (append) {
+        setProjects(prev => [...prev, ...list]);
+      } else {
+        setProjects(list);
+      }
+
+      setTotal(data.total || 0);
+      setHasMore(list.length === size && (pageNum * size) < (data.total || 0));
+
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+      }
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [filterCategory, filterFeatured, filterStatus, searchKeyword, size, loading, loadingMore]);
+
+  // 初次加载
+  useEffect(() => {
+    loadProjects(1, false);
+  }, [filterCategory, filterFeatured, filterStatus, searchKeyword]);
+
+  // 无限滚动监听
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading && !isFirstLoad.current) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          loadProjects(nextPage, true);
         }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, page, loadProjects]);
 
   const handleClearFilters = () => {
     setFilterCategory(undefined);
@@ -177,7 +230,9 @@ const AdminProjects = () => {
     setFilterStatus(undefined);
     setSearchInput('');
     setSearchKeyword('');
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPage(1);
+    setProjects([]);
+    setHasMore(true);
   };
 
   const hasActiveFilters = filterCategory !== undefined || filterFeatured !== undefined || filterStatus !== undefined || searchInput !== '';
@@ -221,7 +276,9 @@ const AdminProjects = () => {
       onConfirm: () => {
         batchUpdateProjectStatus(ids, status).then(() => {
           toast.success(`已批量${action} ${ids.length} 个项目`);
-          loadProjects(false);
+          // 更新本地状态而非重新加载
+          setProjects(prev => prev.map(p => ids.includes(p.id) ? { ...p, status } : p));
+          setSelectedIds(new Set());
         });
         setConfirmModal(null);
       }
@@ -238,7 +295,9 @@ const AdminProjects = () => {
       onConfirm: () => {
         batchSetProjectFeatured(ids, isFeatured).then(() => {
           toast.success(`已批量${action} ${ids.length} 个项目`);
-          loadProjects(false);
+          // 更新本地状态而非重新加载
+          setProjects(prev => prev.map(p => ids.includes(p.id) ? { ...p, isFeatured } : p));
+          setSelectedIds(new Set());
         });
         setConfirmModal(null);
       }
@@ -254,7 +313,10 @@ const AdminProjects = () => {
       onConfirm: () => {
         batchDeleteProjects(ids).then(() => {
           toast.success(`已删除 ${ids.length} 个项目`);
-          loadProjects(false);
+          // 从本地状态移除已删除项目
+          setProjects(prev => prev.filter(p => !ids.includes(p.id)));
+          setTotal(prev => prev - ids.length);
+          setSelectedIds(new Set());
         });
         setConfirmModal(null);
       }
@@ -267,11 +329,14 @@ const AdminProjects = () => {
       <div className="bg-white border-b border-slate-100 shrink-0 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-slate-800">项目管理</h2>
-          <span className="text-sm text-slate-500">共 {pagination.total} 个项目</span>
+          <span className="text-sm text-slate-500">共 {total} 个项目</span>
           {selectMode && selectedIds.size > 0 && (
             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-sm font-medium">
               已选 {selectedIds.size} 个
             </span>
+          )}
+          {loadingMore && (
+            <span className="text-sm text-blue-600">加载更多...</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -410,7 +475,6 @@ const AdminProjects = () => {
           value={filterCategory || ''}
           onChange={(e) => {
             setFilterCategory(e.target.value ? Number(e.target.value) : undefined);
-            setPagination(prev => ({ ...prev, page: 1 }));
           }}
           className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
         >
@@ -423,7 +487,6 @@ const AdminProjects = () => {
           <button
             onClick={() => {
               setFilterCategory(undefined);
-              setPagination(prev => ({ ...prev, page: 1 }));
             }}
             className="px-2 py-1.5 text-slate-500 hover:bg-slate-100 rounded transition-colors text-sm flex items-center gap-1"
             title="清除分类筛选"
@@ -438,7 +501,6 @@ const AdminProjects = () => {
           value={filterStatus ?? ''}
           onChange={(e) => {
             setFilterStatus(e.target.value === '' ? undefined : Number(e.target.value));
-            setPagination(prev => ({ ...prev, page: 1 }));
           }}
           className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
         >
@@ -451,7 +513,6 @@ const AdminProjects = () => {
           value={filterFeatured ?? ''}
           onChange={(e) => {
             setFilterFeatured(e.target.value === '' ? undefined : Number(e.target.value));
-            setPagination(prev => ({ ...prev, page: 1 }));
           }}
           className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none cursor-pointer"
         >
@@ -475,7 +536,7 @@ const AdminProjects = () => {
 
       {/* 卡片网格 */}
       <div className="flex-1 overflow-auto p-4">
-        {loading ? (
+        {loading && projects.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -502,85 +563,34 @@ const AdminProjects = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onClick={() => navigate(`/admin/projects/${project.id}`)}
-                selectable={selectMode}
-                selected={selectedIds.has(project.id)}
-                onSelect={() => toggleSelect(project.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => navigate(`/admin/projects/${project.id}`)}
+                  selectable={selectMode}
+                  selected={selectedIds.has(project.id)}
+                  onSelect={() => toggleSelect(project.id)}
+                />
+              ))}
+            </div>
+            {/* 无限滚动哨兵 */}
+            <div ref={observerRef} className="py-4 flex items-center justify-center">
+              {loadingMore && (
+                <div className="flex items-center gap-2 text-slate-500">
+                  <div className="animate-spin w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
+                  <span className="text-sm">加载更多...</span>
+                </div>
+              )}
+              {!hasMore && projects.length > 0 && (
+                <span className="text-sm text-slate-400">已加载全部 {total} 条数据</span>
+              )}
+            </div>
+          </>
         )}
       </div>
-
-      {/* 分页控件 */}
-      {pagination.total > 0 && (
-        <div className="shrink-0 bg-white border-t border-slate-100 px-6 py-3 flex items-center justify-between">
-          <div className="text-sm text-slate-600">
-            共 <span className="font-medium text-slate-700">{pagination.total}</span> 条记录
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={pagination.size}
-              onChange={(e) => setPagination(prev => ({ ...prev, size: Number(e.target.value), page: 1 }))}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-800 focus:bg-white focus:border-emerald-400 outline-none"
-            >
-              <option value={10}>10 条/页</option>
-              <option value={20}>20 条/页</option>
-              <option value={50}>50 条/页</option>
-            </select>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
-              disabled={pagination.page === 1}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-            >
-              首页
-            </button>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-              disabled={pagination.page === 1}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-            >
-              上一页
-            </button>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min="1"
-                max={Math.ceil(pagination.total / pagination.size)}
-                value={pagination.page}
-                onChange={(e) => {
-                  const page = parseInt(e.target.value);
-                  const maxPage = Math.ceil(pagination.total / pagination.size);
-                  if (page >= 1 && page <= maxPage) {
-                    setPagination(prev => ({ ...prev, page }));
-                  }
-                }}
-                className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-sm bg-white text-slate-800 focus:border-emerald-400 outline-none"
-              />
-              <span className="text-sm text-slate-600">/ {Math.ceil(pagination.total / pagination.size)}</span>
-            </div>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-              disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-            >
-              下一页
-            </button>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.ceil(pagination.total / pagination.size) }))}
-              disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 transition-colors text-sm"
-            >
-              末页
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 确认弹窗 */}
       {confirmModal && (
@@ -615,7 +625,12 @@ const AdminProjects = () => {
       <CreateProjectModal
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
-        onSuccess={loadProjects}
+        onSuccess={() => {
+          // 重置并重新加载
+          setPage(1);
+          setProjects([]);
+          setHasMore(true);
+        }}
       />
     </div>
   );
