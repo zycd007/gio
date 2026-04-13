@@ -5,6 +5,12 @@ spring:
   application:
     name: gio-api
 
+  servlet:
+    multipart:
+      max-file-size: 10MB        # 单文件最大 10MB
+      max-request-size: 100MB    # 单请求最大 100MB
+      file-size-threshold: 0     # 不使用临时文件缓存
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://140.143.87.54:3306/gio_design?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -68,9 +74,14 @@ logging:
     com.gio: debug
     com.gio.mapper: debug
 
-# AI 配置（通义千问）
+# AI 配置（通义千问 + 通义万相）
 ai:
   dashscope:
     api-key: sk-sp-ccff0d12fb58427ca9e3f09545b5c43d
     base-url: https://coding.dashscope.aliyuncs.com/v1
     model: qwen3.5-plus
+    # 通义万相配置
+    image-model: wanx-v1
+    image-url: https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
+    image-size: 1024*1024
+    max-images-per-call: 4  # 单次API调用最大图片数
