@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   getProjectDetail,
   updateProject,
-  uploadImages,
-  uploadTempImages,
   associateImagesToProject,
   deleteImage,
   setAsCover,
@@ -22,7 +20,16 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import ImageViewer from './components/ImageViewer';
-import { compressImages } from '@/utils/imageCompress';
+import UploadQueueCard from '@/components/UploadQueueCard';
+import {
+  createQueueItem,
+  uploadTempImagesSerial,
+  uploadProjectImagesSerial,
+  cancelUpload,
+  retryUploadItem,
+  cleanupPreviewUrls,
+} from '@/services/uploadService';
+import { UploadQueueItem } from '@/types/upload';
 
 interface Category {
   id: number;
@@ -164,7 +171,8 @@ const ProjectDetailPage = () => {
   const [pendingImageFiles, setPendingImageFiles] = useState<{ id: number; file: File }[]>([]);
 
   // 图片相关
-  const [uploading, setUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const [isBatchUploading, setIsBatchUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 图片查看器状态
@@ -298,43 +306,34 @@ const ProjectDetailPage = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // 检查是否有有效的项目 ID
     if (!projectId || projectId <= 0) {
       toast.error('请先保存项目后再上传图片');
       return;
     }
 
-    setUploading(true);
-    try {
-      // 前端压缩
-      const compressResults = await compressImages(Array.from(files), {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.85,
-        maxSizeMB: 2,
-      });
+    const newItems = Array.from(files).map(file => createQueueItem(file));
+    setUploadQueue(prev => [...prev, ...newItems]);
+    setIsBatchUploading(true);
 
-      // 显示压缩提示
-      const compressedCount = compressResults.filter(r => r.wasCompressed).length;
-      if (compressedCount > 0) {
-        const savedSize = compressResults.reduce((acc, r) =>
-          acc + (r.originalSize - r.compressedSize), 0);
-        const savedMB = (savedSize / 1024 / 1024).toFixed(1);
-        toast.info(`已压缩 ${compressedCount} 张图片，节省 ${savedMB}MB`);
-      }
+    const updatedQueue = await uploadProjectImagesSerial(projectId, [...uploadQueue, ...newItems], {
+      onProgress: (id, progress) => {
+        setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, progress } : item));
+      },
+      onSuccess: (_id, _imageId) => {
+        toast.success('图片上传成功');
+      },
+      onFailed: (_id, error) => {
+        toast.error(`上传失败: ${error}`);
+      },
+      onComplete: () => {
+        setIsBatchUploading(false);
+        loadProject();
+      },
+    });
 
-      // 上传压缩后的文件
-      const compressedFiles = compressResults.map(r => r.file);
-      await uploadImages(projectId, compressedFiles);
-      toast.success('图片上传成功');
-      loadProject();
-    } catch (err: any) {
-      toast.error('上传失败：' + err.message);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    setUploadQueue(updatedQueue);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -343,45 +342,31 @@ const ProjectDetailPage = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    try {
-      // 前端压缩
-      const compressResults = await compressImages(Array.from(files), {
-        maxWidth: 1920,
-        maxHeight: 1080,
-        quality: 0.85,
-        maxSizeMB: 2,
-      });
+    const newItems = Array.from(files).map(file => createQueueItem(file));
+    setUploadQueue(prev => [...prev, ...newItems]);
+    setIsBatchUploading(true);
 
-      // 显示压缩提示
-      const compressedCount = compressResults.filter(r => r.wasCompressed).length;
-      if (compressedCount > 0) {
-        const savedSize = compressResults.reduce((acc, r) =>
-          acc + (r.originalSize - r.compressedSize), 0);
-        const savedMB = (savedSize / 1024 / 1024).toFixed(1);
-        toast.info(`已压缩 ${compressedCount} 张图片，节省 ${savedMB}MB`);
-      }
+    const updatedQueue = await uploadTempImagesSerial([...uploadQueue, ...newItems], {
+      onProgress: (id, progress) => {
+        setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, progress } : item));
+      },
+      onSuccess: (id, imageId) => {
+        setPendingTempImageIds(prev => [...prev, imageId]);
+        const item = newItems.find(i => i.id === id);
+        if (item) {
+          setPendingImageFiles(prev => [...prev, { id: imageId, file: item.file }]);
+        }
+      },
+      onFailed: (_id, error) => {
+        toast.error(`上传失败: ${error}`);
+      },
+      onComplete: () => {
+        setIsBatchUploading(false);
+        toast.success(`已上传 ${files.length} 张图片`);
+      },
+    });
 
-      // 上传压缩后的文件
-      const compressedFiles = compressResults.map(r => r.file);
-      const tempImageIds = await uploadTempImages(compressedFiles);
-
-      // 更新暂存的图片 ID 列表
-      setPendingTempImageIds(prev => [...prev, ...tempImageIds]);
-
-      // 使用原始文件用于预览
-      const newPreviewFiles = Array.from(files).map((file, index) => ({
-        id: tempImageIds[index],
-        file,
-      }));
-      setPendingImageFiles(prev => [...prev, ...newPreviewFiles]);
-
-      toast.success(`已上传 ${files.length} 张图片`);
-    } catch (err: any) {
-      toast.error('上传失败：' + err.message);
-    } finally {
-      setUploading(false);
-    }
+    setUploadQueue(updatedQueue);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -392,6 +377,53 @@ const ProjectDetailPage = () => {
     setPendingTempImageIds(prev => prev.filter(id => id !== imageId));
     setPendingImageFiles(prev => prev.filter(item => item.id !== imageId));
     toast.success('已移除图片');
+  };
+
+  // 取消上传
+  const handleCancelUpload = (id: string) => {
+    cancelUpload(id);
+    setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, status: 'pending', progress: 0 } : item));
+  };
+
+  // 重试上传
+  const handleRetryUpload = async (id: string) => {
+    const item = uploadQueue.find(i => i.id === id);
+    if (!item || item.status !== 'failed') return;
+
+    setIsBatchUploading(true);
+
+    const isTemp = pageMode === 'createMode' || !projectId;
+    const projId = isTemp ? undefined : projectId;
+
+    const updatedItem = await retryUploadItem(item, isTemp, projId, {
+      onProgress: (progressId, progress) => {
+        setUploadQueue(prev => prev.map(i => i.id === progressId ? { ...i, progress } : i));
+      },
+      onSuccess: (_successId, imageId) => {
+        if (isTemp) {
+          setPendingTempImageIds(prev => [...prev, imageId]);
+          setPendingImageFiles(prev => [...prev, { id: imageId, file: item.file }]);
+        }
+        toast.success('重试成功');
+      },
+      onFailed: (_failedId, error) => {
+        toast.error(`重试失败: ${error}`);
+      },
+    });
+
+    setUploadQueue(prev => prev.map(i => i.id === id ? updatedItem : i));
+
+    if (!isTemp && updatedItem.status === 'success') {
+      loadProject();
+    }
+
+    setIsBatchUploading(false);
+  };
+
+  // 清空队列
+  const handleClearQueue = () => {
+    cleanupPreviewUrls(uploadQueue);
+    setUploadQueue([]);
   };
 
   // 删除图片
@@ -748,7 +780,7 @@ const ProjectDetailPage = () => {
                       multiple
                       onChange={handleUploadTempImages}
                       className="hidden"
-                      disabled={uploading}
+                      disabled={isBatchUploading}
                     />
                   </div>
 
@@ -796,12 +828,13 @@ const ProjectDetailPage = () => {
                     </div>
                   )}
 
-                  {uploading && (
-                    <div className="mt-3 flex items-center gap-2 text-emerald-600">
-                      <div className="animate-spin w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
-                      <span className="text-sm">上传中...</span>
-                    </div>
-                  )}
+                  {/* 上传队列卡片 */}
+                  <UploadQueueCard
+                    queue={uploadQueue}
+                    onCancel={handleCancelUpload}
+                    onRetry={handleRetryUpload}
+                    onClear={handleClearQueue}
+                  />
                 </div>
               </div>
             </div>
@@ -976,11 +1009,23 @@ const ProjectDetailPage = () => {
                         multiple
                         onChange={handleImageUpload}
                         className="hidden"
-                        disabled={uploading}
+                        disabled={isBatchUploading}
                       />
                     </label>
                   )}
                 </div>
+
+                {/* 上传队列卡片 */}
+                {uploadQueue.length > 0 && (
+                  <div className="mb-4">
+                    <UploadQueueCard
+                      queue={uploadQueue}
+                      onCancel={handleCancelUpload}
+                      onRetry={handleRetryUpload}
+                      onClear={handleClearQueue}
+                    />
+                  </div>
+                )}
 
                 {images.length === 0 ? (
                   <div className="text-center py-12 text-slate-400">
@@ -1025,7 +1070,7 @@ const ProjectDetailPage = () => {
                               multiple
                               onChange={handleImageUpload}
                               className="hidden"
-                              disabled={uploading}
+                              disabled={isBatchUploading}
                             />
                           </label>
                         )}
