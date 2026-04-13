@@ -470,7 +470,7 @@ export const uploadSingleTempImage = async (
   });
 
   // 返回第一个 imageId
-  return response[0];
+  return response.data[0] as number;
 };
 
 /**
@@ -500,5 +500,6 @@ export const uploadSingleProjectImage = async (
   });
 
   // 返回第一个 imageId
-  return response[0]?.id || response[0];
+  const data = response.data as any[];
+  return data[0]?.id || data[0];
 };
