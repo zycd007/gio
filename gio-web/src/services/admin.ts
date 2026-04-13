@@ -63,7 +63,7 @@ export interface ProjectDetail {
 interface DashboardStats {
   totalProjects: number;
   publishedProjects: number;
-  totalCategories: number;
+  totalSocialPosts: number;
   totalImages: number;
 }
 
@@ -329,4 +329,176 @@ export const batchSetProjectFeatured = (ids: number[], isFeatured: number): Prom
  */
 export const batchDeleteProjects = (ids: number[]): Promise<void> => {
   return request.delete('/admin/projects/batch', { data: ids });
+};
+
+// ========== 数据分析 ==========
+
+interface TimeRangeInfo {
+  days: number;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
+
+interface TodayStats {
+  uv: number;
+  pv: number;
+}
+
+interface TrendItem {
+  date: string;
+  uv: number;
+  pv: number;
+}
+
+interface TopProject {
+  projectId: number;
+  name: string;
+  viewCount: number;
+}
+
+interface PageHeatmapItem {
+  pageUrl: string;
+  viewCount: number;
+  uv: number;
+  pageTitle: string;
+}
+
+interface HourlyItem {
+  hour: number;
+  pv: number;
+  uv: number;
+}
+
+interface AvgDurationStats {
+  avgDurationSeconds: number;
+  avgDurationFormatted: string;
+}
+
+interface ReferrerItem {
+  referrer: string;
+  count: number;
+  referrerName: string;
+  category: string;
+}
+
+interface DeviceStats {
+  mobileCount: number;
+  desktopCount: number;
+  tabletCount: number;
+  unknownCount: number;
+  mobilePercent: number;
+  desktopPercent: number;
+  tabletPercent: number;
+}
+
+interface BounceRateStats {
+  bounceRate: number;
+  bounceCount: number;
+  totalVisits: number;
+  description: string;
+}
+
+interface VisitorTypeStats {
+  newVisitorCount: number;
+  returningVisitorCount: number;
+  newVisitorPercent: number;
+  returningVisitorPercent: number;
+}
+
+interface DashboardAnalytics {
+  timeRange: TimeRangeInfo;
+  today: TodayStats;
+  trend: TrendItem[];
+  topProjects: TopProject[];
+  pageHeatmap: PageHeatmapItem[];
+  hourlyStats: HourlyItem[];
+  avgDuration: AvgDurationStats;
+  referrerStats: ReferrerItem[];
+  deviceStats: DeviceStats;
+  bounceRate: BounceRateStats;
+  visitorTypeStats: VisitorTypeStats;
+}
+
+/**
+ * 获取仪表盘分析数据（UV/PV/趋势/项目排行/设备分布/渠道来源等）
+ * @param days 时间范围天数（7、30 等）
+ * @param startDate 开始日期（可选，与 endDate 一起使用）
+ * @param endDate 结束日期（可选，与 startDate 一起使用）
+ */
+export const getDashboardAnalytics = (
+  days?: number,
+  startDate?: string,
+  endDate?: string
+): Promise<DashboardAnalytics> => {
+  const params: any = {};
+  if (days !== undefined) {
+    params.days = days;
+  }
+  if (startDate && endDate) {
+    params.startDate = startDate;
+    params.endDate = endDate;
+  }
+  return request.get('/admin/dashboard/analytics', { params });
+};
+
+// ========== 单文件上传（用于串行上传） ==========
+
+/**
+ * 上传单个临时图片（用于新建项目场景）
+ * 返回 imageId
+ */
+export const uploadSingleTempImage = async (
+  file: File,
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal
+): Promise<number> => {
+  const formData = new FormData();
+  formData.append('files', file);
+
+  const response = await request.post('/admin/images/temp', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
+    },
+    signal,
+  });
+
+  // 返回第一个 imageId
+  return response[0];
+};
+
+/**
+ * 上传单个项目图片（用于项目详情场景）
+ * 返回 imageId
+ */
+export const uploadSingleProjectImage = async (
+  projectId: number,
+  file: File,
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal
+): Promise<number> => {
+  const formData = new FormData();
+  formData.append('files', file);
+
+  const response = await request.post(`/admin/projects/${projectId}/images`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
+    },
+    signal,
+  });
+
+  // 返回第一个 imageId
+  return response[0]?.id || response[0];
 };
