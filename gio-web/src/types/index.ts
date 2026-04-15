@@ -74,3 +74,25 @@ export interface Testimonial {
   projectName?: string;
   rating: number;
 }
+
+// 公司统计数据类型
+export interface CompanyStat {
+  value: string;
+  label: string;
+  subLabel?: string;
+}
+
+// 公司信息类型
+export interface CompanyInfo {
+  name: string;
+  nameEn: string;
+  slogan: string;
+  established: string;
+  descriptions: string[];
+  stats: {
+    projects: CompanyStat;
+    experience: CompanyStat;
+    cities: CompanyStat;
+    satisfaction: CompanyStat;
+  };
+}
