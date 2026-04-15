@@ -114,11 +114,12 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* 向下滚动指示器 */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-            <svg className="w-6 h-6 text-[#d4a853]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
+          {/* 向下滚动提示 */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '1.2s' }}>
+            <span className="text-xs tracking-[0.2em]" style={{ color: '#666' }}>向下探索</span>
+            <div className="w-px h-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-[#d4a853] to-transparent animate-scroll-line" />
+            </div>
           </div>
         </div>
 
@@ -161,9 +162,14 @@ const HomePage = () => {
             </div>
             {!projectsLoading && (
               <AnimatedSection className="text-center mt-12 md:mt-16">
-                <Link to="/projects" className="btn-primary">
-                  查看更多作品
+                <Link
+                  to="/projects"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-[#d4a853] text-[#0a0a0a] font-medium tracking-wide transition-all duration-300 hover:bg-[#e8c87a] hover:gap-4"
+                >
+                  <span>查看更多作品</span>
+                  <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">→</span>
                 </Link>
+                <p className="mt-4 text-sm" style={{ color: '#666' }}>探索更多精彩案例</p>
               </AnimatedSection>
             )}
           </div>
@@ -247,6 +253,26 @@ const HomePage = () => {
               </AnimatedSection>
             ))}
           </div>
+
+          {/* 数据展示 */}
+          <AnimatedSection className="mt-16 md:mt-20">
+            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+              {[
+                { value: '150+', label: '已完成项目', subLabel: '遍布全国' },
+                { value: '10+', label: '年行业经验', subLabel: '始于 2015' },
+                { value: '50+', label: '专业设计师', subLabel: '精英团队' },
+                { value: '98%', label: '客户满意度', subLabel: '口碑认证' }
+              ].map((stat, index) => (
+                <AnimatedSection key={stat.label} delay={index * 100}>
+                  <div className="text-center">
+                    <div className="text-3xl md:text-4xl font-light mb-2" style={{ color: '#d4a853' }}>{stat.value}</div>
+                    <div className="text-sm font-medium text-white mb-1">{stat.label}</div>
+                    <div className="text-xs" style={{ color: '#666' }}>{stat.subLabel}</div>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 

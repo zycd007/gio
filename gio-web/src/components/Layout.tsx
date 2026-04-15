@@ -157,6 +157,11 @@ const Layout = () => {
     }
   };
 
+  // 滚动到顶部
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // 移动端底部Tab配置
   const tabItems = [
     {
@@ -276,6 +281,22 @@ const Layout = () => {
           })}
         </div>
       </nav>
+
+      {/* 返回顶部按钮 */}
+      <button
+        onClick={scrollToTop}
+        className="fixed bottom-24 right-6 z-40 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 opacity-0 translate-y-4"
+        style={{
+          backgroundColor: '#1a1a1a',
+          border: '1px solid #333',
+          opacity: scrolled ? 1 : 0,
+          transform: scrolled ? 'translateY(0)' : 'translateY(1rem)',
+          pointerEvents: scrolled ? 'auto' : 'none'
+        }}
+        aria-label="返回顶部"
+      >
+        <span className="text-lg">↑</span>
+      </button>
 
       {/* 悬浮咨询按钮 */}
       {!isContactPage && !isAtContactSection && (
