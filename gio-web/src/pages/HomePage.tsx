@@ -7,6 +7,7 @@ import AnimatedSection from '@/components/AnimatedSection';
 import CategoryCard from '@/components/CategoryCard';
 import ProjectCard from '@/components/ProjectCard';
 import ContactInfo from '@/components/ContactInfo';
+import ContactForm from '@/components/ContactForm';
 import TestimonialCard from '@/components/TestimonialCard';
 import { ProjectCardSkeleton } from '@/components/Skeleton';
 import { TESTIMONIALS } from '@/constants/contact';
@@ -249,7 +250,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 联系区域 - 使用 ContactInfo 和 ContactForm 组件 */}
+      {/* 联系区域 - 联系方式 + 留言表单 */}
       <section id="contact" className="py-12 md:py-16" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-10 md:mb-12">
@@ -257,8 +258,13 @@ const HomePage = () => {
             <h2 className="section-title text-2xl md:text-3xl lg:text-4xl mt-3">联系我们</h2>
           </AnimatedSection>
 
-          <div className="max-w-xl mx-auto">
-            <ContactInfo />
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div>
+              <ContactInfo />
+            </div>
+            <div>
+              <ContactForm rows={4} />
+            </div>
           </div>
         </div>
       </section>

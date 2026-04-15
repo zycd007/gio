@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContactInfo from '@/components/ContactInfo';
+import ContactForm from '@/components/ContactForm';
 import { usePageTrack } from '@/hooks/usePageTrack';
 
 const Contact = () => {
@@ -34,11 +35,21 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* 联系方式 */}
+      {/* 联系方式和留言表单 */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#141414' }}>
         <div className="container mx-auto px-4">
-          <div className="max-w-xl mx-auto">
-            <ContactInfo delayClassName="delay-200" />
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            {/* 左侧：联系方式 */}
+            <div>
+              <ContactInfo delayClassName="delay-200" />
+            </div>
+            {/* 右侧：留言表单 */}
+            <div>
+              <AnimatedSection className="delay-300">
+                <h2 className="text-xl md:text-2xl font-light text-white mb-6 md:mb-10 tracking-wide">在线留言</h2>
+                <ContactForm rows={4} />
+              </AnimatedSection>
+            </div>
           </div>
         </div>
       </section>

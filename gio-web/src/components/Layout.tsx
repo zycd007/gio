@@ -124,15 +124,17 @@ const Layout = () => {
       return;
     }
 
-    if (!isHomePage) {
-      // 不在首页时，导航到首页
-      if (sectionId === 'featured') {
-        navigate('/projects');
-      } else {
-        navigate('/');
-      }
-    } else {
+    // featured/案例 跳转到项目列表页
+    if (sectionId === 'featured') {
+      navigate('/projects');
+      return;
+    }
+
+    // 其他区块在首页内滚动
+    if (isHomePage) {
       scrollToSection(sectionId);
+    } else {
+      navigate('/');
     }
   };
 
