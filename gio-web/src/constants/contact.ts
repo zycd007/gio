@@ -1,4 +1,4 @@
-import { ContactInfo, SocialMedia, PhilosophyItem, Testimonial } from '@/types';
+import { ContactInfo, SocialMedia, PhilosophyItem, Testimonial, CompanyInfo } from '@/types';
 
 export const CONTACT_INFO: ContactInfo[] = [
   { icon: '📍', title: '地址', content: '四川省成都市锦江区静安路1号' },
@@ -18,16 +18,25 @@ export const PHILOSOPHY_ITEMS: PhilosophyItem[] = [
   { icon: '🤝', title: '客户至上', desc: '以客户空间需求为核心，提供一对一个性化定制服务，从需求沟通、方案设计到落地调试、后期维护，全流程专人跟进，确保需求精准落地。' }
 ];
 
-export const COMPANY_INFO = {
+/**
+ * 公司信息 - 唯一权威数据源
+ * 所有页面（首页、关于页）应从此处获取数据
+ */
+export const COMPANY_INFO: CompanyInfo = {
   name: '光里光外 GIO',
   nameEn: 'GIO',
   slogan: '专注空间智能照明设计',
-  established: '2010',
-  description: [
-    '光里光外 GIO 成立于 2010 年，是一家专注于智能照明全案设计的知名公司。我们的团队由经验丰富的照明设计师组成，致力于为客户创造独特而富有灵感的照明方案。',
-    '我们相信照明设计不仅仅是提供光源，更是对生活品质的提升和空间氛围的营造。每一个项目都是独一无二的，我们用心倾听客户的需求，将他们的愿景转化为现实。',
-    '多年来，我们完成了众多备受赞誉的智能照明项目，涵盖私宅空间、餐饮空间、娱乐空间等多个领域。我们的设计理念是"以光塑形，以影传情"，追求光影与空间的完美融合，同时注重节能与智能化。'
-  ]
+  established: '2015',
+  descriptions: [
+    '光里光外 GIO 团队始于 2015 年，是一家专注于智能照明全案设计的知名公司。我们的团队由经验丰富的照明设计师组成，致力于为客户创造独特而富有灵感的照明方案。',
+    '我们相信照明设计不仅仅是提供光源，更是对生活品质的提升和空间氛围的营造。每一个项目都是独一无二的，我们用心倾听客户的需求，将他们的愿景转化为现实。'
+  ],
+  stats: {
+    projects: { value: '400+', label: '已完成项目', subLabel: '遍布全国' },
+    experience: { value: '10+', label: '年行业经验', subLabel: '始于 2015' },
+    cities: { value: '15+', label: '覆盖城市', subLabel: '深耕全国' },
+    satisfaction: { value: '98%', label: '客户满意度', subLabel: '口碑认证' }
+  }
 };
 
 // 客户评价

@@ -4,20 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import AnimatedSection from '@/components/AnimatedSection';
 import CompanyIntro from '@/components/CompanyIntro';
 import PhilosophyCard from '@/components/PhilosophyCard';
+import { COMPANY_INFO } from '@/constants/contact';
 import { usePageTrack } from '@/hooks/usePageTrack';
-
-// 公司介绍文字
-const COMPANY_DESCRIPTIONS = [
-  '光里光外 GIO 成立于 2010 年，是深耕成都的专业智能照明全案设计公司，由资深照明设计师组成核心团队，专注为私宅、餐饮、办公、酒店等多元空间提供定制化照明解决方案。',
-  '我们坚信，照明设计不止是提供光源，更是生活品质的提升、空间氛围的营造、品牌价值的强化。十余年来，我们深耕光影设计领域，用心倾听每一位客户的需求，将空间愿景与智能照明技术结合，让每一个项目都拥有专属的光影表达。'
-];
-
-// 团队优势数据
-const TEAM_ADVANTAGES = [
-  { value: '14+', label: '行业经验' },
-  { value: '15+', label: '覆盖城市' },
-  { value: '100+', label: '完成项目' }
-];
 
 // 服务流程
 const SERVICE_PROCESS = [
@@ -40,7 +28,7 @@ const About = () => {
     <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Helmet>
         <title>关于我们 - 光里光外 GIO</title>
-        <meta name="description" content="光里光外GIO成立于2010年，是成都专业智能照明设计公司，14年行业经验，提供私宅、餐饮、办公、酒店等空间照明设计服务" />
+        <meta name="description" content="光里光外GIO团队始于2015年，是成都专业智能照明设计公司，10年行业经验，提供私宅、餐饮、办公、酒店等空间照明设计服务" />
         <meta name="keywords" content="关于照明设计公司,成都照明设计,智能照明设计团队,照明设计公司优势" />
         <link rel="canonical" href="http://140.143.87.54/about" />
       </Helmet>
@@ -60,11 +48,11 @@ const About = () => {
       {/* 公司介绍 - 使用 CompanyIntro 组件 */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#141414' }}>
         <div className="container mx-auto px-4">
-          <CompanyIntro descriptions={COMPANY_DESCRIPTIONS} />
+          <CompanyIntro descriptions={COMPANY_INFO.descriptions} />
         </div>
       </section>
 
-      {/* 团队优势 */}
+      {/* 团队优势 - 使用 COMPANY_INFO.stats */}
       <section className="py-16 md:py-20" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-12">
@@ -72,10 +60,10 @@ const About = () => {
             <h2 className="section-title text-2xl md:text-3xl mt-3">团队优势</h2>
           </AnimatedSection>
           <div className="flex justify-center gap-8 md:gap-16">
-            {TEAM_ADVANTAGES.map((item, index) => (
+            {Object.values(COMPANY_INFO.stats).map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-light mb-2" style={{ color: '#d4a853' }}>{item.value}</div>
-                <div className="text-xs md:text-sm tracking-wider" style={{ color: '#666666' }}>{item.label}</div>
+                <div className="text-3xl md:text-4xl font-light mb-2" style={{ color: '#d4a853' }}>{stat.value}</div>
+                <div className="text-xs md:text-sm tracking-wider" style={{ color: '#666666' }}>{stat.label}</div>
               </div>
             ))}
           </div>

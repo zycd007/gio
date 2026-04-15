@@ -6,11 +6,13 @@ import { useAppContext } from '@/App';
 import AnimatedSection from '@/components/AnimatedSection';
 import CategoryCard from '@/components/CategoryCard';
 import ProjectCard from '@/components/ProjectCard';
+import CompanyIntro from '@/components/CompanyIntro';
+import PhilosophyCard from '@/components/PhilosophyCard';
 import ContactInfo from '@/components/ContactInfo';
 import ContactForm from '@/components/ContactForm';
 import TestimonialCard from '@/components/TestimonialCard';
 import { ProjectCardSkeleton } from '@/components/Skeleton';
-import { TESTIMONIALS } from '@/constants/contact';
+import { TESTIMONIALS, COMPANY_INFO } from '@/constants/contact';
 import { usePageTrack } from '@/hooks/usePageTrack';
 
 const HomePage = () => {
@@ -114,11 +116,12 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* 向下滚动指示器 */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-            <svg className="w-6 h-6 text-[#d4a853]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
+          {/* 向下滚动提示 */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '1.2s' }}>
+            <span className="text-xs tracking-[0.2em]" style={{ color: '#666' }}>向下探索</span>
+            <div className="w-px h-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-[#d4a853] to-transparent animate-scroll-line" />
+            </div>
           </div>
         </div>
 
@@ -161,16 +164,21 @@ const HomePage = () => {
             </div>
             {!projectsLoading && (
               <AnimatedSection className="text-center mt-12 md:mt-16">
-                <Link to="/projects" className="btn-primary">
-                  查看更多作品
+                <Link
+                  to="/projects?category="
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-[#d4a853] text-[#0a0a0a] font-medium tracking-wide transition-all duration-300 hover:bg-[#e8c87a] hover:gap-4"
+                >
+                  <span>查看更多作品</span>
+                  <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">→</span>
                 </Link>
+                <p className="mt-4 text-sm" style={{ color: '#666' }}>探索更多精彩案例</p>
               </AnimatedSection>
             )}
           </div>
         </div>
       </div>
 
-      {/* 关于区域 */}
+      {/* 关于区域 - 使用 CompanyIntro 和 PhilosophyCard 组件 */}
       <section id="about" className="min-h-screen py-16 md:py-24" style={{ backgroundColor: '#141414' }}>
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-12 md:mb-16">
@@ -178,33 +186,8 @@ const HomePage = () => {
             <h2 className="section-title text-2xl md:text-3xl lg:text-4xl mt-3">关于 光里光外 <span className="text-[#d4a853]">GIO</span></h2>
           </AnimatedSection>
 
-          {/* 公司介绍 */}
-          <AnimatedSection className="max-w-5xl mx-auto mb-16 md:mb-20">
-            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
-              <div className="md:w-1/2 relative">
-                {/* 装饰边框 */}
-                <div className="absolute -top-2 -left-2 w-8 h-8 border-t border-l" style={{ borderColor: '#d4a853' }} />
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b border-r" style={{ borderColor: '#d4a853' }} />
-                <img
-                  src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"
-                  alt="About"
-                  loading="lazy"
-                  className="w-full h-[250px] md:h-[400px] object-cover"
-                  style={{ filter: 'grayscale(20%)' }}
-                />
-              </div>
-              <div className="md:w-1/2">
-                <p className="text-sm md:text-base leading-relaxed mb-6" style={{ color: '#a0a0a0' }}>
-                  光里光外 GIO 成立于 2010 年，是一家专注于智能照明全案设计的知名公司。
-                  我们的团队由经验丰富的照明设计师组成，致力于为客户创造独特而富有灵感的照明方案。
-                </p>
-                <p className="text-sm md:text-base leading-relaxed" style={{ color: '#a0a0a0' }}>
-                  我们相信照明设计不仅仅是提供光源，更是对生活品质的提升和空间氛围的营造。
-                  每一个项目都是独一无二的，我们用心倾听客户的需求，将他们的愿景转化为现实。
-                </p>
-              </div>
-            </div>
-          </AnimatedSection>
+          {/* 公司介绍 - 使用 CompanyIntro 组件 */}
+          <CompanyIntro descriptions={COMPANY_INFO.descriptions} />
 
           {/* 核心理念 - 使用 PhilosophyCard 组件 */}
           <AnimatedSection className="mb-12 md:mb-16">
@@ -212,23 +195,7 @@ const HomePage = () => {
               <span className="section-label">Our Philosophy</span>
               <h3 className="section-title text-xl md:text-2xl mt-3">核心理念</h3>
             </div>
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
-              {[
-                { icon: '🎯', title: '专注品质', desc: '我们坚持高标准的照明设计品质，关注每一个细节，确保每个项目都能达到最佳效果。' },
-                { icon: '💡', title: '智能创新', desc: '我们不断探索智能照明新技术，为客户创造节能、环保、智能化的照明解决方案。' },
-                { icon: '🤝', title: '客户至上', desc: '我们以客户需求为核心，提供个性化的照明设计服务，确保客户满意。' }
-              ].map((item, index) => (
-                <AnimatedSection key={item.title} delay={index * 150}>
-                  <div className="text-center p-8 md:p-10 transition-all duration-500 card-hover" style={{ backgroundColor: '#1a1a1a', border: '1px solid #1a1a1a' }}>
-                    <div className="text-3xl md:text-4xl mb-5">{item.icon}</div>
-                    <h4 className="text-lg md:text-xl font-light text-white mb-4 tracking-wide">{item.title}</h4>
-                    <p className="text-xs md:text-sm leading-relaxed" style={{ color: '#666666' }}>
-                      {item.desc}
-                    </p>
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
+            <PhilosophyCard />
           </AnimatedSection>
         </div>
       </section>
@@ -247,6 +214,21 @@ const HomePage = () => {
               </AnimatedSection>
             ))}
           </div>
+
+          {/* 数据展示 - 使用 COMPANY_INFO.stats */}
+          <AnimatedSection className="mt-16 md:mt-20">
+            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+              {Object.values(COMPANY_INFO.stats).map((stat, index) => (
+                <AnimatedSection key={stat.label} delay={index * 100}>
+                  <div className="text-center">
+                    <div className="text-3xl md:text-4xl font-light mb-2" style={{ color: '#d4a853' }}>{stat.value}</div>
+                    <div className="text-sm font-medium text-white mb-1">{stat.label}</div>
+                    {stat.subLabel && <div className="text-xs" style={{ color: '#666' }}>{stat.subLabel}</div>}
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 

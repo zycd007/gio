@@ -33,6 +33,12 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
               setImgLoaded(true);
             }}
           />
+          {/* 分类标签 */}
+          <div className="absolute top-3 left-3">
+            <span className="px-2.5 py-1 text-xs font-medium bg-black/60 backdrop-blur-sm text-white/90 rounded">
+              {project.categoryName}
+            </span>
+          </div>
           {/* 悬停遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           {/* 悬停时显示详情 */}
