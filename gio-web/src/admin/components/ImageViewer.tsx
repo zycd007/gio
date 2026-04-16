@@ -32,6 +32,26 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     }
   }, [currentIndex, visible]);
 
+  // 预加载前后相邻图片
+  useEffect(() => {
+    if (!visible || images.length === 0) return;
+
+    const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+    const nextIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
+
+    // 使用 Image 对象预加载相邻图片
+    const preloadImages = [prevIndex, nextIndex].map(i => {
+      const img = new window.Image();
+      img.src = `/api/images/${images[i].id}`;
+      return img;
+    });
+
+    return () => {
+      // 清理预加载（可选）
+      preloadImages.forEach(img => { img.src = ''; });
+    };
+  }, [visible, currentIndex, images]);
+
   // 键盘导航
   useEffect(() => {
     if (!visible) return;
@@ -123,7 +143,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             </div>
           )}
           <img
-            src={`/api/images/${currentImage.id}?t=${Date.now()}`}
+            src={`/api/images/${currentImage.id}`}
             alt={currentImage.imageName}
             className={`max-w-full max-h-full object-contain rounded-lg transition-opacity duration-300 ${
               imageLoading ? 'opacity-0' : 'opacity-100'
@@ -176,7 +196,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
                 }`}
               >
                 <img
-                  src={`/api/images/${img.id}?t=${Date.now()}`}
+                  src={`/api/images/${img.id}`}
                   alt={img.imageName}
                   className="w-full h-full object-cover"
                 />

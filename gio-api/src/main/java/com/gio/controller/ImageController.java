@@ -46,8 +46,8 @@ public class ImageController {
             return ResponseEntity.notFound().build();
         }
 
-        // 设置缓存头
-        response.setHeader("Cache-Control", "public, max-age=3600");
+        // 设置缓存头 - 24小时，immutable表示内容永不变
+        response.setHeader("Cache-Control", "public, max-age=86400, immutable");
 
         HttpHeaders headers = new HttpHeaders();
         String contentType = getContentType(image.getImageType());

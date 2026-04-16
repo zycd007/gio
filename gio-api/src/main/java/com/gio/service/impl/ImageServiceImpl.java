@@ -36,15 +36,17 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ImageServiceImpl implements ImageService {
 
-    // 缩略图缓存（最大 100 个，30 分钟过期）
+    // 缩略图缓存（最大 500 个，2 小时过期）
     private final Cache<Integer, byte[]> thumbnailCache = Caffeine.newBuilder()
-            .maximumSize(100)
-            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .maximumSize(500)
+            .expireAfterWrite(2, TimeUnit.HOURS)
+            .recordStats()
             .build();
-    // 原图缓存（最大 50 个，10 分钟过期）
+    // 原图缓存（最大 200 个，1 小时过期）
     private final Cache<Integer, byte[]> imageCache = Caffeine.newBuilder()
-            .maximumSize(50)
-            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .maximumSize(200)
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .recordStats()
             .build();
 
     @Value("${file.upload-path}")
