@@ -74,7 +74,7 @@ const SortableImageItem = ({
       className={`relative aspect-square rounded-xl overflow-hidden cursor-move group border-2 border-transparent hover:border-emerald-400 transition-all ${isDragging ? 'border-emerald-500 shadow-lg' : ''}`}
     >
       <img
-        src={`/api/images/${image.id}?t=${Date.now()}`}
+        src={`/api/images/${image.id}`}
         alt={image.imageName}
         className="w-full h-full object-cover pointer-events-none"
       />
