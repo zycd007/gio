@@ -1,124 +1,90 @@
-# GIO 项目开发规范
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
-- **项目名称**: 光里光外-专注空间智能照明设计
-- **技术栈**: Spring Boot 3.2.0 + MyBatis Plus 3.5.5 + MySQL
-- **Java 版本**: 17
 
-### 服务列表
-| 服务名 | 端口 | 说明 | 访问范围 |
-|--------|------|------|----------|
-| gio-web | 5173 | 前端开发服务器 | 本地开发 |
-| gio-api | 8081 | 后端 API 服务 | 公开 |
+光里光外（GIO）— 空间智能照明设计官网及后台管理系统。
 
-### 访问地址
-- **C 端官网**: http://localhost:5173
-- **后台管理**: http://localhost:5173/admin/
+- **后端**: Spring Boot 3.2.0 + MyBatis Plus 3.5.5 + MySQL（单体架构，端口 8081）
+- **前端**: React 18 + TypeScript + Vite 6 + Tailwind CSS（开发端口 5173）
+- **Java**: 17（必须使用 ms-17.0.17）
 
-### 项目结构
-```
-gio/
-├── pom.xml                  # 父 POM
-├── gio-api/                 # 后端 API 服务（单体）
-│   ├── src/main/java/com/gio/
-│   │   ├── entity/         # 实体类
-│   │   ├── dto/            # DTO
-│   │   ├── mapper/         # MyBatis Mapper
-│   │   ├── service/        # 服务层
-│   │   ├── controller/     # 控制器
-│   │   ├── common/         # 通用类
-│   │   └── config/         # 配置类
-│   └── pom.xml
-├── gio-web/                # 前端
-├── init_db.py              # 数据库初始化脚本
-└── migrate_images.py       # 图片迁移脚本
-```
+## 常用命令
 
-## 开发环境配置
-
-### 必需环境
-```
-- JDK 17 (必须使用 ms-17.0.17，路径：C:/Users/Administrator/.jdks/ms-17.0.17)
-- Maven 3.6+
-- MySQL 8.0+
-```
-
-### 环境变量配置
 ```bash
-# 必须设置 JAVA_HOME 为 JDK 17（重要：不要使用其他版本）
-export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17"
-export PATH="$JAVA_HOME/bin:$PATH"
-```
+# 设置 JAVA_HOME（每次新终端必须执行）
+export JAVA_HOME="C:/Users/Administrator/.jdks/ms-17.0.17" && export PATH="$JAVA_HOME/bin:$PATH"
 
-### 启动命令
-```bash
-# 构建所有模块
-cd gio
-mvn clean install -DskipTests
+# 后端构建 + 启动
+cd gio && mvn clean install -DskipTests && cd gio-api && mvn spring-boot:run
 
-# 启动后端服务
-cd gio-api
-mvn spring-boot:run
-```
-
-### 配置说明
-- **数据库**: 腾讯云 MySQL (140.143.87.54:3306/gio_design)
-
-## 开发规范
-
-### 代码风格
-- 使用 Lombok `@Data` 注解简化实体类
-- 统一返回格式：`Result<T>`
-- 使用 MyBatis Plus 的 `BaseMapper` 和 `IService`
-- 异常处理：使用 `GlobalExceptionHandler` 统一处理
-
-### 数据库规范
-- 表名：小写 + 下划线（如 `project_image`）
-- 主键：自增 INT，使用 `@TableId(type = IdType.AUTO)`
-- 逻辑删除：`deleted` 字段，0-未删除，1-已删除
-- 时间字段：`created_at`, `updated_at` 自动填充
-
-### API 规范
-- RESTful 风格
-- C 端接口：`GET /api/categories`, `GET /api/projects`
-- 管理端接口：`/api/admin/*` (需要 JWT 认证)
-- JWT Token 认证，过期时间 24 小时
-
-## 测试
-
-### 单元测试
-```bash
+# 后端运行测试
 mvn test
+
+# 前端开发
+cd gio-web && pnpm install && pnpm dev
+
+# 前端构建
+cd gio-web && pnpm build
+
+# 运行单个后端测试类
+cd gio-api && mvn test -Dtest=ClassName
+
+# 运行单个测试方法
+cd gio-api && mvn test -Dtest=ClassName#methodName
 ```
 
-### API 测试
-```bash
-# C 端 - 获取分类列表
-curl http://localhost:8081/api/categories
+## 架构要点
 
-# C 端 - 获取项目列表
-curl http://localhost:8081/api/projects
+### 后端分层
 
-# 管理端 - 登录
-curl -X POST http://localhost:8081/api/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
+`Controller` → `Service` → `Mapper(BaseMapper)` → `Entity`，遵循 MyBatis Plus 标准分层。
 
-## 服务器信息
-> **服务器信息：腾讯云**
-> - IP: 140.143.87.54
-> - 服务器用户名：ubuntu
-> - 服务器密码：@yuku007@
-> - 数据库用户名：root
-> - 数据库密码：@Yuku007@
+- **C 端控制器**（`/api/**`，无需认证）：`PortalController`、`MessageController`、`ImageController`、`TrackController`
+- **管理端控制器**（`/api/admin/**`，需 JWT）：`AdminLoginController`、`DashboardController`、`AdminProjectController`、`AdminCategoryController`、`AdminImageController`、`AdminMessageController`、`SocialPostController`
 
-**访问地址：**
-- 前端页面：http://140.143.87.54
-- 后端 API：http://140.143.87.54:8081
+### 前端路由
 
-**日志查看：**
-```bash
-ssh ubuntu@140.143.87.54
-tail -f ~/gio/logs/api.log
-```
+- **C 端**（`Layout` 包裹）：`/`（首页）、`/projects`、`/projects/:id`、`/contact`、`/about`
+- **管理端**（`AdminLayout` 包裹）：`/admin`（Dashboard）、`/admin/projects`、`/admin/projects/:id`、`/admin/categories`、`/admin/messages`、`/admin/social-posts`
+
+前端无 Redux/Zustand，状态管理使用 React Context（`AppContext` 持有 categories/projects）+ 组件局部 state + localStorage（仅存 admin_token）。
+
+### 图片存储模型（非显而易见）
+
+图片**以 Base64 存储在 `attachment` 表**中（`base64_data` 和 `thumbnail_data` 字段），文件系统仅作为上传/压缩的临时暂存区。读取图片时通过 Caffeine 缓存避免重复 Base64 解码。
+
+**临时图片工作流**：创建项目时先上传图片到 `/api/admin/images/temp`（project_id=null），项目创建后再通过 `/api/admin/projects/{id}/images/associate` 关联，第一张关联图片自动成为封面。
+
+### 认证流程
+
+1. POST `/api/admin/login` → BCrypt 验证 → 返回 JWT（access 24h, refresh 7d）
+2. 前端 Axios 拦截器注入 `Authorization: Bearer <token>`
+3. `JwtAuthenticationFilter` 验证 token 并设置 `ROLE_ADMIN`
+4. 前端 `AdminLayout` 挂载时调 `/api/admin/me` 验证，每 5 分钟轮询
+5. 401 响应自动清除 token 并跳转 `/admin/login`
+
+### 软删除不一致
+
+`SocialPost` 使用 MyBatis Plus `@TableLogic` 自动软删除，但 `Project` 使用手动 `deleted` 字段 + 显式 `eq("deleted", 0)` 过滤。新增实体时需注意保持一致性。
+
+## 关键约定
+
+- 统一返回格式 `Result<T>`（code/message/data/timestamp），分页用 `PageResult<T>`
+- 实体类用 Lombok `@Data`，主键 `@TableId(type = IdType.AUTO)`
+- 时间字段 `created_at`/`updated_at` 由 `MybatisPlusConfig.MetaObjectHandler` 自动填充
+- 表名小写+下划线，逻辑删除字段 `deleted`（0/1）
+- 前端 API 层在 `services/` 目录，Axios 实例在 `services/api.ts`（自动解包 code===200 返回 data）
+- 前端上传使用串行队列（`uploadService.ts`），非并行
+- AI 功能通过阿里云 DashScope API（qwen3.5-plus 文本、wanx-v1 图片），超时 60s/120s
+
+## 配置
+
+- **后端配置**: `gio-api/src/main/resources/application.yml`（端口 8081、MySQL、JWT secret、DashScope API key、邮件通知）
+- **前端代理**: `gio-web/vite.config.ts` 中 `/api` → `http://localhost:8081`
+- **CORS**: `SecurityConfig` 允许 `localhost:5173`、`localhost:3000`、`https://gio-ai.cn`、`http://140.143.87.54`
+
+## 部署
+
+使用本地打包 + SCP 上传方式部署到腾讯云（140.143.87.54），详见 `deploy_upload.py`（上传）和 `deploy_remote.py`（远程重启）。服务器使用 Nginx 反向代理前端。

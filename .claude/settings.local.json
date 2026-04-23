@@ -37,7 +37,19 @@
       "Bash(python deploy/scripts/fix-claude-config.py)",
       "Bash(where cc-connect:*)",
       "Bash(powershell:*)",
-      "Bash(git -C \"E:/my_projects/gio\" status --porcelain gio-web/src/admin/ProjectDetailPage.tsx)"
+      "Bash(git -C \"E:/my_projects/gio\" status --porcelain gio-web/src/admin/ProjectDetailPage.tsx)",
+      "Bash(pnpm add:*)",
+      "Bash(mvn compile:*)",
+      "Bash(JAVA_HOME=\"C:/Users/Administrator/.jdks/ms-17.0.17\" mvn compile -q)",
+      "Bash(npm install:*)",
+      "Bash(JAVA_HOME=\"C:/Users/Administrator/.jdks/ms-17.0.17\" mvn spring-boot:run -q)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081/api/categories)",
+      "Bash(curl -s -X POST http://localhost:8081/api/track/pageview -H 'Content-Type: application/json' -d '{\"pageUrl\":\"/projects/1\",\"projectId\":1,\"referrer\":\"\"}')",
+      "Bash(curl -s -X POST http://localhost:8081/api/track/duration -H 'Content-Type: application/json' -d '{\"pageUrl\":\"/projects/1\",\"projectId\":1,\"duration\":30}')",
+      "Bash(mysql:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(pnpm run:*)"
     ]
   }
 }

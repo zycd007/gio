@@ -18,6 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.annotation.PostConstruct;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
@@ -36,16 +40,34 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ImageServiceImpl implements ImageService {
 
-    // 缩略图缓存（最大 500 个，2 小时过期）
+    // 缩略图缓存（最大 2000 个，24 小时过期）
     private final Cache<Integer, byte[]> thumbnailCache = Caffeine.newBuilder()
-            .maximumSize(500)
-            .expireAfterWrite(2, TimeUnit.HOURS)
+            .maximumSize(2000)
+            .expireAfterWrite(24, TimeUnit.HOURS)
             .recordStats()
             .build();
-    // 原图缓存（最大 200 个，1 小时过期）
+    // 原图缓存（最大 1000 个，12 小时过期）
     private final Cache<Integer, byte[]> imageCache = Caffeine.newBuilder()
-            .maximumSize(200)
-            .expireAfterWrite(1, TimeUnit.HOURS)
+            .maximumSize(1000)
+            .expireAfterWrite(12, TimeUnit.HOURS)
+            .recordStats()
+            .build();
+    // WebP格式缩略图缓存
+    private final Cache<Integer, byte[]> webpThumbnailCache = Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterWrite(24, TimeUnit.HOURS)
+            .recordStats()
+            .build();
+    // WebP格式原图缓存
+    private final Cache<Integer, byte[]> webpImageCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(12, TimeUnit.HOURS)
+            .recordStats()
+            .build();
+    // 调整尺寸后的图片缓存，key格式：attachmentId:width:format
+    private final Cache<String, byte[]> resizedImageCache = Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterWrite(24, TimeUnit.HOURS)
             .recordStats()
             .build();
 
@@ -325,15 +347,151 @@ public class ImageServiceImpl implements ImageService {
         return thumbnailData;
     }
 
+    @Override
+    public byte[] getImageFileWithFormat(Integer id, String format) {
+        ProjectImage image = getImageById(id);
+        if (image == null || image.getAttachmentId() == null) {
+            return null;
+        }
+
+        if ("webp".equalsIgnoreCase(format)) {
+            // 先查WebP缓存
+            byte[] cached = webpImageCache.getIfPresent(image.getAttachmentId());
+            if (cached != null) {
+                return cached;
+            }
+
+            // 获取原始图片数据
+            byte[] originalData = getImageFileByAttachmentId(image.getAttachmentId());
+            if (originalData == null) {
+                return null;
+            }
+
+            // 转换为WebP格式
+            try {
+                Path tempFile = Files.createTempFile("webp_", ".tmp");
+                Files.write(tempFile, originalData);
+                byte[] webpData = compressImage(tempFile, "webp");
+                Files.deleteIfExists(tempFile);
+
+                // 存入缓存
+                webpImageCache.put(image.getAttachmentId(), webpData);
+                return webpData;
+            } catch (Exception e) {
+                // 转换失败返回原始格式
+                return originalData;
+            }
+        }
+
+        // 默认返回原始格式
+        return getImageFileByAttachmentId(image.getAttachmentId());
+    }
+
+    @Override
+    public byte[] getThumbnailFileWithFormat(Integer id, String format) {
+        ProjectImage image = getImageById(id);
+        if (image == null || image.getAttachmentId() == null) {
+            return null;
+        }
+
+        if ("webp".equalsIgnoreCase(format)) {
+            // 先查WebP缓存
+            byte[] cached = webpThumbnailCache.getIfPresent(image.getAttachmentId());
+            if (cached != null) {
+                return cached;
+            }
+
+            // 获取原始缩略图数据
+            byte[] originalData = getThumbnailFileByAttachmentId(image.getAttachmentId());
+            if (originalData == null) {
+                return null;
+            }
+
+            // 转换为WebP格式
+            try {
+                byte[] webpData = generateThumbnail(originalData, "webp");
+                // 存入缓存
+                webpThumbnailCache.put(image.getAttachmentId(), webpData);
+                return webpData;
+            } catch (Exception e) {
+                // 转换失败返回原始格式
+                return originalData;
+            }
+        }
+
+        // 默认返回原始格式
+        return getThumbnailFileByAttachmentId(image.getAttachmentId());
+    }
+
+    @Override
+    public byte[] getResizedImage(Integer id, Integer width, String format) {
+        ProjectImage image = getImageById(id);
+        if (image == null || image.getAttachmentId() == null || width == null || width <= 0) {
+            return null;
+        }
+
+        // 限制最大宽度为原图宽度
+        int targetWidth = Math.min(width, image.getWidth() != null ? image.getWidth() : 1920);
+        // 限制最小宽度为100px
+        targetWidth = Math.max(targetWidth, 100);
+
+        // 缓存key
+        String cacheKey = String.format("%d:%d:%s", image.getAttachmentId(), targetWidth, format.toLowerCase());
+
+        // 先查缓存
+        byte[] cached = resizedImageCache.getIfPresent(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        // 获取原始图片数据
+        byte[] originalData = getImageFileByAttachmentId(image.getAttachmentId());
+        if (originalData == null) {
+            return null;
+        }
+
+        // 调整尺寸
+        try {
+            // 写入临时文件
+            Path tempFile = Files.createTempFile("resized_", ".tmp");
+            Files.write(tempFile, originalData);
+
+            // 压缩调整尺寸
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Thumbnails.of(tempFile.toFile())
+                    .width(targetWidth)
+                    .outputQuality(0.8)
+                    .outputFormat(format.toLowerCase())
+                    .toOutputStream(baos);
+
+            byte[] resizedData = baos.toByteArray();
+            Files.deleteIfExists(tempFile);
+
+            // 存入缓存
+            resizedImageCache.put(cacheKey, resizedData);
+            return resizedData;
+        } catch (Exception e) {
+            // 调整失败返回原始图片
+            return originalData;
+        }
+    }
+
     /**
      * 压缩图片
      */
     private byte[] compressImage(Path imagePath) throws IOException {
+        return compressImage(imagePath, "jpg");
+    }
+
+    /**
+     * 压缩图片，指定输出格式
+     */
+    private byte[] compressImage(Path imagePath, String format) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Thumbnails.of(imagePath.toFile())
                 .width(1920) // 最大宽度 1920
-                .outputQuality(0.85)
-                .outputFormat("jpg")
+                .outputQuality(0.8) // 详情图质量0.8
+                .outputFormat(format)
                 .toOutputStream(baos);
         return baos.toByteArray();
     }
@@ -377,16 +535,23 @@ public class ImageServiceImpl implements ImageService {
      * 避免文件系统积累无用文件。临时文件在 finally 块中通过 Files.deleteIfExists() 清理。
      */
     private byte[] generateThumbnail(byte[] imageData) throws IOException {
+        return generateThumbnail(imageData, "jpg");
+    }
+
+    /**
+     * 生成缩略图，指定输出格式
+     */
+    private byte[] generateThumbnail(byte[] imageData, String format) throws IOException {
         // 将 byte 数组转为临时文件
-        Path tempFile = Files.createTempFile("thumb_", ".jpg");
+        Path tempFile = Files.createTempFile("thumb_", "." + format);
         try {
             Files.write(tempFile, imageData);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Thumbnails.of(tempFile.toFile())
                     .width(400) // 缩略图宽度 400px
-                    .outputQuality(0.7) // 质量 0.7
-                    .outputFormat("jpg")
+                    .outputQuality(0.6) // 缩略图质量0.6
+                    .outputFormat(format)
                     .toOutputStream(baos);
             return baos.toByteArray();
         } finally {
@@ -540,6 +705,71 @@ public class ImageServiceImpl implements ImageService {
 
                 projectImageMapper.updateById(image);
             }
+        }
+    }
+
+    /**
+     * 服务完全启动后预加载所有图片缓存，彻底解决冷启动问题
+     * 等待Spring容器、数据库连接池全部初始化完成后才开始加载
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Async
+    public void preloadImageCache() {
+        try {
+            // 等待3秒确保所有组件完全就绪
+            Thread.sleep(3000);
+
+            // 查询所有未删除的图片，优先加载封面图片，然后按上传时间倒序
+            var queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<ProjectImage>();
+            queryWrapper.eq("status", 1)
+                    .orderByDesc("is_cover") // 封面图片优先加载
+                    .orderByDesc("id");      // 最新上传的优先加载
+            List<ProjectImage> allImages = projectImageMapper.selectList(queryWrapper);
+
+            int total = allImages.size();
+            int thumbnailCount = 0;
+            int coverImageCount = 0;
+            int progress = 0;
+
+            System.out.println("🚀 开始预加载所有图片缓存，总图片数：" + total + " 张");
+
+            for (ProjectImage image : allImages) {
+                try {
+                    if (image.getAttachmentId() != null) {
+                        // 1. 预加载所有图片的缩略图（体积小，优先全部加载）
+                        byte[] thumbData = getThumbnailFileByAttachmentId(image.getAttachmentId());
+                        if (thumbData != null) {
+                            thumbnailCount++;
+                        }
+
+                        // 2. 预加载所有封面图片的原图（首屏主要用这些）
+                        if (image.getIsCover() == 1) {
+                            byte[] imageData = getImageFileByAttachmentId(image.getAttachmentId());
+                            if (imageData != null) {
+                                coverImageCount++;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // 单张图片加载失败不影响整体流程
+                    System.err.println("警告：图片ID " + image.getId() + " 预加载失败，跳过：" + e.getMessage());
+                }
+
+                // 每加载100张打印一次进度
+                progress++;
+                if (progress % 100 == 0) {
+                    double percent = (double) progress / total * 100;
+                    System.out.printf("图片预加载进度：%d/%d (%.1f%%)%n", progress, total, percent);
+                }
+            }
+
+            System.out.println("✅ 图片缓存预加载全部完成：");
+            System.out.println("   - 缩略图：" + thumbnailCount + " 张");
+            System.out.println("   - 封面原图：" + coverImageCount + " 张");
+            System.out.println("   - 所有图片首次访问无延迟！");
+        } catch (Exception e) {
+            System.err.println("❌ 图片缓存预加载失败：" + e.getMessage());
+            // 预加载失败不影响服务正常运行，只是首次访问会稍慢
         }
     }
 }

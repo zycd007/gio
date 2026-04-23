@@ -8,6 +8,29 @@ interface CompressOptions {
   maxHeight?: number;     // 最大高度，默认 1080
   quality?: number;       // 压缩质量，默认 0.85
   maxSizeMB?: number;     // 最大文件大小（MB），超过此值强制压缩
+  preferWebP?: boolean;   // 优先使用WebP格式，默认true
+}
+
+// 检测浏览器是否支持WebP
+let supportsWebP: boolean | null = null;
+
+export function checkWebPSupport(): Promise<boolean> {
+  if (supportsWebP !== null) {
+    return Promise.resolve(supportsWebP);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      supportsWebP = img.width === 1;
+      resolve(supportsWebP);
+    };
+    img.onerror = () => {
+      supportsWebP = false;
+      resolve(false);
+    };
+    img.src = 'data:image/webp;base64,UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAABBxAR/Q9ERP8DAABWUDggGAAAADABAJ0BKgEAAQADADQlpAADcAD++/1QAA==';
+  });
 }
 
 interface CompressResult {
@@ -29,6 +52,7 @@ export async function compressImage(
     maxHeight = 1080,
     quality = 0.85,
     maxSizeMB = 2,  // 超过 2MB 的图片需要压缩
+    preferWebP = true,
   } = options;
 
   const originalSize = file.size;
@@ -37,13 +61,22 @@ export async function compressImage(
   // 判断是否需要压缩
   const needsCompress = originalSize > maxSizeBytes;
 
+  // 检查WebP支持
+  const webPSupported = preferWebP ? await checkWebPSupport() : false;
+  const outputFormat = webPSupported ? 'image/webp' : 'image/jpeg';
+  const fileExtension = webPSupported ? '.webp' : '.jpg';
+
   if (!needsCompress) {
-    return {
-      file,
-      originalSize,
-      compressedSize: originalSize,
-      wasCompressed: false,
-    };
+    // 如果原始文件已经是WebP格式，直接返回
+    if (file.type === 'image/webp' || !webPSupported) {
+      return {
+        file,
+        originalSize,
+        compressedSize: originalSize,
+        wasCompressed: false,
+      };
+    }
+    // 否则将非WebP格式转换为WebP以获得更好的压缩率
   }
 
   // 读取图片
@@ -78,8 +111,8 @@ export async function compressImage(
         (blob) => {
           if (blob) {
             // 创建新的 File 对象
-            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-              type: 'image/jpeg',
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, fileExtension), {
+              type: outputFormat,
               lastModified: Date.now(),
             });
             resolve({
@@ -92,7 +125,7 @@ export async function compressImage(
             reject(new Error('Canvas toBlob 失败'));
           }
         },
-        'image/jpeg',
+        outputFormat,
         quality
       );
     };

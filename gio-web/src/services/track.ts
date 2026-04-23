@@ -1,49 +1,54 @@
 const trackService = {
-  trackPageView: (pageUrl: string, projectId?: number) => {
-    // 使用 sendBeacon 确保页面关闭时数据能发送
-    const data = JSON.stringify({
-      pageUrl,
-      projectId,
-      referrer: document.referrer || '',
-    });
+  // 重试配置
+  maxRetries: 3,
+  retryDelay: 1000, // 1秒后重试
 
-    // 优先使用 sendBeacon（页面卸载时也能发送）
+  // 通用埋点请求方法（带重试）
+  sendWithRetry: (url: string, data: object, retries: number = 0) => {
     if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/track/pageview', data);
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const sent = navigator.sendBeacon(url, blob);
+      if (!sent && retries < trackService.maxRetries) {
+        // sendBeacon 返回 false 或失败时，使用 fetch 重试
+        setTimeout(() => {
+          trackService.sendWithRetry(url, data, retries + 1);
+        }, trackService.retryDelay);
+      }
     } else {
       // 降级使用 fetch
-      fetch('/api/track/pageview', {
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: data,
+        body: JSON.stringify(data),
         keepalive: true,
-      }).catch(err => {
-        console.error('Page view tracking failed:', err);
+      }).catch(() => {
+        if (retries < trackService.maxRetries) {
+          setTimeout(() => {
+            trackService.sendWithRetry(url, data, retries + 1);
+          }, trackService.retryDelay);
+        } else {
+          console.error('[Track] Failed to track after', trackService.maxRetries, 'retries');
+        }
       });
     }
   },
 
+  trackPageView: (pageUrl: string, projectId?: number) => {
+    const data = {
+      pageUrl,
+      projectId,
+      referrer: document.referrer || '',
+    };
+    trackService.sendWithRetry('/api/track/pageview', data);
+  },
+
   trackDuration: (pageUrl: string, projectId: number | undefined, duration: number) => {
-    const data = JSON.stringify({
+    const data = {
       pageUrl,
       projectId,
       duration,
-    });
-
-    // 使用 sendBeacon 确保页面关闭时数据能发送
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/track/duration', data);
-    } else {
-      // 降级使用 fetch
-      fetch('/api/track/duration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: data,
-        keepalive: true,
-      }).catch(err => {
-        console.error('Duration tracking failed:', err);
-      });
-    }
+    };
+    trackService.sendWithRetry('/api/track/duration', data);
   },
 };
 

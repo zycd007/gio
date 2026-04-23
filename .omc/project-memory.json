@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775880483858,
+  "lastScanned": 1776948653528,
   "projectRoot": "E:\\my_projects\\gio",
   "techStack": {
     "languages": [
@@ -34,7 +34,8 @@
     "isMonorepo": false,
     "workspaces": [],
     "mainDirectories": [
-      "docs"
+      "docs",
+      "scripts"
     ],
     "gitBranches": {
       "defaultBranch": "main",
@@ -47,14 +48,14 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 0,
-      "lastAccessed": 1775880483811,
+      "lastAccessed": 1776948653421,
       "keyFiles": []
     },
     "gio-api": {
       "path": "gio-api",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775880483812,
+      "lastAccessed": 1776948653422,
       "keyFiles": [
         "admin.log",
         "pom.xml"
@@ -64,7 +65,7 @@
       "path": "gio-miniapp",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1775880483812,
+      "lastAccessed": 1776948653423,
       "keyFiles": [
         "app.js",
         "app.json",
@@ -76,8 +77,8 @@
     "gio-web": {
       "path": "gio-web",
       "purpose": null,
-      "fileCount": 13,
-      "lastAccessed": 1775880483813,
+      "fileCount": 14,
+      "lastAccessed": 1776948653425,
       "keyFiles": [
         "index.html",
         "package-lock.json",
@@ -90,7 +91,7 @@
       "path": "logs",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1775880483814,
+      "lastAccessed": 1776948653431,
       "keyFiles": [
         "admin.log",
         "api.log",
@@ -99,25 +100,34 @@
         "web.log"
       ]
     },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1776948653431,
+      "keyFiles": [
+        "restart_env.py"
+      ]
+    },
     "gio-api\\src": {
       "path": "gio-api\\src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1775880483815,
+      "lastAccessed": 1776948653432,
       "keyFiles": []
     },
     "gio-miniapp\\pages": {
       "path": "gio-miniapp\\pages",
       "purpose": "Page components",
       "fileCount": 0,
-      "lastAccessed": 1775880483816,
+      "lastAccessed": 1776948653433,
       "keyFiles": []
     },
     "gio-web\\dist": {
       "path": "gio-web\\dist",
       "purpose": "Distribution/build output",
       "fileCount": 7,
-      "lastAccessed": 1775880483817,
+      "lastAccessed": 1776948653435,
       "keyFiles": [
         "favicon-c.svg",
         "favicon.svg",
@@ -128,331 +138,320 @@
       "path": "gio-web\\node_modules",
       "purpose": "Dependencies",
       "fileCount": 3,
-      "lastAccessed": 1775880483821,
+      "lastAccessed": 1776948653439,
       "keyFiles": []
     },
     "gio-web\\public": {
       "path": "gio-web\\public",
       "purpose": "Public files",
       "fileCount": 4,
-      "lastAccessed": 1775880483821,
+      "lastAccessed": 1776948653439,
       "keyFiles": [
         "favicon-c.svg",
         "favicon.svg",
         "logo_avatar.html"
       ]
-    },
-    "gio-web\\src": {
-      "path": "gio-web\\src",
-      "purpose": "Source code",
-      "fileCount": 3,
-      "lastAccessed": 1775880483822,
-      "keyFiles": [
-        "App.tsx",
-        "index.css",
-        "main.tsx"
-      ]
     }
   },
   "hotPaths": [
     {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\AiCopywritingServiceImpl.java",
-      "accessCount": 24,
-      "lastAccessed": 1775907743185,
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\ImageServiceImpl.java",
+      "accessCount": 19,
+      "lastAccessed": 1776951922254,
       "type": "file"
     },
     {
-      "path": "",
-      "accessCount": 19,
-      "lastAccessed": 1775959998236,
-      "type": "directory"
-    },
-    {
-      "path": "gio-web\\src",
-      "accessCount": 17,
-      "lastAccessed": 1775912119490,
-      "type": "directory"
-    },
-    {
-      "path": "gio-api",
-      "accessCount": 13,
-      "lastAccessed": 1775958054570,
-      "type": "directory"
-    },
-    {
-      "path": "gio-web\\src\\admin\\components\\AiCopywritingModal.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1775907735446,
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\ImageController.java",
+      "accessCount": 12,
+      "lastAccessed": 1776951352320,
       "type": "file"
     },
     {
       "path": "gio-api\\src\\main\\resources\\application.yml",
-      "accessCount": 10,
-      "lastAccessed": 1775957888125,
+      "accessCount": 4,
+      "lastAccessed": 1776952055161,
+      "type": "file"
+    },
+    {
+      "path": "gio-web\\vite.config.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776952062043,
+      "type": "file"
+    },
+    {
+      "path": "gio-web\\src\\services\\uploadService.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776950100235,
+      "type": "file"
+    },
+    {
+      "path": "pom.xml",
+      "accessCount": 2,
+      "lastAccessed": 1776948710827,
       "type": "file"
     },
     {
       "path": "CLAUDE.md",
-      "accessCount": 9,
-      "lastAccessed": 1775903774566,
-      "type": "file"
-    },
-    {
-      "path": ".claude\\skills\\deploy\\scripts\\deploy.py",
-      "accessCount": 8,
-      "lastAccessed": 1775906982195,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\components\\ContactInfo.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1775902871280,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\admin\\Copywriting.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1775907735401,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\admin\\components\\CopywritingModal.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1775907768191,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\AiCopywritingService.java",
-      "accessCount": 6,
-      "lastAccessed": 1775907743046,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AiCopywritingController.java",
-      "accessCount": 5,
-      "lastAccessed": 1775907742670,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\services\\ai.ts",
-      "accessCount": 5,
-      "lastAccessed": 1775907867633,
-      "type": "file"
-    },
-    {
-      "path": "C:\\Users\\Administrator\\.claude\\projects\\E--my-projects-gio\\memory\\MEMORY.md",
-      "accessCount": 4,
-      "lastAccessed": 1775882772849,
-      "type": "file"
-    },
-    {
-      "path": "gio-miniapp\\project.config.json",
-      "accessCount": 4,
-      "lastAccessed": 1775897108507,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java",
-      "accessCount": 4,
-      "lastAccessed": 1775898670945,
-      "type": "directory"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\AiCopywriting.java",
-      "accessCount": 4,
-      "lastAccessed": 1775907743083,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\CopywritingDTO.java",
-      "accessCount": 4,
-      "lastAccessed": 1775907751638,
-      "type": "file"
-    },
-    {
-      "path": ".claude\\skills\\deploy\\deploy.md",
-      "accessCount": 3,
-      "lastAccessed": 1775882782064,
-      "type": "file"
-    },
-    {
-      "path": "gio-miniapp\\app.json",
-      "accessCount": 3,
-      "lastAccessed": 1775896967076,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\services\\copywriting.ts",
-      "accessCount": 3,
-      "lastAccessed": 1775907735492,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\AiCopywritingResponse.java",
-      "accessCount": 3,
-      "lastAccessed": 1775907751525,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\CopywritingCreateRequest.java",
-      "accessCount": 3,
-      "lastAccessed": 1775907751696,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\FreeCopywritingRequest.java",
-      "accessCount": 3,
-      "lastAccessed": 1775907767803,
-      "type": "file"
-    },
-    {
-      "path": "gio-web\\src\\admin\\components\\CopywritingDetailModal.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1775907768087,
-      "type": "file"
-    },
-    {
-      "path": ".claude\\settings.local.json",
       "accessCount": 2,
-      "lastAccessed": 1775882526030,
+      "lastAccessed": 1776948955034,
       "type": "file"
     },
     {
-      "path": "gio-web\\src\\constants\\contact.ts",
+      "path": "gio-web\\src\\services\\admin.ts",
       "accessCount": 2,
-      "lastAccessed": 1775902860786,
+      "lastAccessed": 1776949981644,
       "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\AiTokenUsage.java",
-      "accessCount": 2,
-      "lastAccessed": 1775907743003,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\AiPromptTemplate.java",
-      "accessCount": 2,
-      "lastAccessed": 1775907743114,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\mapper\\AiCopywritingMapper.java",
-      "accessCount": 2,
-      "lastAccessed": 1775907751053,
-      "type": "file"
-    },
-    {
-      "path": "gio-api\\src\\main\\java\\com\\gio\\mapper\\AiTokenUsageMapper.java",
-      "accessCount": 2,
-      "lastAccessed": 1775907751744,
-      "type": "file"
-    },
-    {
-      "path": "gio-web",
-      "accessCount": 2,
-      "lastAccessed": 1775908259403,
-      "type": "directory"
     },
     {
       "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AdminImageController.java",
       "accessCount": 2,
-      "lastAccessed": 1775908874082,
+      "lastAccessed": 1776949982453,
       "type": "file"
     },
     {
-      "path": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\claude\\E--my-projects-gio\\d768a070-2f55-4202-8edc-ba9d0a7a082c\\tasks\\bwh90c751.output",
+      "path": "gio-web\\src\\services\\api.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776949993767,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\config\\SecurityConfig.java",
       "accessCount": 1,
-      "lastAccessed": 1775881777448,
+      "lastAccessed": 1776948720178,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\common\\exception\\GlobalExceptionHandler.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948720522,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\config\\JwtAuthenticationFilter.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948720563,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\common\\Result.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948720624,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\config\\WebConfig.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948720640,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\PortalController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948728459,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AdminLoginController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948728888,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AdminProjectController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948728929,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\DashboardController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948729003,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AdminCategoryController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948729060,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\AdminMessageController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948737189,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\TrackController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948737269,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\TrackDebugController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948737324,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\SocialPostController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948737399,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\controller\\MessageController.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948737460,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\AdminService.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948745644,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\TrackServiceImpl.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948745959,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\ProjectService.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948746036,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\AdminServiceImpl.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948746087,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\ProjectServiceImpl.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948746146,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\Project.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758139,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\AdminUser.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758340,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\Category.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758536,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\Message.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758580,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\ProjectImage.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758647,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\Attachment.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948758665,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\SocialPost.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768104,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\DailyStats.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768220,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\entity\\PageViewLog.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768405,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\LoginResponse.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768614,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\LoginRequest.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768680,
+      "type": "file"
+    },
+    {
+      "path": "gio-api\\src\\main\\java\\com\\gio\\dto\\PageResult.java",
+      "accessCount": 1,
+      "lastAccessed": 1776948768763,
       "type": "file"
     },
     {
       "path": "gio-web\\package.json",
       "accessCount": 1,
-      "lastAccessed": 1775883187840,
+      "lastAccessed": 1776948777283,
       "type": "file"
     },
     {
-      "path": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\claude\\E--my-projects-gio\\d768a070-2f55-4202-8edc-ba9d0a7a082c\\tasks\\b5kvvg12d.output",
+      "path": "gio-web\\src\\services\\project.ts",
       "accessCount": 1,
-      "lastAccessed": 1775884508687,
+      "lastAccessed": 1776948777783,
       "type": "file"
     },
     {
-      "path": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\claude\\E--my-projects-gio\\95a27565-5e4d-44eb-830f-e62f7893e6c9\\tasks\\bdxfkvgw5.output",
+      "path": "gio-web\\src\\App.tsx",
       "accessCount": 1,
-      "lastAccessed": 1775889864118,
+      "lastAccessed": 1776948777876,
       "type": "file"
     },
     {
-      "path": "gio-web\\src\\components\\ContactForm.tsx",
+      "path": "gio-web\\src\\services\\track.ts",
       "accessCount": 1,
-      "lastAccessed": 1775890495127,
+      "lastAccessed": 1776948787799,
       "type": "file"
     },
     {
-      "path": "gio-web\\src\\pages\\Contact.tsx",
+      "path": "gio-web\\src\\services\\socialPost.ts",
       "accessCount": 1,
-      "lastAccessed": 1775890507555,
+      "lastAccessed": 1776948788232,
       "type": "file"
     },
     {
-      "path": "gio-web\\src\\constants",
+      "path": "gio-web\\src\\admin\\Login.tsx",
       "accessCount": 1,
-      "lastAccessed": 1775890511465,
-      "type": "directory"
-    },
-    {
-      "path": "gio-web\\src\\components\\PlaceholderImage\\index.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1775890523816,
+      "lastAccessed": 1776948788265,
       "type": "file"
     },
     {
-      "path": "gio-web\\src\\constants\\placeholder.ts",
+      "path": "gio-api\\src\\main\\java\\com\\gio\\service\\impl\\SocialPostServiceImpl.java",
       "accessCount": 1,
-      "lastAccessed": 1775890523968,
+      "lastAccessed": 1776948788316,
       "type": "file"
     },
     {
-      "path": "gio-web\\public",
+      "path": "gio-web\\src\\admin\\Layout.tsx",
       "accessCount": 1,
-      "lastAccessed": 1775890524026,
-      "type": "directory"
-    },
-    {
-      "path": "gio-web\\src\\pages\\HomePage.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1775890526468,
-      "type": "file"
-    },
-    {
-      "path": "C:\\Users\\Administrator\\.claude\\plans\\whimsical-conjuring-cupcake.md",
-      "accessCount": 1,
-      "lastAccessed": 1775890564469,
-      "type": "file"
-    },
-    {
-      "path": "C:\\Users\\Administrator\\.claude\\image-cache\\c1b85950-66e6-4162-8463-08546888a173\\1.png",
-      "accessCount": 1,
-      "lastAccessed": 1775896937156,
-      "type": "file"
-    },
-    {
-      "path": "C:\\Users\\Administrator\\.claude\\image-cache\\c1b85950-66e6-4162-8463-08546888a173\\2.png",
-      "accessCount": 1,
-      "lastAccessed": 1775897060144,
-      "type": "file"
-    },
-    {
-      "path": "gio-miniapp\\pages\\index\\index.js",
-      "accessCount": 1,
-      "lastAccessed": 1775897066482,
-      "type": "file"
-    },
-    {
-      "path": "gio-miniapp\\app.js",
-      "accessCount": 1,
-      "lastAccessed": 1775897072411,
+      "lastAccessed": 1776948788361,
       "type": "file"
     }
   ],

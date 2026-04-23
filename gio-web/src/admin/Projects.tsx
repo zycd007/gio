@@ -186,7 +186,7 @@ const AdminProjects = () => {
   const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // 滚动分页状态
@@ -272,19 +272,31 @@ const AdminProjects = () => {
     });
   }, []);
 
-  // 搜索防抖
+  // 搜索防抖 - 只在有输入时触发
   useEffect(() => {
+    // 空输入时不触发搜索防抖逻辑，避免与初次加载冲突
+    if (searchInput === '') {
+      setSearchKeyword('');
+      return;
+    }
+
     const timer = setTimeout(() => {
+      setLoading(true);  // 先设置 loading，确保显示骨架屏
       setSearchKeyword(searchInput);
-      setPage(1); // 搜索时重置页码
+      setPage(1);
       setProjects([]);
       setHasMore(true);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // 筛选变化时重置
+  // 筛选变化时重置 - 只在筛选条件实际变化时触发
   useEffect(() => {
+    // 使用 ref 标记是否是首次渲染，避免初始状态触发重置
+    const isInitialMount = isFirstLoad.current;
+    if (isInitialMount) return;
+
+    setLoading(true);  // 先设置 loading，确保显示骨架屏而非空状态
     setPage(1);
     setProjects([]);
     setHasMore(true);
@@ -292,7 +304,8 @@ const AdminProjects = () => {
 
   // 加载项目数据
   const loadProjects = useCallback(async (pageNum: number, append = false) => {
-    if (loading || loadingMore) return;
+    // 只检查 loadingMore，不检查 loading（允许重新加载时覆盖）
+    if (loadingMore) return;
 
     if (append) {
       setLoadingMore(true);
@@ -679,10 +692,7 @@ const AdminProjects = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <p className="text-slate-500 mb-3">暂无项目</p>
-              <button onClick={handleCreateProject} className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg">
-                创建第一个项目
-              </button>
+              <p className="text-slate-500">暂无项目</p>
             </div>
           </div>
         ) : (
@@ -773,6 +783,7 @@ const AdminProjects = () => {
         onClose={() => setCreateModalVisible(false)}
         onSuccess={() => {
           // 重置状态并重新加载
+          setLoading(true);  // 先设置 loading，确保显示骨架屏
           setPage(1);
           setProjects([]);
           setHasMore(true);

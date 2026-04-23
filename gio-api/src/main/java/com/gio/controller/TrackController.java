@@ -5,6 +5,8 @@ import com.gio.dto.DashboardStatsVO;
 import com.gio.dto.PageViewRequest;
 import com.gio.service.TrackService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import java.time.LocalDate;
 @RequestMapping("/api/track")
 public class TrackController {
 
+    private static final Logger log = LoggerFactory.getLogger(TrackController.class);
+
     @Autowired
     private TrackService trackService;
 
@@ -22,6 +26,7 @@ public class TrackController {
     public Result<?> pageview(@RequestBody PageViewRequest request, HttpServletRequest httpRequest) {
         String ip = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
+        log.info("[PageView] ip={}, pageUrl={}, projectId={}, referrer={}", ip, request.getPageUrl(), request.getProjectId(), request.getReferrer());
         trackService.trackPageView(ip, request.getPageUrl(), request.getReferrer(), request.getProjectId(), userAgent);
         return Result.success(null);
     }
@@ -29,6 +34,7 @@ public class TrackController {
     @PostMapping("/duration")
     public Result<?> duration(@RequestBody PageViewRequest request, HttpServletRequest httpRequest) {
         String ip = getClientIp(httpRequest);
+        log.info("[Duration] ip={}, pageUrl={}, projectId={}, duration={}s", ip, request.getPageUrl(), request.getProjectId(), request.getDuration());
         trackService.trackDuration(ip, request.getPageUrl(), request.getProjectId(), request.getDuration());
         return Result.success(null);
     }

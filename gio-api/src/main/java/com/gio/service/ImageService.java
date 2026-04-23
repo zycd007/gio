@@ -62,6 +62,25 @@ public interface ImageService {
     byte[] getThumbnailFileByAttachmentId(Integer attachmentId);
 
     /**
+     * 获取指定格式的图片文件
+     */
+    byte[] getImageFileWithFormat(Integer id, String format);
+
+    /**
+     * 获取指定格式的缩略图文件
+     */
+    byte[] getThumbnailFileWithFormat(Integer id, String format);
+
+    /**
+     * 获取指定尺寸和格式的图片
+     * @param id 图片ID
+     * @param width 目标宽度（高度等比缩放）
+     * @param format 图片格式（jpg/webp）
+     * @return 调整后的图片字节数组
+     */
+    byte[] getResizedImage(Integer id, Integer width, String format);
+
+    /**
      * 获取图片总数
      */
     Long getTotalImageCount();
